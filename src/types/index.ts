@@ -88,4 +88,18 @@ export interface ProjectPaginationInfo {
 export interface ProjectsResponse {
   projects: Project[];
   pagination: ProjectPaginationInfo;
+}
+
+// File types
+export interface ProjectFile {
+  id: number;
+  project_id: number;
+  original_name: string;
+  stored_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  is_public: boolean;
+  uploaded_by: number;
+  created_at: string;
 } 

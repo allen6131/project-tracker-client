@@ -4,6 +4,7 @@ import UserList from '../components/UserList';
 import UserForm from '../components/UserForm';
 import ProjectList from '../components/ProjectList';
 import ProjectForm from '../components/ProjectForm';
+import ProjectFilesModal from '../components/ProjectFilesModal';
 import { 
   User, 
   CreateUserRequest, 
@@ -32,6 +33,8 @@ const Dashboard: React.FC = () => {
   const [projectRefreshTrigger, setProjectRefreshTrigger] = useState(0);
   const [projectError, setProjectError] = useState<string | null>(null);
   const [projectSuccess, setProjectSuccess] = useState<string | null>(null);
+  const [showFilesModal, setShowFilesModal] = useState(false);
+  const [selectedProjectForFiles, setSelectedProjectForFiles] = useState<Project | null>(null);
 
   // Active tab state
   const [activeTab, setActiveTab] = useState<'users' | 'projects'>('projects');
@@ -149,6 +152,16 @@ const Dashboard: React.FC = () => {
     setEditingProject(null);
   };
 
+  const handleOpenFilesModal = (project: Project) => {
+    setSelectedProjectForFiles(project);
+    setShowFilesModal(true);
+  };
+
+  const handleCloseFilesModal = () => {
+    setSelectedProjectForFiles(null);
+    setShowFilesModal(false);
+  };
+
   const handleTabChange = (tab: 'users' | 'projects') => {
     clearMessages();
     setActiveTab(tab);
@@ -247,6 +260,7 @@ const Dashboard: React.FC = () => {
             <ProjectList
               onEdit={handleEditProject}
               onDelete={handleDeleteProject}
+              onViewFiles={handleOpenFilesModal}
               refreshTrigger={projectRefreshTrigger}
             />
 
@@ -257,6 +271,13 @@ const Dashboard: React.FC = () => {
               onSubmit={handleProjectFormSubmit}
               project={editingProject}
               loading={projectFormLoading}
+            />
+
+            {/* Project Files Modal */}
+            <ProjectFilesModal
+              isOpen={showFilesModal}
+              onClose={handleCloseFilesModal}
+              project={selectedProjectForFiles}
             />
           </div>
         ) : (

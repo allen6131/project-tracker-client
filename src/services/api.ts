@@ -9,7 +9,8 @@ import {
   Project,
   CreateProjectRequest,
   UpdateProjectRequest,
-  ProjectsResponse
+  ProjectsResponse,
+  ProjectFile
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -126,6 +127,44 @@ export const projectsAPI = {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/projects/${id}`);
     return response.data;
   },
+};
+
+// Files API
+export const filesAPI = {
+  getProjectFiles: async (projectId: number): Promise<{ files: ProjectFile[] }> => {
+    const response: AxiosResponse<{ files: ProjectFile[] }> = await api.get(`/projects/${projectId}/files`);
+    return response.data;
+  },
+
+  uploadFile: async (projectId: number, file: File, isPublic: boolean): Promise<{ file: ProjectFile }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('is_public', String(isPublic));
+
+    const response: AxiosResponse<{ file: ProjectFile }> = await api.post(
+      `/projects/${projectId}/upload`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  },
+
+  deleteFile: async (fileId: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/files/${fileId}`);
+    return response.data;
+  },
+
+  updateFile: async (fileId: number, isPublic: boolean): Promise<{ file: ProjectFile }> => {
+    const response: AxiosResponse<{ file: ProjectFile }> = await api.put(`/files/${fileId}`, { is_public: isPublic });
+    return response.data;
+  },
+
+  downloadFile: async (fileId: number): Promise<Blob> => {
+    const response: AxiosResponse<Blob> = await api.get(`/files/${fileId}/download`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
 };
 
 // Health check

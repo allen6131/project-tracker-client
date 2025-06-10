@@ -5,10 +5,11 @@ import { projectsAPI } from '../services/api';
 interface ProjectListProps {
   onEdit: (project: Project) => void;
   onDelete: (id: number) => void;
+  onViewFiles: (project: Project) => void;
   refreshTrigger: number;
 }
 
-const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrigger }) => {
+const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, onViewFiles, refreshTrigger }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -174,6 +175,12 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => onViewFiles(project)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Files
+                        </button>
                         <button
                           onClick={() => onEdit(project)}
                           className="text-blue-600 hover:text-blue-900"
