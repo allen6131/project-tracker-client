@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Project, ProjectsResponse } from '../types';
 import { projectsAPI } from '../services/api';
+import { Link } from 'react-router-dom';
 
 interface ProjectListProps {
   onEdit: (project: Project) => void;
   onDelete: (id: number) => void;
-  onViewFiles: (project: Project) => void;
   refreshTrigger: number;
 }
 
-const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, onViewFiles, refreshTrigger }) => {
+const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrigger }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -175,12 +175,12 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, onViewFiles
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => onViewFiles(project)}
+                        <Link
+                          to={`/projects/${project.id}`}
                           className="text-green-600 hover:text-green-900"
                         >
-                          Files
-                        </button>
+                          View
+                        </Link>
                         <button
                           onClick={() => onEdit(project)}
                           className="text-blue-600 hover:text-blue-900"

@@ -10,7 +10,9 @@ import {
   CreateProjectRequest,
   UpdateProjectRequest,
   ProjectsResponse,
-  ProjectFile
+  ProjectFile,
+  TodoList,
+  TodoItem
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -165,6 +167,44 @@ export const filesAPI = {
     });
     return response.data;
   }
+};
+
+// Todo API
+export const todoAPI = {
+  // --- Todo List Methods ---
+  getTodoLists: async (projectId: number): Promise<TodoList[]> => {
+    const response = await api.get(`/projects/${projectId}/todolists`);
+    return response.data;
+  },
+
+  createTodoList: async (projectId: number, title: string): Promise<TodoList> => {
+    const response = await api.post(`/projects/${projectId}/todolists`, { title });
+    return response.data;
+  },
+
+  updateTodoList: async (listId: number, title: string): Promise<TodoList> => {
+    const response = await api.put(`/todolists/${listId}`, { title });
+    return response.data;
+  },
+
+  deleteTodoList: async (listId: number): Promise<void> => {
+    await api.delete(`/todolists/${listId}`);
+  },
+
+  // --- Todo Item Methods ---
+  createTodoItem: async (listId: number, content: string): Promise<TodoItem> => {
+    const response = await api.post(`/todolists/${listId}/items`, { content });
+    return response.data;
+  },
+
+  updateTodoItem: async (itemId: number, updates: { content?: string; is_completed?: boolean }): Promise<TodoItem> => {
+    const response = await api.put(`/todoitems/${itemId}`, updates);
+    return response.data;
+  },
+
+  deleteTodoItem: async (itemId: number): Promise<void> => {
+    await api.delete(`/todoitems/${itemId}`);
+  },
 };
 
 // Health check

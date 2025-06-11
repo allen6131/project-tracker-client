@@ -102,4 +102,22 @@ export interface ProjectFile {
   is_public: boolean;
   uploaded_by: number;
   created_at: string;
+}
+
+// Todo List Types
+export interface TodoItem {
+  id: number;
+  todo_list_id: number;
+  content: string;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TodoList {
+  id: number;
+  project_id: number;
+  title: string;
+  created_at: string;
+  items: TodoItem[];
 } 
