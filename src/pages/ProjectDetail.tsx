@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Project, TodoList as TodoListType } from '../types';
 import { projectsAPI, todoAPI } from '../services/api';
-import TodoList from '../components/TodoList'; 
+import TodoList from '../components/TodoList';
+import ProjectFilesModal from '../components/ProjectFilesModal';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -11,6 +12,7 @@ const ProjectDetail: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
+    const [showFilesModal, setShowFilesModal] = useState(false);
 
     useEffect(() => {
         const fetchProjectDetails = async () => {
@@ -76,8 +78,18 @@ const ProjectDetail: React.FC = () => {
             <div className="mb-4">
                 <Link to="/dashboard" className="text-blue-600 hover:underline">&larr; Back to Dashboard</Link>
             </div>
-            <h1 className="text-3xl font-bold mb-2">{project.name}</h1>
-            <p className="text-gray-600 mb-6">{project.description}</p>
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-3xl font-bold mb-2">{project.name}</h1>
+                    <p className="text-gray-600">{project.description}</p>
+                </div>
+                <button 
+                    onClick={() => setShowFilesModal(true)}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg"
+                >
+                    Manage Files
+                </button>
+            </div>
 
             <div className="mt-8">
                 <h2 className="text-2xl font-bold mb-4">Todo Lists</h2>
@@ -106,6 +118,12 @@ const ProjectDetail: React.FC = () => {
                     ))}
                 </div>
             </div>
+
+            <ProjectFilesModal
+                isOpen={showFilesModal}
+                onClose={() => setShowFilesModal(false)}
+                project={project}
+            />
         </div>
     );
 };
