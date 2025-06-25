@@ -110,6 +110,9 @@ export interface TodoItem {
   todo_list_id: number;
   content: string;
   is_completed: boolean;
+  assigned_to?: number | null;
+  assigned_username?: string | null;
+  assigned_user_role?: 'admin' | 'user' | null;
   created_at: string;
   updated_at: string;
 }
@@ -120,4 +123,9 @@ export interface TodoList {
   title: string;
   created_at: string;
   items: TodoItem[];
+}
+
+// Users for assignment
+export interface ActiveUsersResponse {
+  users: User[];
 } 

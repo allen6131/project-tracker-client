@@ -12,7 +12,8 @@ import {
   ProjectsResponse,
   ProjectFile,
   TodoList,
-  TodoItem
+  TodoItem,
+  ActiveUsersResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -77,6 +78,11 @@ export const usersAPI = {
     const response: AxiosResponse<UsersResponse> = await api.get('/users', {
       params: { page, limit, search },
     });
+    return response.data;
+  },
+
+  getActiveUsers: async (): Promise<ActiveUsersResponse> => {
+    const response: AxiosResponse<ActiveUsersResponse> = await api.get('/users/active');
     return response.data;
   },
 
@@ -192,12 +198,19 @@ export const todoAPI = {
   },
 
   // --- Todo Item Methods ---
-  createTodoItem: async (listId: number, content: string): Promise<TodoItem> => {
-    const response = await api.post(`/todolists/${listId}/items`, { content });
+  createTodoItem: async (listId: number, content: string, assignedTo?: number | null): Promise<TodoItem> => {
+    const response = await api.post(`/todolists/${listId}/items`, { 
+      content, 
+      assigned_to: assignedTo 
+    });
     return response.data;
   },
 
-  updateTodoItem: async (itemId: number, updates: { content?: string; is_completed?: boolean }): Promise<TodoItem> => {
+  updateTodoItem: async (itemId: number, updates: { 
+    content?: string; 
+    is_completed?: boolean; 
+    assigned_to?: number | null 
+  }): Promise<TodoItem> => {
     const response = await api.put(`/todoitems/${itemId}`, updates);
     return response.data;
   },

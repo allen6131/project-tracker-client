@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { TodoList as TodoListType, TodoItem as TodoItemType } from '../types';
-import { todoAPI } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { TodoList as TodoListType, TodoItem as TodoItemType, User } from '../types';
+import { todoAPI, usersAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface TodoListProps {
     list: TodoListType;
@@ -10,16 +11,36 @@ interface TodoListProps {
 
 const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete }) => {
     const [newItemContent, setNewItemContent] = useState('');
+    const [newItemAssignedTo, setNewItemAssignedTo] = useState<number | ''>('');
+    const [activeUsers, setActiveUsers] = useState<User[]>([]);
+    const [editingItemId, setEditingItemId] = useState<number | null>(null);
+    const [editingAssignment, setEditingAssignment] = useState<number | ''>('');
+    const { user: currentUser } = useAuth();
+
+    // Load active users on component mount
+    useEffect(() => {
+        const loadActiveUsers = async () => {
+            try {
+                const response = await usersAPI.getActiveUsers();
+                setActiveUsers(response.users);
+            } catch (error) {
+                console.error("Failed to load active users", error);
+            }
+        };
+        loadActiveUsers();
+    }, []);
 
     const handleAddItem = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newItemContent.trim()) return;
 
         try {
-            const newItem = await todoAPI.createTodoItem(list.id, newItemContent.trim());
+            const assignedTo = newItemAssignedTo === '' ? null : Number(newItemAssignedTo);
+            const newItem = await todoAPI.createTodoItem(list.id, newItemContent.trim(), assignedTo);
             const updatedList = { ...list, items: [...list.items, newItem] };
             onListUpdate(updatedList);
             setNewItemContent('');
+            setNewItemAssignedTo('');
         } catch (error) {
             console.error("Failed to add item", error);
         }
@@ -46,12 +67,46 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
             console.error("Failed to delete item", error);
         }
     };
+
+    const handleAssignmentChange = async (itemId: number, newAssignedTo: number | '') => {
+        try {
+            const assignedTo = newAssignedTo === '' ? null : Number(newAssignedTo);
+            const updatedItem = await todoAPI.updateTodoItem(itemId, { assigned_to: assignedTo });
+            const updatedItems = list.items.map(i => i.id === itemId ? updatedItem : i);
+            const updatedList = { ...list, items: updatedItems };
+            onListUpdate(updatedList);
+            setEditingItemId(null);
+        } catch (error) {
+            console.error("Failed to update assignment", error);
+        }
+    };
+
+    const startEditingAssignment = (item: TodoItemType) => {
+        setEditingItemId(item.id);
+        setEditingAssignment(item.assigned_to || '');
+    };
+
+    const cancelEditingAssignment = () => {
+        setEditingItemId(null);
+        setEditingAssignment('');
+    };
     
     const handleDeleteList = () => {
         if (window.confirm(`Are you sure you want to delete the list "${list.title}"?`)) {
             onListDelete(list.id);
         }
-    }
+    };
+
+    const getRoleBadgeColor = (role: 'admin' | 'user' | null | undefined) => {
+        switch (role) {
+            case 'admin':
+                return 'bg-purple-100 text-purple-800 border-purple-200';
+            case 'user':
+                return 'bg-blue-100 text-blue-800 border-blue-200';
+            default:
+                return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+    };
 
     return (
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col h-full">
@@ -60,33 +115,112 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
                 <button onClick={handleDeleteList} className="text-gray-400 hover:text-red-500">&times;</button>
             </div>
             
-            <div className="flex-grow space-y-2 mb-4">
+            <div className="flex-grow space-y-3 mb-4">
                 {list.items.map(item => (
-                    <div key={item.id} className="flex items-center justify-between">
-                        <div className="flex items-center">
+                    <div key={item.id} className="flex items-start justify-between p-2 border rounded-lg">
+                        <div className="flex items-start flex-grow">
                             <input
                                 type="checkbox"
                                 checked={item.is_completed}
                                 onChange={() => handleToggleItem(item)}
-                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
                             />
-                            <span className={`ml-3 text-sm ${item.is_completed ? 'line-through text-gray-500' : 'text-gray-700'}`}>
-                                {item.content}
-                            </span>
+                            <div className="ml-3 flex-grow">
+                                <span className={`text-sm ${item.is_completed ? 'line-through text-gray-500' : 'text-gray-700'}`}>
+                                    {item.content}
+                                </span>
+                                
+                                {/* Assignment section */}
+                                <div className="mt-1 flex items-center gap-2">
+                                    {editingItemId === item.id ? (
+                                        <div className="flex items-center gap-2">
+                                            <select
+                                                value={editingAssignment}
+                                                onChange={(e) => setEditingAssignment(e.target.value === '' ? '' : Number(e.target.value))}
+                                                className="text-xs border border-gray-300 rounded px-2 py-1"
+                                            >
+                                                <option value="">Unassigned</option>
+                                                {activeUsers.map(user => (
+                                                    <option key={user.id} value={user.id}>
+                                                        {user.username} ({user.role})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                onClick={() => handleAssignmentChange(item.id, editingAssignment)}
+                                                className="text-xs text-green-600 hover:text-green-800"
+                                            >
+                                                Save
+                                            </button>
+                                            <button
+                                                onClick={cancelEditingAssignment}
+                                                className="text-xs text-gray-500 hover:text-gray-700"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            {item.assigned_username ? (
+                                                <span 
+                                                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border cursor-pointer hover:bg-opacity-80 ${getRoleBadgeColor(item.assigned_user_role)}`}
+                                                    onClick={() => startEditingAssignment(item)}
+                                                    title="Click to change assignment"
+                                                >
+                                                    {item.assigned_username}
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => startEditingAssignment(item)}
+                                                    className="text-xs text-gray-500 hover:text-blue-600 border border-dashed border-gray-300 rounded px-2 py-1"
+                                                >
+                                                    Assign
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <button onClick={() => handleDeleteItem(item.id)} className="text-gray-400 hover:text-red-500 text-xs">Delete</button>
+                        <button 
+                            onClick={() => handleDeleteItem(item.id)} 
+                            className="text-gray-400 hover:text-red-500 text-xs ml-2"
+                        >
+                            Delete
+                        </button>
                     </div>
                 ))}
             </div>
 
-            <form onSubmit={handleAddItem} className="mt-auto">
+            <form onSubmit={handleAddItem} className="mt-auto space-y-2">
                 <input
                     type="text"
                     value={newItemContent}
                     onChange={e => setNewItemContent(e.target.value)}
                     placeholder="Add a new task"
-                    className="w-full border-t pt-2 mt-2 text-sm focus:outline-none"
+                    className="w-full border-t pt-2 text-sm focus:outline-none"
                 />
+                <div className="flex items-center gap-2">
+                    <select
+                        value={newItemAssignedTo}
+                        onChange={e => setNewItemAssignedTo(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="text-xs border border-gray-300 rounded px-2 py-1 flex-grow"
+                    >
+                        <option value="">Assign to someone (optional)</option>
+                        {activeUsers.map(user => (
+                            <option key={user.id} value={user.id}>
+                                {user.username} ({user.role})
+                            </option>
+                        ))}
+                    </select>
+                    <button
+                        type="submit"
+                        className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                        disabled={!newItemContent.trim()}
+                    >
+                        Add
+                    </button>
+                </div>
             </form>
         </div>
     );
