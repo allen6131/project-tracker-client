@@ -198,10 +198,11 @@ export const todoAPI = {
   },
 
   // --- Todo Item Methods ---
-  createTodoItem: async (listId: number, content: string, assignedTo?: number | null): Promise<TodoItem> => {
+  createTodoItem: async (listId: number, content: string, assignedTo?: number | null, dueDate?: string | null): Promise<TodoItem> => {
     const response = await api.post(`/todolists/${listId}/items`, { 
       content, 
-      assigned_to: assignedTo 
+      assigned_to: assignedTo,
+      due_date: dueDate
     });
     return response.data;
   },
@@ -209,7 +210,8 @@ export const todoAPI = {
   updateTodoItem: async (itemId: number, updates: { 
     content?: string; 
     is_completed?: boolean; 
-    assigned_to?: number | null 
+    assigned_to?: number | null;
+    due_date?: string | null;
   }): Promise<TodoItem> => {
     const response = await api.put(`/todoitems/${itemId}`, updates);
     return response.data;

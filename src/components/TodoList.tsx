@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TodoList as TodoListType, TodoItem as TodoItemType, User } from '../types';
 import { todoAPI, usersAPI } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
 
 interface TodoListProps {
     list: TodoListType;
@@ -12,10 +11,11 @@ interface TodoListProps {
 const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete }) => {
     const [newItemContent, setNewItemContent] = useState('');
     const [newItemAssignedTo, setNewItemAssignedTo] = useState<number | ''>('');
+    const [newItemDueDate, setNewItemDueDate] = useState('');
     const [activeUsers, setActiveUsers] = useState<User[]>([]);
     const [editingItemId, setEditingItemId] = useState<number | null>(null);
     const [editingAssignment, setEditingAssignment] = useState<number | ''>('');
-    const { user: currentUser } = useAuth();
+    const [editingDueDate, setEditingDueDate] = useState('');
 
     // Load active users on component mount
     useEffect(() => {
@@ -36,11 +36,13 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
 
         try {
             const assignedTo = newItemAssignedTo === '' ? null : Number(newItemAssignedTo);
-            const newItem = await todoAPI.createTodoItem(list.id, newItemContent.trim(), assignedTo);
+            const dueDate = newItemDueDate.trim() === '' ? null : newItemDueDate;
+            const newItem = await todoAPI.createTodoItem(list.id, newItemContent.trim(), assignedTo, dueDate);
             const updatedList = { ...list, items: [...list.items, newItem] };
             onListUpdate(updatedList);
             setNewItemContent('');
             setNewItemAssignedTo('');
+            setNewItemDueDate('');
         } catch (error) {
             console.error("Failed to add item", error);
         }
@@ -81,14 +83,29 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
         }
     };
 
+    const handleDueDateChange = async (itemId: number, newDueDate: string) => {
+        try {
+            const dueDate = newDueDate.trim() === '' ? null : newDueDate;
+            const updatedItem = await todoAPI.updateTodoItem(itemId, { due_date: dueDate });
+            const updatedItems = list.items.map(i => i.id === itemId ? updatedItem : i);
+            const updatedList = { ...list, items: updatedItems };
+            onListUpdate(updatedList);
+            setEditingItemId(null);
+        } catch (error) {
+            console.error("Failed to update due date", error);
+        }
+    };
+
     const startEditingAssignment = (item: TodoItemType) => {
         setEditingItemId(item.id);
         setEditingAssignment(item.assigned_to || '');
+        setEditingDueDate(item.due_date || '');
     };
 
     const cancelEditingAssignment = () => {
         setEditingItemId(null);
         setEditingAssignment('');
+        setEditingDueDate('');
     };
     
     const handleDeleteList = () => {
@@ -106,6 +123,30 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
             default:
                 return 'bg-gray-100 text-gray-800 border-gray-200';
         }
+    };
+
+    const formatDate = (dateString: string | null | undefined) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+    };
+
+    const getDueDateColor = (dueDate: string | null | undefined, isCompleted: boolean) => {
+        if (!dueDate || isCompleted) return 'text-gray-500';
+        
+        const today = new Date();
+        const due = new Date(dueDate);
+        const diffTime = due.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return 'text-red-600'; // Overdue
+        if (diffDays === 0) return 'text-orange-600'; // Due today
+        if (diffDays <= 3) return 'text-yellow-600'; // Due soon
+        return 'text-gray-600'; // Future
     };
 
     return (
@@ -130,10 +171,10 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
                                     {item.content}
                                 </span>
                                 
-                                {/* Assignment section */}
-                                <div className="mt-1 flex items-center gap-2">
+                                {/* Assignment and Due Date section */}
+                                <div className="mt-1 flex items-center gap-2 flex-wrap">
                                     {editingItemId === item.id ? (
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <select
                                                 value={editingAssignment}
                                                 onChange={(e) => setEditingAssignment(e.target.value === '' ? '' : Number(e.target.value))}
@@ -146,8 +187,17 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
                                                     </option>
                                                 ))}
                                             </select>
+                                            <input
+                                                type="date"
+                                                value={editingDueDate}
+                                                onChange={(e) => setEditingDueDate(e.target.value)}
+                                                className="text-xs border border-gray-300 rounded px-2 py-1"
+                                            />
                                             <button
-                                                onClick={() => handleAssignmentChange(item.id, editingAssignment)}
+                                                onClick={() => {
+                                                    handleAssignmentChange(item.id, editingAssignment);
+                                                    handleDueDateChange(item.id, editingDueDate);
+                                                }}
                                                 className="text-xs text-green-600 hover:text-green-800"
                                             >
                                                 Save
@@ -160,7 +210,7 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             {item.assigned_username ? (
                                                 <span 
                                                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border cursor-pointer hover:bg-opacity-80 ${getRoleBadgeColor(item.assigned_user_role)}`}
@@ -175,6 +225,23 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
                                                     className="text-xs text-gray-500 hover:text-blue-600 border border-dashed border-gray-300 rounded px-2 py-1"
                                                 >
                                                     Assign
+                                                </button>
+                                            )}
+                                            
+                                            {item.due_date ? (
+                                                <span 
+                                                    className={`text-xs px-2 py-1 rounded cursor-pointer hover:bg-gray-100 ${getDueDateColor(item.due_date, item.is_completed)}`}
+                                                    onClick={() => startEditingAssignment(item)}
+                                                    title="Click to change due date"
+                                                >
+                                                    📅 {formatDate(item.due_date)}
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => startEditingAssignment(item)}
+                                                    className="text-xs text-gray-500 hover:text-blue-600 border border-dashed border-gray-300 rounded px-2 py-1"
+                                                >
+                                                    Set due date
                                                 </button>
                                             )}
                                         </div>
@@ -204,7 +271,7 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
                     <select
                         value={newItemAssignedTo}
                         onChange={e => setNewItemAssignedTo(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="text-xs border border-gray-300 rounded px-2 py-1 flex-grow"
+                        className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
                     >
                         <option value="">Assign to someone (optional)</option>
                         {activeUsers.map(user => (
@@ -213,6 +280,13 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
                             </option>
                         ))}
                     </select>
+                    <input
+                        type="date"
+                        value={newItemDueDate}
+                        onChange={e => setNewItemDueDate(e.target.value)}
+                        className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+                        title="Set due date (optional)"
+                    />
                     <button
                         type="submit"
                         className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"

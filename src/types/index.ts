@@ -113,6 +113,7 @@ export interface TodoItem {
   assigned_to?: number | null;
   assigned_username?: string | null;
   assigned_user_role?: 'admin' | 'user' | null;
+  due_date?: string | null;
   created_at: string;
   updated_at: string;
 }
