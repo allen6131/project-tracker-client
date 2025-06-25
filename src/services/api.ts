@@ -13,7 +13,15 @@ import {
   ProjectFile,
   TodoList,
   TodoItem,
-  ActiveUsersResponse
+  ActiveUsersResponse,
+  Customer,
+  Contact,
+  CreateCustomerRequest,
+  UpdateCustomerRequest,
+  CreateContactRequest,
+  UpdateContactRequest,
+  CustomersResponse,
+  SimpleCustomersResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -226,6 +234,57 @@ export const todoAPI = {
 export const healthAPI = {
   check: async (): Promise<{ status: string; timestamp: string }> => {
     const response: AxiosResponse<{ status: string; timestamp: string }> = await api.get('/health');
+    return response.data;
+  },
+};
+
+// Customers API
+export const customersAPI = {
+  getCustomers: async (page = 1, limit = 10, search = ''): Promise<CustomersResponse> => {
+    const response: AxiosResponse<CustomersResponse> = await api.get('/customers', {
+      params: { page, limit, search },
+    });
+    return response.data;
+  },
+
+  getSimpleCustomers: async (): Promise<SimpleCustomersResponse> => {
+    const response: AxiosResponse<SimpleCustomersResponse> = await api.get('/customers/simple');
+    return response.data;
+  },
+
+  createCustomer: async (customerData: CreateCustomerRequest): Promise<{ customer: Customer; message: string }> => {
+    const response: AxiosResponse<{ customer: Customer; message: string }> = await api.post('/customers', customerData);
+    return response.data;
+  },
+
+  getCustomer: async (id: number): Promise<{ customer: Customer }> => {
+    const response: AxiosResponse<{ customer: Customer }> = await api.get(`/customers/${id}`);
+    return response.data;
+  },
+
+  updateCustomer: async (id: number, customerData: UpdateCustomerRequest): Promise<{ customer: Customer; message: string }> => {
+    const response: AxiosResponse<{ customer: Customer; message: string }> = await api.put(`/customers/${id}`, customerData);
+    return response.data;
+  },
+
+  deleteCustomer: async (id: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/customers/${id}`);
+    return response.data;
+  },
+
+  // Contact methods
+  createContact: async (customerId: number, contactData: CreateContactRequest): Promise<{ contact: Contact; message: string }> => {
+    const response: AxiosResponse<{ contact: Contact; message: string }> = await api.post(`/customers/${customerId}/contacts`, contactData);
+    return response.data;
+  },
+
+  updateContact: async (customerId: number, contactId: number, contactData: UpdateContactRequest): Promise<{ contact: Contact; message: string }> => {
+    const response: AxiosResponse<{ contact: Contact; message: string }> = await api.put(`/customers/${customerId}/contacts/${contactId}`, contactData);
+    return response.data;
+  },
+
+  deleteContact: async (customerId: number, contactId: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/customers/${customerId}/contacts/${contactId}`);
     return response.data;
   },
 };

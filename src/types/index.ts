@@ -57,24 +57,28 @@ export interface UsersResponse {
 export interface Project {
   id: number;
   name: string;
-  description?: string;
+  description: string;
   status: 'started' | 'active' | 'done';
+  customer_id?: number | null;
+  customer_name?: string | null;
   created_by: number;
   created_by_username?: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateProjectRequest {
   name: string;
   description?: string;
   status?: 'started' | 'active' | 'done';
+  customer_id?: number | null;
 }
 
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
   status?: 'started' | 'active' | 'done';
+  customer_id?: number | null;
 }
 
 export interface ProjectPaginationInfo {
@@ -87,7 +91,13 @@ export interface ProjectPaginationInfo {
 
 export interface ProjectsResponse {
   projects: Project[];
-  pagination: ProjectPaginationInfo;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalProjects: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
 // File types
@@ -129,4 +139,105 @@ export interface TodoList {
 // Users for assignment
 export interface ActiveUsersResponse {
   users: User[];
+}
+
+// Customer types
+export interface Customer {
+  id: number;
+  name: string;
+  description?: string;
+  industry?: string;
+  website?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+  created_by?: number;
+  created_by_username?: string;
+  created_at: string;
+  updated_at: string;
+  contacts?: Contact[];
+}
+
+export interface Contact {
+  id: number;
+  customer_id: number;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  department?: string;
+  is_primary: boolean;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCustomerRequest {
+  name: string;
+  description?: string;
+  industry?: string;
+  website?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+}
+
+export interface UpdateCustomerRequest {
+  name?: string;
+  description?: string;
+  industry?: string;
+  website?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+}
+
+export interface CreateContactRequest {
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  department?: string;
+  is_primary?: boolean;
+  notes?: string;
+}
+
+export interface UpdateContactRequest {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  department?: string;
+  is_primary?: boolean;
+  notes?: string;
+}
+
+export interface CustomersResponse {
+  customers: Customer[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCustomers: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface SimpleCustomersResponse {
+  customers: { id: number; name: string }[];
 } 

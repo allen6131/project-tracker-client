@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import UserList from '../components/UserList';
 import UserForm from '../components/UserForm';
@@ -15,7 +16,8 @@ import {
 import { usersAPI, projectsAPI } from '../services/api';
 
 const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
+  const navigate = useNavigate();
   
   // User management state
   const [showUserForm, setShowUserForm] = useState(false);
@@ -34,7 +36,7 @@ const Dashboard: React.FC = () => {
   const [projectSuccess, setProjectSuccess] = useState<string | null>(null);
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'users' | 'projects'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'users' | 'customers'>('projects');
 
   const clearMessages = () => {
     setUserError(null);
@@ -149,9 +151,13 @@ const Dashboard: React.FC = () => {
     setEditingProject(null);
   };
 
-  const handleTabChange = (tab: 'users' | 'projects') => {
+  const handleTabChange = (tab: 'projects' | 'users' | 'customers') => {
     clearMessages();
-    setActiveTab(tab);
+    if (tab === 'customers') {
+      navigate('/customers');
+    } else {
+      setActiveTab(tab);
+    }
   };
 
   return (
@@ -193,16 +199,26 @@ const Dashboard: React.FC = () => {
               >
                 Projects
               </button>
-              <button
-                onClick={() => handleTabChange('users')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'users'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                User Management
-              </button>
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => handleTabChange('customers')}
+                    className="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+                  >
+                    Customers
+                  </button>
+                  <button
+                    onClick={() => handleTabChange('users')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'users'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    User Management
+                  </button>
+                </>
+              )}
             </nav>
           </div>
         </div>
@@ -220,12 +236,14 @@ const Dashboard: React.FC = () => {
                       Manage your company's active projects
                     </p>
                   </div>
-                  <button
-                    onClick={handleCreateProject}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                  >
-                    Add New Project
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={handleCreateProject}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                    >
+                      Add New Project
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -251,13 +269,15 @@ const Dashboard: React.FC = () => {
             />
 
             {/* Project Form Modal */}
-            <ProjectForm
-              isOpen={showProjectForm}
-              onClose={handleCloseProjectForm}
-              onSubmit={handleProjectFormSubmit}
-              project={editingProject}
-              loading={projectFormLoading}
-            />
+            {isAdmin && (
+              <ProjectForm
+                isOpen={showProjectForm}
+                onClose={handleCloseProjectForm}
+                onSubmit={handleProjectFormSubmit}
+                project={editingProject}
+                loading={projectFormLoading}
+              />
+            )}
           </div>
         ) : (
           <div className="space-y-6">

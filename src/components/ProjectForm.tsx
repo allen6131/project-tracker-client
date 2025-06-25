@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project, CreateProjectRequest, UpdateProjectRequest } from '../types';
+import { customersAPI } from '../services/api';
 
 interface ProjectFormProps {
   isOpen: boolean;
@@ -19,22 +20,47 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: 'started' as 'started' | 'active' | 'done'
+    status: 'started' as 'started' | 'active' | 'done',
+    customer_id: '' as string
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+
+  // Load customers when form opens
+  useEffect(() => {
+    if (isOpen) {
+      loadCustomers();
+    }
+  }, [isOpen]);
+
+  const loadCustomers = async () => {
+    try {
+      setLoadingCustomers(true);
+      const response = await customersAPI.getSimpleCustomers();
+      setCustomers(response.customers);
+    } catch (error) {
+      console.error('Failed to load customers:', error);
+      setCustomers([]);
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
 
   useEffect(() => {
     if (project) {
       setFormData({
         name: project.name,
         description: project.description || '',
-        status: project.status
+        status: project.status,
+        customer_id: project.customer_id ? project.customer_id.toString() : ''
       });
     } else {
       setFormData({
         name: '',
         description: '',
-        status: 'started'
+        status: 'started',
+        customer_id: ''
       });
     }
     setErrors({});
@@ -69,10 +95,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     }
 
     try {
-      const submitData = {
+      const submitData: CreateProjectRequest | UpdateProjectRequest = {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        status: formData.status
+        status: formData.status,
+        customer_id: formData.customer_id ? parseInt(formData.customer_id) : null
       };
 
       await onSubmit(submitData);
@@ -86,9 +113,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     setFormData({
       name: '',
       description: '',
-      status: 'started'
+      status: 'started',
+      customer_id: ''
     });
     setErrors({});
+    setCustomers([]);
     onClose();
   };
 
@@ -139,6 +168,31 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
             />
             {errors.name && (
               <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+            )}
+          </div>
+
+          {/* Customer Selection */}
+          <div>
+            <label htmlFor="customer_id" className="block text-sm font-medium text-gray-700 mb-1">
+              Customer
+            </label>
+            <select
+              id="customer_id"
+              name="customer_id"
+              value={formData.customer_id}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={loading || loadingCustomers}
+            >
+              <option value="">Select a customer (optional)</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name}
+                </option>
+              ))}
+            </select>
+            {loadingCustomers && (
+              <p className="mt-1 text-sm text-gray-500">Loading customers...</p>
             )}
           </div>
 
