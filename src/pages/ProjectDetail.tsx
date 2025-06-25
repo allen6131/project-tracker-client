@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Project, TodoList as TodoListType } from '../types';
 import { projectsAPI, todoAPI } from '../services/api';
 import TodoList from '../components/TodoList';
-import ProjectFilesModal from '../components/ProjectFilesModal';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const [project, setProject] = useState<Project | null>(null);
     const [todoLists, setTodoLists] = useState<TodoListType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
-    const [showFilesModal, setShowFilesModal] = useState(false);
 
     useEffect(() => {
         const fetchProjectDetails = async () => {
@@ -61,6 +60,10 @@ const ProjectDetail: React.FC = () => {
         }
     };
 
+    const handleManageFiles = () => {
+        navigate(`/projects/${id}/files`);
+    };
+
     if (loading) {
         return <div className="p-8">Loading project details...</div>;
     }
@@ -84,10 +87,13 @@ const ProjectDetail: React.FC = () => {
                     <p className="text-gray-600">{project.description}</p>
                 </div>
                 <button 
-                    onClick={() => setShowFilesModal(true)}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg"
+                    onClick={handleManageFiles}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
                 >
-                    Manage Files
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Manage Files</span>
                 </button>
             </div>
 
@@ -118,12 +124,6 @@ const ProjectDetail: React.FC = () => {
                     ))}
                 </div>
             </div>
-
-            <ProjectFilesModal
-                isOpen={showFilesModal}
-                onClose={() => setShowFilesModal(false)}
-                project={project}
-            />
         </div>
     );
 };

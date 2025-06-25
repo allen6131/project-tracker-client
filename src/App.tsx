@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ProjectDetail from './pages/ProjectDetail';
+import Files from './pages/Files';
 import './App.css';
 
 function App() {
@@ -27,6 +28,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProjectDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/projects/:id/files"
+              element={
+                <ProtectedRoute>
+                  <Files />
                 </ProtectedRoute>
               }
             />
