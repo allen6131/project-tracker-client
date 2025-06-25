@@ -30,8 +30,9 @@ const Login: React.FC = () => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>Project Tracker</h1>
-          <p>Sign in to your account</p>
+          <h1>AmpTrack</h1>
+          <p>Electrical Project Management System</p>
+          <p className="text-sm">Sign in to your account</p>
         </div>
         
         <form onSubmit={handleSubmit} className="login-form">

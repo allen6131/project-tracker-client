@@ -168,7 +168,7 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-bold text-gray-900">
-                Project Tracker Admin
+                AmpTrack
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -233,7 +233,7 @@ const Dashboard: React.FC = () => {
                   <div>
                     <h2 className="text-lg font-medium text-gray-900">Project Management</h2>
                     <p className="mt-1 text-sm text-gray-500">
-                      Manage your company's active projects
+                      Manage electrical projects and low voltage installations
                     </p>
                   </div>
                   {isAdmin && (

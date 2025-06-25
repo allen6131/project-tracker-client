@@ -301,7 +301,7 @@ const Customers: React.FC = () => {
               </Link>
             </div>
             <h1 className="text-3xl font-bold text-gray-900">Customer Management</h1>
-            <p className="text-gray-600 mt-1">Manage your customers and their contacts</p>
+            <p className="text-gray-600 mt-1">Manage your electrical clients and their project contacts</p>
           </div>
           <button
             onClick={openCreateCustomerForm}
