@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "AmpTrack",
+  "name": "AmpTrack - Project Management for Low Voltage Companies & Electricians",
+  "description": "Professional project management system designed specifically for low voltage companies, electricians, and electrical contractors.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,7 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#2563eb",
+  "background_color": "#f8fafc",
+  "categories": ["business", "productivity", "utilities"]
 }
