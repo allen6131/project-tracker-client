@@ -10,6 +10,8 @@ import Files from './pages/Files';
 import Customers from './pages/Customers';
 import Estimates from './pages/Estimates';
 import Invoices from './pages/Invoices';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancelled from './pages/PaymentCancelled';
 import './App.css';
 
 function App() {
@@ -64,6 +66,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Files />
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/payment-success"
+              element={
+                <ProtectedRoute>
+                  <PaymentSuccess />
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/payment-cancelled"
+              element={
+                <ProtectedRoute>
+                  <PaymentCancelled />
                 </ProtectedRoute>
               }
             />

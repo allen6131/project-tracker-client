@@ -345,6 +345,10 @@ export interface Invoice {
   total_amount: number;
   due_date?: string | null;
   paid_date?: string | null;
+  payment_intent_id?: string | null;
+  payment_method?: string | null;
+  payment_status?: string | null;
+  stripe_session_id?: string | null;
   notes?: string;
   created_by: number;
   created_by_username?: string;
@@ -384,6 +388,39 @@ export interface UpdateInvoiceRequest {
   due_date?: string | null;
   paid_date?: string | null;
   notes?: string;
+}
+
+// Payment types
+export interface PaymentIntent {
+  client_secret: string;
+  payment_intent_id: string;
+}
+
+export interface CheckoutSession {
+  session_id: string;
+  url: string;
+}
+
+export interface PaymentStatus {
+  invoice_status: string;
+  payment_status?: string;
+  payment_method?: string;
+  payment_details?: {
+    status: string;
+    amount: number;
+    currency: string;
+    payment_method?: string;
+  } | null;
+}
+
+export interface CreatePaymentIntentRequest {
+  invoice_id: number;
+}
+
+export interface CreateCheckoutSessionRequest {
+  invoice_id: number;
+  success_url: string;
+  cancel_url: string;
 }
 
 export interface InvoicesResponse {

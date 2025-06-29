@@ -29,7 +29,12 @@ import {
   Invoice,
   CreateInvoiceRequest,
   UpdateInvoiceRequest,
-  InvoicesResponse
+  InvoicesResponse,
+  PaymentIntent,
+  CheckoutSession,
+  PaymentStatus,
+  CreatePaymentIntentRequest,
+  CreateCheckoutSessionRequest
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -378,6 +383,29 @@ export const invoicesAPI = {
 
   deleteInvoice: async (id: number): Promise<{ message: string }> => {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/invoices/${id}`);
+    return response.data;
+  },
+};
+
+// Payments API
+export const paymentsAPI = {
+  createPaymentIntent: async (data: CreatePaymentIntentRequest): Promise<PaymentIntent> => {
+    const response: AxiosResponse<PaymentIntent> = await api.post('/payments/create-payment-intent', data);
+    return response.data;
+  },
+
+  createCheckoutSession: async (data: CreateCheckoutSessionRequest): Promise<CheckoutSession> => {
+    const response: AxiosResponse<CheckoutSession> = await api.post('/payments/create-checkout-session', data);
+    return response.data;
+  },
+
+  getPaymentStatus: async (invoiceId: number): Promise<PaymentStatus> => {
+    const response: AxiosResponse<PaymentStatus> = await api.get(`/payments/payment-status/${invoiceId}`);
+    return response.data;
+  },
+
+  getPublicKey: async (): Promise<{ publishable_key: string }> => {
+    const response: AxiosResponse<{ publishable_key: string }> = await api.get('/payments/public-key');
     return response.data;
   },
 };

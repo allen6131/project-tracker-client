@@ -11,6 +11,7 @@ import {
   Project
 } from '../types';
 import { invoicesAPI, customersAPI, estimatesAPI, projectsAPI } from '../services/api';
+import PaymentForm from '../components/PaymentForm';
 
 const Invoices: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -27,6 +28,10 @@ const Invoices: React.FC = () => {
   const [showEstimateSelector, setShowEstimateSelector] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  
+  // Payment state
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -196,6 +201,36 @@ const Invoices: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update status');
     }
+  };
+
+  const handlePayInvoice = (invoice: Invoice) => {
+    if (invoice.status === 'paid') {
+      setError('Invoice is already paid');
+      return;
+    }
+    if (invoice.status === 'cancelled') {
+      setError('Cannot pay a cancelled invoice');
+      return;
+    }
+    clearMessages();
+    setPaymentInvoice(invoice);
+    setShowPaymentForm(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentForm(false);
+    setPaymentInvoice(null);
+    setSuccess('Payment processed successfully! Invoice has been marked as paid.');
+    loadInvoices();
+  };
+
+  const handlePaymentError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
+
+  const handleClosePaymentForm = () => {
+    setShowPaymentForm(false);
+    setPaymentInvoice(null);
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -454,6 +489,18 @@ const Invoices: React.FC = () => {
                             >
                               Delete
                             </button>
+                          </div>
+                          
+                          {/* Payment Actions */}
+                          <div className="flex space-x-1 mb-1">
+                            {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                              <button
+                                onClick={() => handlePayInvoice(invoice)}
+                                className="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-medium"
+                              >
+                                💳 Pay Invoice
+                              </button>
+                            )}
                           </div>
                           
                           {/* Quick Status Actions */}
@@ -854,6 +901,16 @@ const Invoices: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Payment Form Modal */}
+        {showPaymentForm && paymentInvoice && (
+          <PaymentForm
+            invoice={paymentInvoice}
+            onPaymentSuccess={handlePaymentSuccess}
+            onPaymentError={handlePaymentError}
+            onClose={handleClosePaymentForm}
+          />
         )}
       </div>
     </div>
