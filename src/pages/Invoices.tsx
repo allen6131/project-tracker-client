@@ -2,27 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  Estimate, 
-  CreateEstimateRequest, 
-  UpdateEstimateRequest,
-  EstimateItem,
-  SimpleCustomersResponse
+  Invoice, 
+  CreateInvoiceRequest, 
+  UpdateInvoiceRequest,
+  InvoiceItem,
+  SimpleCustomersResponse,
+  Estimate
 } from '../types';
-import { estimatesAPI, customersAPI } from '../services/api';
+import { invoicesAPI, customersAPI, estimatesAPI } from '../services/api';
 
-const Estimates: React.FC = () => {
+const Invoices: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   
   // State management
-  const [estimates, setEstimates] = useState<Estimate[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
   // Form state
   const [showForm, setShowForm] = useState(false);
-  const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null);
+  const [showEstimateSelector, setShowEstimateSelector] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   
   // Form data
@@ -34,17 +36,20 @@ const Estimates: React.FC = () => {
     customer_email: '',
     customer_phone: '',
     customer_address: '',
+    estimate_id: null as number | null,
+    project_id: null as number | null,
     tax_rate: 0,
-    valid_until: '',
+    due_date: '',
     notes: '',
-    status: 'draft' as 'draft' | 'sent' | 'approved' | 'rejected' | 'expired'
+    status: 'draft' as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
   });
   
-  const [items, setItems] = useState<EstimateItem[]>([
+  const [items, setItems] = useState<InvoiceItem[]>([
     { description: '', quantity: 1, unit_price: 0 }
   ]);
   
   const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
+  const [estimates, setEstimates] = useState<Estimate[]>([]);
   
   // Pagination and filtering
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,20 +57,21 @@ const Estimates: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Load estimates and customers
+  // Load invoices and data
   useEffect(() => {
-    loadEstimates();
+    loadInvoices();
     loadCustomers();
+    loadEstimates();
   }, [currentPage, searchTerm, statusFilter]);
 
-  const loadEstimates = async () => {
+  const loadInvoices = async () => {
     try {
       setLoading(true);
-      const response = await estimatesAPI.getEstimates(currentPage, 10, searchTerm, statusFilter);
-      setEstimates(response.estimates);
+      const response = await invoicesAPI.getInvoices(currentPage, 10, searchTerm, statusFilter);
+      setInvoices(response.invoices);
       setTotalPages(response.pagination.totalPages);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load estimates');
+      setError(err.response?.data?.message || 'Failed to load invoices');
     } finally {
       setLoading(false);
     }
@@ -77,6 +83,15 @@ const Estimates: React.FC = () => {
       setCustomers(response.customers);
     } catch (err) {
       console.error('Failed to load customers:', err);
+    }
+  };
+
+  const loadEstimates = async () => {
+    try {
+      const response = await estimatesAPI.getEstimates(1, 100, '', 'approved');
+      setEstimates(response.estimates);
+    } catch (err) {
+      console.error('Failed to load estimates:', err);
     }
   };
 
@@ -94,74 +109,78 @@ const Estimates: React.FC = () => {
       customer_email: '',
       customer_phone: '',
       customer_address: '',
+      estimate_id: null,
+      project_id: null,
       tax_rate: 0,
-      valid_until: '',
+      due_date: '',
       notes: '',
       status: 'draft'
     });
     setItems([{ description: '', quantity: 1, unit_price: 0 }]);
   };
 
-  const handleCreateEstimate = () => {
+  const handleCreateInvoice = () => {
     clearMessages();
     resetForm();
-    setEditingEstimate(null);
+    setEditingInvoice(null);
     setShowForm(true);
   };
 
-  const handleEditEstimate = (estimate: Estimate) => {
+  const handleCreateFromEstimate = () => {
     clearMessages();
-    setEditingEstimate(estimate);
+    setShowEstimateSelector(true);
+  };
+
+  const handleEstimateSelect = async (estimate: Estimate) => {
+    try {
+      const response = await invoicesAPI.createInvoiceFromEstimate(estimate.id, {});
+      setSuccess(`Invoice created successfully from estimate "${estimate.title}"`);
+      setShowEstimateSelector(false);
+      loadInvoices();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create invoice from estimate');
+    }
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    clearMessages();
+    setEditingInvoice(invoice);
     setFormData({
-      title: estimate.title,
-      description: estimate.description || '',
-      customer_id: estimate.customer_id ?? null,
-      customer_name: estimate.customer_name || '',
-      customer_email: estimate.customer_email || '',
-      customer_phone: estimate.customer_phone || '',
-      customer_address: estimate.customer_address || '',
-      tax_rate: estimate.tax_rate,
-      valid_until: estimate.valid_until || '',
-      notes: estimate.notes || '',
-      status: estimate.status
+      title: invoice.title,
+      description: invoice.description || '',
+      customer_id: invoice.customer_id ?? null,
+      customer_name: invoice.customer_name || '',
+      customer_email: invoice.customer_email || '',
+      customer_phone: invoice.customer_phone || '',
+      customer_address: invoice.customer_address || '',
+      estimate_id: invoice.estimate_id ?? null,
+      project_id: invoice.project_id ?? null,
+      tax_rate: invoice.tax_rate,
+      due_date: invoice.due_date || '',
+      notes: invoice.notes || '',
+      status: invoice.status
     });
-    setItems(estimate.items || [{ description: '', quantity: 1, unit_price: 0 }]);
+    setItems(invoice.items || [{ description: '', quantity: 1, unit_price: 0 }]);
     setShowForm(true);
   };
 
-  const handleDeleteEstimate = async (estimateId: number) => {
-    if (window.confirm('Are you sure you want to delete this estimate?')) {
+  const handleDeleteInvoice = async (invoiceId: number) => {
+    if (window.confirm('Are you sure you want to delete this invoice?')) {
       try {
-        await estimatesAPI.deleteEstimate(estimateId);
-        setSuccess('Estimate deleted successfully');
-        loadEstimates();
+        await invoicesAPI.deleteInvoice(invoiceId);
+        setSuccess('Invoice deleted successfully');
+        loadInvoices();
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to delete estimate');
+        setError(err.response?.data?.message || 'Failed to delete invoice');
       }
     }
   };
 
-  const handleCreateProject = async (estimate: Estimate) => {
-    const projectName = prompt('Enter project name:');
-    if (projectName) {
-      try {
-        const response = await estimatesAPI.createProjectFromEstimate(estimate.id, {
-          project_name: projectName,
-          project_description: estimate.description
-        });
-        setSuccess(`Project "${response.project.name}" created successfully from estimate`);
-        loadEstimates();
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to create project');
-      }
-    }
-  };
-
-  const handleQuickStatusUpdate = async (estimateId: number, newStatus: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired') => {
+  const handleQuickStatusUpdate = async (invoiceId: number, newStatus: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled') => {
     try {
-      await estimatesAPI.updateEstimate(estimateId, { status: newStatus });
-      setSuccess(`Estimate status updated to ${newStatus}`);
-      loadEstimates();
+      await invoicesAPI.updateInvoice(invoiceId, { status: newStatus });
+      setSuccess(`Invoice status updated to ${newStatus}`);
+      loadInvoices();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update status');
     }
@@ -172,22 +191,22 @@ const Estimates: React.FC = () => {
     setFormLoading(true);
     
     try {
-      const estimateData: CreateEstimateRequest = {
+      const invoiceData: CreateInvoiceRequest = {
         ...formData,
         items: items.filter(item => item.description.trim() !== '')
       };
 
-      if (editingEstimate) {
-        await estimatesAPI.updateEstimate(editingEstimate.id, estimateData);
-        setSuccess('Estimate updated successfully');
+      if (editingInvoice) {
+        await invoicesAPI.updateInvoice(editingInvoice.id, invoiceData);
+        setSuccess('Invoice updated successfully');
       } else {
-        await estimatesAPI.createEstimate(estimateData);
-        setSuccess('Estimate created successfully');
+        await invoicesAPI.createInvoice(invoiceData);
+        setSuccess('Invoice created successfully');
       }
       
       setShowForm(false);
       resetForm();
-      loadEstimates();
+      loadInvoices();
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred');
     } finally {
@@ -195,7 +214,7 @@ const Estimates: React.FC = () => {
     }
   };
 
-  const handleItemChange = (index: number, field: keyof EstimateItem, value: string | number) => {
+  const handleItemChange = (index: number, field: keyof InvoiceItem, value: string | number) => {
     const updatedItems = [...items];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     setItems(updatedItems);
@@ -226,11 +245,11 @@ const Estimates: React.FC = () => {
         return `${baseClasses} bg-gray-100 text-gray-800`;
       case 'sent':
         return `${baseClasses} bg-blue-100 text-blue-800`;
-      case 'approved':
+      case 'paid':
         return `${baseClasses} bg-green-100 text-green-800`;
-      case 'rejected':
+      case 'overdue':
         return `${baseClasses} bg-red-100 text-red-800`;
-      case 'expired':
+      case 'cancelled':
         return `${baseClasses} bg-yellow-100 text-yellow-800`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800`;
@@ -249,7 +268,7 @@ const Estimates: React.FC = () => {
               <Link to="/dashboard" className="text-xl font-bold text-gray-900">
                 AmpTrack
               </Link>
-              <span className="ml-4 text-lg text-gray-600">Estimates</span>
+              <span className="ml-4 text-lg text-gray-600">Invoices</span>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">Welcome, {user?.username}</span>
@@ -271,17 +290,25 @@ const Estimates: React.FC = () => {
             <div className="px-4 py-5 sm:p-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900">Estimates Management</h2>
+                  <h2 className="text-lg font-medium text-gray-900">Invoices Management</h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    Create and manage project estimates
+                    Create and manage customer invoices
                   </p>
                 </div>
-                <button
-                  onClick={handleCreateEstimate}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                >
-                  Create New Estimate
-                </button>
+                <div className="space-x-2">
+                  <button
+                    onClick={handleCreateFromEstimate}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                  >
+                    Create from Estimate
+                  </button>
+                  <button
+                    onClick={handleCreateInvoice}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                  >
+                    Create New Invoice
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -306,7 +333,7 @@ const Estimates: React.FC = () => {
             <div>
               <input
                 type="text"
-                placeholder="Search estimates..."
+                placeholder="Search invoices..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -321,18 +348,18 @@ const Estimates: React.FC = () => {
                 <option value="">All Statuses</option>
                 <option value="draft">Draft</option>
                 <option value="sent">Sent</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="expired">Expired</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Estimates List */}
+        {/* Invoices List */}
         {loading ? (
           <div className="bg-white shadow rounded-lg p-6">
-            <div className="text-center">Loading estimates...</div>
+            <div className="text-center">Loading invoices...</div>
           </div>
         ) : (
           <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -340,6 +367,9 @@ const Estimates: React.FC = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Invoice #
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Title
                     </th>
@@ -353,7 +383,7 @@ const Estimates: React.FC = () => {
                       Total
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Valid Until
+                      Due Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -361,46 +391,41 @@ const Estimates: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {estimates.map((estimate) => (
-                    <tr key={estimate.id}>
+                  {invoices.map((invoice) => (
+                    <tr key={invoice.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{estimate.title}</div>
-                        <div className="text-sm text-gray-500">{estimate.description}</div>
+                        <div className="text-sm font-medium text-gray-900">{invoice.invoice_number}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{invoice.title}</div>
+                        <div className="text-sm text-gray-500">{invoice.description}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {estimate.customer_name || 'No customer'}
+                        {invoice.customer_name || 'No customer'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={getStatusBadge(estimate.status)}>
-                          {estimate.status}
+                        <span className={getStatusBadge(invoice.status)}>
+                          {invoice.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${estimate.total_amount.toFixed(2)}
+                        ${invoice.total_amount.toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {estimate.valid_until ? new Date(estimate.valid_until).toLocaleDateString() : 'No expiry'}
+                        {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'No due date'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex flex-col space-y-1">
                           {/* Primary Actions */}
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => handleEditEstimate(estimate)}
+                              onClick={() => handleEditInvoice(invoice)}
                               className="text-indigo-600 hover:text-indigo-900 text-xs"
                             >
                               Edit
                             </button>
-                            {estimate.status === 'approved' && (
-                              <button
-                                onClick={() => handleCreateProject(estimate)}
-                                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium"
-                              >
-                                Create Project
-                              </button>
-                            )}
                             <button
-                              onClick={() => handleDeleteEstimate(estimate.id)}
+                              onClick={() => handleDeleteInvoice(invoice.id)}
                               className="text-red-600 hover:text-red-900 text-xs"
                             >
                               Delete
@@ -409,36 +434,28 @@ const Estimates: React.FC = () => {
                           
                           {/* Quick Status Actions */}
                           <div className="flex space-x-1">
-                            {estimate.status === 'draft' && (
+                            {invoice.status === 'draft' && (
                               <button
-                                onClick={() => handleQuickStatusUpdate(estimate.id, 'sent')}
+                                onClick={() => handleQuickStatusUpdate(invoice.id, 'sent')}
                                 className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
                               >
                                 Send
                               </button>
                             )}
-                            {estimate.status === 'sent' && (
-                              <>
-                                <button
-                                  onClick={() => handleQuickStatusUpdate(estimate.id, 'approved')}
-                                  className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleQuickStatusUpdate(estimate.id, 'rejected')}
-                                  className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
-                                >
-                                  Reject
-                                </button>
-                              </>
-                            )}
-                            {(estimate.status === 'approved' || estimate.status === 'rejected') && (
+                            {invoice.status === 'sent' && (
                               <button
-                                onClick={() => handleQuickStatusUpdate(estimate.id, 'expired')}
-                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs"
+                                onClick={() => handleQuickStatusUpdate(invoice.id, 'paid')}
+                                className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
                               >
-                                Mark Expired
+                                Mark Paid
+                              </button>
+                            )}
+                            {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                              <button
+                                onClick={() => handleQuickStatusUpdate(invoice.id, 'cancelled')}
+                                className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
+                              >
+                                Cancel
                               </button>
                             )}
                           </div>
@@ -499,13 +516,61 @@ const Estimates: React.FC = () => {
           </div>
         )}
 
-        {/* Create/Edit Form Modal */}
+        {/* Estimate Selector Modal */}
+        {showEstimateSelector && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Select Estimate to Convert to Invoice
+                </h3>
+                
+                <div className="max-h-96 overflow-y-auto">
+                  {estimates.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">No approved estimates available</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {estimates.map((estimate) => (
+                        <div key={estimate.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{estimate.title}</h4>
+                              <p className="text-sm text-gray-500">{estimate.customer_name}</p>
+                              <p className="text-sm text-gray-600">${estimate.total_amount.toFixed(2)}</p>
+                            </div>
+                            <button
+                              onClick={() => handleEstimateSelect(estimate)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+                            >
+                              Create Invoice
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => setShowEstimateSelector(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create/Edit Form Modal - Similar to Estimates form but adapted for invoices */}
         {showForm && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
               <div className="mt-3">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  {editingEstimate ? 'Edit Estimate' : 'Create New Estimate'}
+                  {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
                 </h3>
                 
                 <form onSubmit={handleFormSubmit} className="space-y-6">
@@ -546,19 +611,19 @@ const Estimates: React.FC = () => {
                       </select>
                     </div>
 
-                    {editingEstimate && (
+                    {editingInvoice && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Status</label>
                         <select
                           value={formData.status || 'draft'}
-                          onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'sent' | 'approved' | 'rejected' | 'expired' })}
+                          onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' })}
                           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value="draft">Draft</option>
                           <option value="sent">Sent</option>
-                          <option value="approved">Approved</option>
-                          <option value="rejected">Rejected</option>
-                          <option value="expired">Expired</option>
+                          <option value="paid">Paid</option>
+                          <option value="overdue">Overdue</option>
+                          <option value="cancelled">Cancelled</option>
                         </select>
                       </div>
                     )}
@@ -607,7 +672,7 @@ const Estimates: React.FC = () => {
                     />
                   </div>
 
-                  {/* Items Section */}
+                  {/* Items Section - Same as estimates */}
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="text-md font-medium text-gray-900">Items</h4>
@@ -676,7 +741,7 @@ const Estimates: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Tax and Totals */}
+                  {/* Tax and Due Date */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
@@ -692,11 +757,11 @@ const Estimates: React.FC = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Valid Until</label>
+                      <label className="block text-sm font-medium text-gray-700">Due Date</label>
                       <input
                         type="date"
-                        value={formData.valid_until}
-                        onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                        value={formData.due_date}
+                        onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
@@ -742,7 +807,7 @@ const Estimates: React.FC = () => {
                       disabled={formLoading}
                       className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {formLoading ? 'Saving...' : (editingEstimate ? 'Update Estimate' : 'Create Estimate')}
+                      {formLoading ? 'Saving...' : (editingInvoice ? 'Update Invoice' : 'Create Invoice')}
                     </button>
                   </div>
                 </form>
@@ -755,4 +820,4 @@ const Estimates: React.FC = () => {
   );
 };
 
-export default Estimates; 
+export default Invoices; 
