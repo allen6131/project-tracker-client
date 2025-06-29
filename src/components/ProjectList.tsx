@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Project, ProjectsResponse } from '../types';
-import { projectsAPI } from '../services/api';
+import { projectsAPI, invoicesAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
 interface ProjectListProps {
@@ -10,9 +11,11 @@ interface ProjectListProps {
 }
 
 const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrigger }) => {
+  const { isAdmin } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,6 +51,40 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
 
   const handlePageChange = (page: number) => {
     loadProjects(page, searchTerm, statusFilter);
+  };
+
+  const handleCreateInvoice = async (project: Project) => {
+    const invoiceTitle = prompt(`Enter invoice title for project "${project.name}":`, `Invoice for ${project.name}`);
+    if (!invoiceTitle) return;
+
+    try {
+      const invoiceData = {
+        title: invoiceTitle,
+        description: `Invoice for project: ${project.name}`,
+        project_id: project.id,
+        customer_id: null,
+        customer_name: project.customer_name || '',
+        customer_email: '',
+        customer_phone: '',
+        customer_address: '',
+        items: [{
+          description: `Work on project: ${project.name}`,
+          quantity: 1,
+          unit_price: 0
+        }],
+        tax_rate: 0,
+        due_date: '',
+        notes: '',
+        status: 'draft' as const
+      };
+
+      await invoicesAPI.createInvoice(invoiceData);
+      setSuccess('Invoice created successfully! You can now edit it in the Invoices section.');
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create invoice');
+      setTimeout(() => setError(null), 5000);
+    }
   };
 
   const getStatusBadgeClass = (status: string) => {
@@ -109,6 +146,12 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          {success}
         </div>
       )}
 
@@ -189,6 +232,15 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
                         >
                           View
                         </Link>
+                        {isAdmin && project.status === 'active' && (
+                          <button
+                            onClick={() => handleCreateInvoice(project)}
+                            className="text-purple-600 hover:text-purple-900"
+                            title="Create Invoice"
+                          >
+                            Invoice
+                          </button>
+                        )}
                         <button
                           onClick={() => onEdit(project)}
                           className="text-blue-600 hover:text-blue-900"

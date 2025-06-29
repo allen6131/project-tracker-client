@@ -86,6 +86,16 @@ export const authAPI = {
     const response: AxiosResponse<{ token: string }> = await api.post('/auth/refresh');
     return response.data;
   },
+
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  resetPassword: async (token: string, password: string): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.post('/auth/reset-password', { token, password });
+    return response.data;
+  },
 };
 
 // Users API
@@ -328,6 +338,11 @@ export const estimatesAPI = {
 
   createProjectFromEstimate: async (id: number, projectData: { project_name: string; project_description?: string }): Promise<{ project: Project; message: string; estimate_id: number }> => {
     const response: AxiosResponse<{ project: Project; message: string; estimate_id: number }> = await api.post(`/estimates/${id}/create-project`, projectData);
+    return response.data;
+  },
+
+  sendEstimateEmail: async (id: number, emailData: { recipient_email: string; sender_name?: string }): Promise<{ message: string; recipient: string }> => {
+    const response: AxiosResponse<{ message: string; recipient: string }> = await api.post(`/estimates/${id}/send-email`, emailData);
     return response.data;
   },
 };

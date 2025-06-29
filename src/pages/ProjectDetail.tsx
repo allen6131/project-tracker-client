@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Project, TodoList as TodoListType } from '../types';
-import { projectsAPI, todoAPI } from '../services/api';
+import { projectsAPI, todoAPI, invoicesAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import TodoList from '../components/TodoList';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { isAdmin } = useAuth();
     const [project, setProject] = useState<Project | null>(null);
     const [todoLists, setTodoLists] = useState<TodoListType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
 
     useEffect(() => {
@@ -64,6 +67,42 @@ const ProjectDetail: React.FC = () => {
         navigate(`/projects/${id}/files`);
     };
 
+    const handleCreateInvoice = async () => {
+        if (!project || !id) return;
+        
+        const projectName = prompt(`Enter invoice title for project "${project.name}":`, `Invoice for ${project.name}`);
+        if (!projectName) return;
+
+        try {
+            const invoiceData = {
+                title: projectName,
+                description: `Invoice for project: ${project.name}`,
+                project_id: parseInt(id),
+                customer_id: null,
+                customer_name: '',
+                customer_email: '',
+                customer_phone: '',
+                customer_address: '',
+                items: [{
+                    description: `Work on project: ${project.name}`,
+                    quantity: 1,
+                    unit_price: 0
+                }],
+                tax_rate: 0,
+                due_date: '',
+                notes: '',
+                status: 'draft' as const
+            };
+
+            await invoicesAPI.createInvoice(invoiceData);
+            setSuccess('Invoice created successfully! You can now edit it in the Invoices section.');
+            setTimeout(() => setSuccess(null), 5000);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to create invoice');
+            setTimeout(() => setError(null), 5000);
+        }
+    };
+
     if (loading) {
         return <div className="p-8">Loading project details...</div>;
     }
@@ -81,20 +120,46 @@ const ProjectDetail: React.FC = () => {
             <div className="mb-4">
                 <Link to="/dashboard" className="text-blue-600 hover:underline">&larr; Back to Dashboard</Link>
             </div>
+
+            {/* Messages */}
+            {error && (
+                <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {error}
+                </div>
+            )}
+
+            {success && (
+                <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                    {success}
+                </div>
+            )}
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">{project.name}</h1>
                     <p className="text-gray-600">{project.description}</p>
                 </div>
-                <button 
-                    onClick={handleManageFiles}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
-                >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Manage Files</span>
-                </button>
+                <div className="flex space-x-3">
+                    {isAdmin && (
+                        <button 
+                            onClick={handleCreateInvoice}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <span>Create Invoice</span>
+                        </button>
+                    )}
+                    <button 
+                        onClick={handleManageFiles}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>Manage Files</span>
+                    </button>
+                </div>
             </div>
 
             <div className="mt-8">

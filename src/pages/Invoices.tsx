@@ -7,9 +7,10 @@ import {
   UpdateInvoiceRequest,
   InvoiceItem,
   SimpleCustomersResponse,
-  Estimate
+  Estimate,
+  Project
 } from '../types';
-import { invoicesAPI, customersAPI, estimatesAPI } from '../services/api';
+import { invoicesAPI, customersAPI, estimatesAPI, projectsAPI } from '../services/api';
 
 const Invoices: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -50,6 +51,7 @@ const Invoices: React.FC = () => {
   
   const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
   const [estimates, setEstimates] = useState<Estimate[]>([]);
+  const [projects, setProjects] = useState<{ id: number; name: string; status: string }[]>([]);
   
   // Pagination and filtering
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,6 +64,7 @@ const Invoices: React.FC = () => {
     loadInvoices();
     loadCustomers();
     loadEstimates();
+    loadProjects();
   }, [currentPage, searchTerm, statusFilter]);
 
   const loadInvoices = async () => {
@@ -92,6 +95,15 @@ const Invoices: React.FC = () => {
       setEstimates(response.estimates);
     } catch (err) {
       console.error('Failed to load estimates:', err);
+    }
+  };
+
+  const loadProjects = async () => {
+    try {
+      const response = await projectsAPI.getProjects(1, 100, '', 'active');
+      setProjects(response.projects.map((p: Project) => ({ id: p.id, name: p.name, status: p.status })));
+    } catch (err) {
+      console.error('Failed to load projects:', err);
     }
   };
 
@@ -377,6 +389,9 @@ const Invoices: React.FC = () => {
                       Customer
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Project
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -402,6 +417,15 @@ const Invoices: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {invoice.customer_name || 'No customer'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {invoice.project_id ? (
+                          <span className="text-blue-600">
+                            Project #{invoice.project_id}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">No project</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={getStatusBadge(invoice.status)}>
@@ -606,6 +630,22 @@ const Invoices: React.FC = () => {
                         {customers.map(customer => (
                           <option key={customer.id} value={customer.id}>
                             {customer.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Project (Optional)</label>
+                      <select
+                        value={formData.project_id || ''}
+                        onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select Project (Optional)</option>
+                        {projects.map(project => (
+                          <option key={project.id} value={project.id}>
+                            {project.name} ({project.status})
                           </option>
                         ))}
                       </select>

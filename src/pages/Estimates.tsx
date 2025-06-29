@@ -22,8 +22,11 @@ const Estimates: React.FC = () => {
   
   // Form state
   const [showForm, setShowForm] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null);
+  const [emailingEstimate, setEmailingEstimate] = useState<Estimate | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -43,6 +46,12 @@ const Estimates: React.FC = () => {
   const [items, setItems] = useState<EstimateItem[]>([
     { description: '', quantity: 1, unit_price: 0 }
   ]);
+
+  // Email form data
+  const [emailData, setEmailData] = useState({
+    recipient_email: '',
+    sender_name: ''
+  });
   
   const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
   
@@ -164,6 +173,35 @@ const Estimates: React.FC = () => {
       loadEstimates();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update status');
+    }
+  };
+
+  const handleSendEmail = (estimate: Estimate) => {
+    clearMessages();
+    setEmailingEstimate(estimate);
+    setEmailData({
+      recipient_email: estimate.customer_email || '',
+      sender_name: user?.username || ''
+    });
+    setShowEmailModal(true);
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailingEstimate) return;
+
+    setEmailLoading(true);
+    try {
+      await estimatesAPI.sendEstimateEmail(emailingEstimate.id, emailData);
+      setSuccess(`Estimate sent successfully to ${emailData.recipient_email}`);
+      setShowEmailModal(false);
+      setEmailingEstimate(null);
+      setEmailData({ recipient_email: '', sender_name: '' });
+      loadEstimates(); // Refresh to show updated status
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send email');
+    } finally {
+      setEmailLoading(false);
     }
   };
 
@@ -390,6 +428,12 @@ const Estimates: React.FC = () => {
                               className="text-indigo-600 hover:text-indigo-900 text-xs"
                             >
                               Edit
+                            </button>
+                            <button
+                              onClick={() => handleSendEmail(estimate)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium"
+                            >
+                              Send Email
                             </button>
                             {estimate.status === 'approved' && (
                               <button
@@ -743,6 +787,78 @@ const Estimates: React.FC = () => {
                       className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                     >
                       {formLoading ? 'Saving...' : (editingEstimate ? 'Update Estimate' : 'Create Estimate')}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Email Modal */}
+        {showEmailModal && emailingEstimate && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Send Estimate via Email
+                </h3>
+                
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Estimate: {emailingEstimate.title}
+                    </label>
+                    <p className="text-sm text-gray-500">
+                      Total: ${emailingEstimate.total_amount.toFixed(2)}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Recipient Email *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={emailData.recipient_email}
+                      onChange={(e) => setEmailData({ ...emailData, recipient_email: e.target.value })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="customer@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Your Name (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={emailData.sender_name}
+                      onChange={(e) => setEmailData({ ...emailData, sender_name: e.target.value })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Your name or company"
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEmailModal(false);
+                        setEmailingEstimate(null);
+                        setEmailData({ recipient_email: '', sender_name: '' });
+                      }}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={emailLoading}
+                      className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {emailLoading ? 'Sending...' : 'Send Email'}
                     </button>
                   </div>
                 </form>
