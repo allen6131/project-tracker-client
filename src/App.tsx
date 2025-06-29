@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import ProjectDetail from './pages/ProjectDetail';
 import Files from './pages/Files';
 import Customers from './pages/Customers';
+import Estimates from './pages/Estimates';
 import './App.css';
 
 function App() {
@@ -30,6 +31,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Customers />
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/estimates"
+              element={
+                <ProtectedRoute>
+                  <Estimates />
                 </ProtectedRoute>
               }
             />

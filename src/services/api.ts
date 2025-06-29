@@ -21,7 +21,15 @@ import {
   CreateContactRequest,
   UpdateContactRequest,
   CustomersResponse,
-  SimpleCustomersResponse
+  SimpleCustomersResponse,
+  Estimate,
+  CreateEstimateRequest,
+  UpdateEstimateRequest,
+  EstimatesResponse,
+  Invoice,
+  CreateInvoiceRequest,
+  UpdateInvoiceRequest,
+  InvoicesResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -285,6 +293,76 @@ export const customersAPI = {
 
   deleteContact: async (customerId: number, contactId: number): Promise<{ message: string }> => {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/customers/${customerId}/contacts/${contactId}`);
+    return response.data;
+  },
+};
+
+// Estimates API
+export const estimatesAPI = {
+  getEstimates: async (page = 1, limit = 10, search = '', status = ''): Promise<EstimatesResponse> => {
+    const response: AxiosResponse<EstimatesResponse> = await api.get('/estimates', {
+      params: { page, limit, search, status },
+    });
+    return response.data;
+  },
+
+  createEstimate: async (estimateData: CreateEstimateRequest): Promise<{ estimate: Estimate; message: string }> => {
+    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.post('/estimates', estimateData);
+    return response.data;
+  },
+
+  getEstimate: async (id: number): Promise<{ estimate: Estimate }> => {
+    const response: AxiosResponse<{ estimate: Estimate }> = await api.get(`/estimates/${id}`);
+    return response.data;
+  },
+
+  updateEstimate: async (id: number, estimateData: UpdateEstimateRequest): Promise<{ estimate: Estimate; message: string }> => {
+    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.put(`/estimates/${id}`, estimateData);
+    return response.data;
+  },
+
+  deleteEstimate: async (id: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/estimates/${id}`);
+    return response.data;
+  },
+
+  createProjectFromEstimate: async (id: number, projectData: { project_name: string; project_description?: string }): Promise<{ project: Project; message: string; estimate_id: number }> => {
+    const response: AxiosResponse<{ project: Project; message: string; estimate_id: number }> = await api.post(`/estimates/${id}/create-project`, projectData);
+    return response.data;
+  },
+};
+
+// Invoices API
+export const invoicesAPI = {
+  getInvoices: async (page = 1, limit = 10, search = '', status = ''): Promise<InvoicesResponse> => {
+    const response: AxiosResponse<InvoicesResponse> = await api.get('/invoices', {
+      params: { page, limit, search, status },
+    });
+    return response.data;
+  },
+
+  createInvoice: async (invoiceData: CreateInvoiceRequest): Promise<{ invoice: Invoice; message: string }> => {
+    const response: AxiosResponse<{ invoice: Invoice; message: string }> = await api.post('/invoices', invoiceData);
+    return response.data;
+  },
+
+  createInvoiceFromEstimate: async (estimateId: number, invoiceData: { title?: string; due_date?: string }): Promise<{ invoice: Invoice; message: string }> => {
+    const response: AxiosResponse<{ invoice: Invoice; message: string }> = await api.post(`/invoices/from-estimate/${estimateId}`, invoiceData);
+    return response.data;
+  },
+
+  getInvoice: async (id: number): Promise<{ invoice: Invoice }> => {
+    const response: AxiosResponse<{ invoice: Invoice }> = await api.get(`/invoices/${id}`);
+    return response.data;
+  },
+
+  updateInvoice: async (id: number, invoiceData: UpdateInvoiceRequest): Promise<{ invoice: Invoice; message: string }> => {
+    const response: AxiosResponse<{ invoice: Invoice; message: string }> = await api.put(`/invoices/${id}`, invoiceData);
+    return response.data;
+  },
+
+  deleteInvoice: async (id: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/invoices/${id}`);
     return response.data;
   },
 };

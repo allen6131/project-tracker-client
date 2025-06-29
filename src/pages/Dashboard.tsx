@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
   const [projectSuccess, setProjectSuccess] = useState<string | null>(null);
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'users' | 'customers'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'users' | 'customers' | 'estimates'>('projects');
 
   const clearMessages = () => {
     setUserError(null);
@@ -151,10 +151,12 @@ const Dashboard: React.FC = () => {
     setEditingProject(null);
   };
 
-  const handleTabChange = (tab: 'projects' | 'users' | 'customers') => {
+  const handleTabChange = (tab: 'projects' | 'users' | 'customers' | 'estimates') => {
     clearMessages();
     if (tab === 'customers') {
       navigate('/customers');
+    } else if (tab === 'estimates') {
+      navigate('/estimates');
     } else {
       setActiveTab(tab);
     }
@@ -198,6 +200,12 @@ const Dashboard: React.FC = () => {
                 }`}
               >
                 Projects
+              </button>
+              <button
+                onClick={() => handleTabChange('estimates')}
+                className="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+              >
+                Estimates
               </button>
               {isAdmin && (
                 <>

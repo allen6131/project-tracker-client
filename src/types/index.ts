@@ -240,4 +240,159 @@ export interface CustomersResponse {
 
 export interface SimpleCustomersResponse {
   customers: { id: number; name: string }[];
+}
+
+// Estimates types
+export interface EstimateItem {
+  id?: number;
+  estimate_id?: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price?: number;
+  created_at?: string;
+}
+
+export interface Estimate {
+  id: number;
+  title: string;
+  description?: string;
+  customer_id?: number | null;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  total_amount: number;
+  valid_until?: string | null;
+  notes?: string;
+  created_by: number;
+  created_by_username?: string;
+  created_at: string;
+  updated_at: string;
+  items?: EstimateItem[];
+}
+
+export interface CreateEstimateRequest {
+  title: string;
+  description?: string;
+  customer_id?: number | null;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  tax_rate?: number;
+  valid_until?: string | null;
+  notes?: string;
+  items: EstimateItem[];
+}
+
+export interface UpdateEstimateRequest {
+  title?: string;
+  description?: string;
+  status?: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
+  customer_id?: number | null;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  tax_rate?: number;
+  valid_until?: string | null;
+  notes?: string;
+}
+
+export interface EstimatesResponse {
+  estimates: Estimate[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalEstimates: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+// Invoices types
+export interface InvoiceItem {
+  id?: number;
+  invoice_id?: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price?: number;
+  created_at?: string;
+}
+
+export interface Invoice {
+  id: number;
+  invoice_number: string;
+  title: string;
+  description?: string;
+  customer_id?: number | null;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  estimate_id?: number | null;
+  project_id?: number | null;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  total_amount: number;
+  due_date?: string | null;
+  paid_date?: string | null;
+  notes?: string;
+  created_by: number;
+  created_by_username?: string;
+  estimate_title?: string;
+  project_name?: string;
+  created_at: string;
+  updated_at: string;
+  items?: InvoiceItem[];
+}
+
+export interface CreateInvoiceRequest {
+  title: string;
+  description?: string;
+  customer_id?: number | null;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  estimate_id?: number | null;
+  project_id?: number | null;
+  tax_rate?: number;
+  due_date?: string | null;
+  notes?: string;
+  items: InvoiceItem[];
+}
+
+export interface UpdateInvoiceRequest {
+  title?: string;
+  description?: string;
+  status?: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  customer_id?: number | null;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  tax_rate?: number;
+  due_date?: string | null;
+  paid_date?: string | null;
+  notes?: string;
+}
+
+export interface InvoicesResponse {
+  invoices: Invoice[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalInvoices: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 } 
