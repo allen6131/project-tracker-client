@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Customer, Contact, CreateCustomerRequest, UpdateCustomerRequest, CreateContactRequest, UpdateContactRequest } from '../types';
 import { customersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Logo from '../components/Logo';
 
 const Customers: React.FC = () => {
   const { isAdmin } = useAuth();

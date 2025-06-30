@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import Logo from '../components/Logo';
 import './Login.css';
 
 const Login: React.FC = () => {
@@ -30,6 +31,9 @@ const Login: React.FC = () => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
+          <div className="flex justify-center mb-4">
+            <Logo size="xl" showText={false} />
+          </div>
           <h1>AmpTrack</h1>
           <p>Electrical Project Management System</p>
           <p className="text-sm">Sign in to your account</p>

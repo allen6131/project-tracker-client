@@ -1,0 +1,29 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="triangleGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E88E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0D47A1;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="triangleGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#42A5F5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1976D2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="boltGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFA726;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FB8C00;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main triangle shape -->
+  <path d="M50 30 L150 30 L170 60 L170 140 L150 170 L50 170 L30 140 L30 60 Z" fill="url(#triangleGradient1)" />
+  
+  <!-- Inner triangle -->
+  <path d="M60 50 L140 50 L155 70 L155 130 L140 150 L60 150 L45 130 L45 70 Z" fill="url(#triangleGradient2)" />
+  
+  <!-- Lightning bolt -->
+  <path d="M90 60 L120 60 L105 90 L125 90 L110 140 L85 100 L105 100 L90 60 Z" fill="url(#boltGradient)" />
+  
+  <!-- Highlights for 3D effect -->
+  <path d="M50 30 L150 30 L170 60 L150 50 L60 50 L45 70 L30 60 Z" fill="rgba(255,255,255,0.3)" />
+  <path d="M30 60 L30 140 L45 130 L45 70 Z" fill="rgba(255,255,255,0.2)" />
+</svg> 
