@@ -259,6 +259,49 @@ export interface Contact {
   updated_at: string;
 }
 
+// RFI types
+export interface RFI {
+  id: number;
+  project_id: number;
+  customer_id: number;
+  contact_id: number;
+  sent_by: number;
+  subject: string;
+  message: string;
+  priority: 'low' | 'medium' | 'high';
+  response_needed_by?: string;
+  status: 'draft' | 'sent' | 'responded' | 'closed' | 'failed';
+  sent_at?: string;
+  error_message?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  customer_name?: string;
+  first_name?: string;
+  last_name?: string;
+  contact_email?: string;
+  sent_by_username?: string;
+}
+
+export interface CreateRFIRequest {
+  project_id: number;
+  customer_id: number;
+  contact_id: number;
+  subject: string;
+  message: string;
+  priority?: 'low' | 'medium' | 'high';
+  response_needed_by?: string;
+}
+
+export interface RFIResponse {
+  rfis: RFI[];
+}
+
+export interface SendRFIResponse {
+  message: string;
+  rfi_id: number;
+}
+
 export interface CreateCustomerRequest {
   name: string;
   description?: string;

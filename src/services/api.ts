@@ -30,6 +30,10 @@ import {
   UpdateContactRequest,
   CustomersResponse,
   SimpleCustomersResponse,
+  RFI,
+  CreateRFIRequest,
+  RFIResponse,
+  SendRFIResponse,
   Estimate,
   CreateEstimateRequest,
   UpdateEstimateRequest,
@@ -342,6 +346,19 @@ export const customersAPI = {
 
   deleteContact: async (customerId: number, contactId: number): Promise<{ message: string }> => {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/customers/${customerId}/contacts/${contactId}`);
+    return response.data;
+  },
+};
+
+// RFI API
+export const rfiAPI = {
+  sendRFI: async (rfiData: CreateRFIRequest): Promise<SendRFIResponse> => {
+    const response: AxiosResponse<SendRFIResponse> = await api.post('/rfi/send', rfiData);
+    return response.data;
+  },
+
+  getRFIHistory: async (projectId: number): Promise<RFIResponse> => {
+    const response: AxiosResponse<RFIResponse> = await api.get(`/rfi/project/${projectId}`);
     return response.data;
   },
 };
