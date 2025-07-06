@@ -11,6 +11,8 @@ import {
   UpdateProjectRequest,
   ProjectsResponse,
   ProjectFile,
+  ProjectFolder,
+  FoldersResponse,
   TodoList,
   TodoItem,
   ActiveUsersResponse,
@@ -175,10 +177,13 @@ export const filesAPI = {
     return response.data;
   },
 
-  uploadFile: async (projectId: number, file: File, isPublic: boolean): Promise<{ file: ProjectFile }> => {
+  uploadFile: async (projectId: number, file: File, isPublic: boolean, folderId?: number): Promise<{ file: ProjectFile }> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('is_public', String(isPublic));
+    if (folderId) {
+      formData.append('folder_id', String(folderId));
+    }
 
     const response: AxiosResponse<{ file: ProjectFile }> = await api.post(
       `/projects/${projectId}/upload`,
@@ -198,10 +203,33 @@ export const filesAPI = {
     return response.data;
   },
 
+  moveFile: async (fileId: number, folderId?: number): Promise<{ file: ProjectFile }> => {
+    const response: AxiosResponse<{ file: ProjectFile }> = await api.put(`/files/${fileId}/move`, { folder_id: folderId });
+    return response.data;
+  },
+
   downloadFile: async (fileId: number): Promise<Blob> => {
     const response: AxiosResponse<Blob> = await api.get(`/files/${fileId}/download`, {
       responseType: 'blob',
     });
+    return response.data;
+  }
+};
+
+// Folders API
+export const foldersAPI = {
+  getProjectFolders: async (projectId: number): Promise<FoldersResponse> => {
+    const response: AxiosResponse<FoldersResponse> = await api.get(`/projects/${projectId}/folders`);
+    return response.data;
+  },
+
+  createFolder: async (projectId: number, name: string): Promise<{ folder: ProjectFolder }> => {
+    const response: AxiosResponse<{ folder: ProjectFolder }> = await api.post(`/projects/${projectId}/folders`, { name });
+    return response.data;
+  },
+
+  deleteFolder: async (projectId: number, folderId: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/projects/${projectId}/folders/${folderId}`);
     return response.data;
   }
 };

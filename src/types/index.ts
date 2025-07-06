@@ -111,7 +111,27 @@ export interface ProjectFile {
   file_size: number;
   is_public: boolean;
   uploaded_by: number;
+  folder_id?: number | null;
+  folder_name?: string | null;
   created_at: string;
+}
+
+// Folder types
+export interface ProjectFolder {
+  id: number;
+  project_id: number;
+  name: string;
+  is_default: boolean;
+  created_by?: number;
+  created_at: string;
+}
+
+export interface CreateFolderRequest {
+  name: string;
+}
+
+export interface FoldersResponse {
+  folders: ProjectFolder[];
 }
 
 // Todo List Types
