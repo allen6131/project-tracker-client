@@ -61,6 +61,9 @@ export interface Project {
   status: 'started' | 'active' | 'done';
   customer_id?: number | null;
   customer_name?: string | null;
+  main_technician_id?: number | null;
+  main_technician_username?: string | null;
+  main_technician_email?: string | null;
   created_by: number;
   created_by_username?: string;
   created_at: string;
@@ -72,6 +75,7 @@ export interface CreateProjectRequest {
   description?: string;
   status?: 'started' | 'active' | 'done';
   customer_id?: number | null;
+  main_technician_id?: number | null;
 }
 
 export interface UpdateProjectRequest {

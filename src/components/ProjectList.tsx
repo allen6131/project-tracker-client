@@ -178,6 +178,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
                     Customer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Main Technician
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -211,6 +214,18 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {project.customer_name || (
                         <span className="text-gray-500 italic">No customer assigned</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {project.main_technician_username ? (
+                        <div>
+                          <div className="font-medium">{project.main_technician_username}</div>
+                          {project.main_technician_email && (
+                            <div className="text-gray-500 text-xs">{project.main_technician_email}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 italic">No technician assigned</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

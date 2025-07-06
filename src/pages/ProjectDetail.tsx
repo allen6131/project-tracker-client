@@ -133,10 +133,47 @@ const ProjectDetail: React.FC = () => {
                     {success}
                 </div>
             )}
-            <div className="flex justify-between items-center mb-6">
-                <div>
+            <div className="flex justify-between items-start mb-6">
+                <div className="flex-1">
                     <h1 className="text-3xl font-bold mb-2">{project.name}</h1>
-                    <p className="text-gray-600">{project.description}</p>
+                    <p className="text-gray-600 mb-4">{project.description}</p>
+                    
+                    {/* Project Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                            <span className="font-medium text-gray-700">Status:</span>
+                            <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                project.status === 'started' ? 'bg-blue-100 text-blue-800' :
+                                project.status === 'active' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
+                            }`}>
+                                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <span className="font-medium text-gray-700">Customer:</span>
+                            <span className="ml-2 text-gray-900">
+                                {project.customer_name || 'No customer assigned'}
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <span className="font-medium text-gray-700">Main Technician:</span>
+                            <div className="ml-2">
+                                {project.main_technician_username ? (
+                                    <div>
+                                        <div className="text-gray-900 font-medium">{project.main_technician_username}</div>
+                                        {project.main_technician_email && (
+                                            <div className="text-gray-500 text-xs">{project.main_technician_email}</div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <span className="text-gray-500 italic">No technician assigned</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div className="flex space-x-3">
                     {isAdmin && (

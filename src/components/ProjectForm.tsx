@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project, CreateProjectRequest, UpdateProjectRequest } from '../types';
-import { customersAPI } from '../services/api';
+import { customersAPI, usersAPI } from '../services/api';
 
 interface ProjectFormProps {
   isOpen: boolean;
@@ -21,16 +21,20 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     name: '',
     description: '',
     status: 'started' as 'started' | 'active' | 'done',
-    customer_id: '' as string
+    customer_id: '' as string,
+    main_technician_id: '' as string
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [users, setUsers] = useState<{ id: number; username: string; email: string }[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
-  // Load customers when form opens
+  // Load customers and users when form opens
   useEffect(() => {
     if (isOpen) {
       loadCustomers();
+      loadUsers();
     }
   }, [isOpen]);
 
@@ -47,20 +51,35 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     }
   };
 
+  const loadUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const response = await usersAPI.getActiveUsers();
+      setUsers(response.users);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+      setUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
   useEffect(() => {
     if (project) {
       setFormData({
         name: project.name,
         description: project.description || '',
         status: project.status,
-        customer_id: project.customer_id ? project.customer_id.toString() : ''
+        customer_id: project.customer_id ? project.customer_id.toString() : '',
+        main_technician_id: project.main_technician_id ? project.main_technician_id.toString() : ''
       });
     } else {
       setFormData({
         name: '',
         description: '',
         status: 'started',
-        customer_id: ''
+        customer_id: '',
+        main_technician_id: ''
       });
     }
     setErrors({});
@@ -99,7 +118,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         name: formData.name.trim(),
         description: formData.description.trim(),
         status: formData.status,
-        customer_id: formData.customer_id ? parseInt(formData.customer_id) : null
+        customer_id: formData.customer_id ? parseInt(formData.customer_id) : null,
+        main_technician_id: formData.main_technician_id ? parseInt(formData.main_technician_id) : null
       };
 
       await onSubmit(submitData);
@@ -114,10 +134,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       name: '',
       description: '',
       status: 'started',
-      customer_id: ''
+      customer_id: '',
+      main_technician_id: ''
     });
     setErrors({});
     setCustomers([]);
+    setUsers([]);
     onClose();
   };
 
@@ -193,6 +215,31 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
             </select>
             {loadingCustomers && (
               <p className="mt-1 text-sm text-gray-500">Loading customers...</p>
+            )}
+          </div>
+
+          {/* Main Technician Selection */}
+          <div>
+            <label htmlFor="main_technician_id" className="block text-sm font-medium text-gray-700 mb-1">
+              Main Technician
+            </label>
+            <select
+              id="main_technician_id"
+              name="main_technician_id"
+              value={formData.main_technician_id}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={loading || loadingUsers}
+            >
+              <option value="">Select a main technician (optional)</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.username} ({user.email})
+                </option>
+              ))}
+            </select>
+            {loadingUsers && (
+              <p className="mt-1 text-sm text-gray-500">Loading users...</p>
             )}
           </div>
 
