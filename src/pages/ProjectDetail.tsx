@@ -5,6 +5,7 @@ import { projectsAPI, todoAPI, invoicesAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TodoList from '../components/TodoList';
 import MaterialCosts from '../components/MaterialCosts';
+import CustomerInfo from '../components/CustomerInfo';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -16,7 +17,7 @@ const ProjectDetail: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
-    const [activeTab, setActiveTab] = useState<'todos' | 'materials'>('todos');
+    const [activeTab, setActiveTab] = useState<'todos' | 'materials' | 'customer'>('todos');
 
     useEffect(() => {
         const fetchProjectDetails = async () => {
@@ -225,6 +226,16 @@ const ProjectDetail: React.FC = () => {
                         >
                             Material Costs
                         </button>
+                        <button
+                            onClick={() => setActiveTab('customer')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'customer'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Customer Info
+                        </button>
                     </nav>
                 </div>
 
@@ -260,8 +271,15 @@ const ProjectDetail: React.FC = () => {
                                 ))}
                             </div>
                         </div>
-                    ) : (
+                    ) : activeTab === 'materials' ? (
                         <MaterialCosts projectId={parseInt(id || '0')} />
+                    ) : (
+                        <div>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold">Customer Information</h2>
+                            </div>
+                            <CustomerInfo customerId={project.customer_id || null} customerName={project.customer_name} />
+                        </div>
                     )}
                 </div>
             </div>
