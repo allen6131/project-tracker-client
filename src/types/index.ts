@@ -138,6 +138,64 @@ export interface FoldersResponse {
   folders: ProjectFolder[];
 }
 
+// Material types
+export interface ProjectMaterial {
+  id: number;
+  project_id: number;
+  description: string;
+  quantity: number;
+  unit_cost: number;
+  total_cost: number;
+  supplier?: string | null;
+  purchase_date?: string | null;
+  notes?: string | null;
+  created_by?: number;
+  created_by_username?: string;
+  created_at: string;
+  updated_at: string;
+  receipt_count?: number;
+}
+
+export interface MaterialReceipt {
+  id: number;
+  material_id: number;
+  original_name: string;
+  stored_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  uploaded_by?: number;
+  uploaded_by_username?: string;
+  created_at: string;
+}
+
+export interface CreateMaterialRequest {
+  project_id: number;
+  description: string;
+  quantity: number;
+  unit_cost: number;
+  supplier?: string;
+  purchase_date?: string;
+  notes?: string;
+}
+
+export interface UpdateMaterialRequest {
+  description?: string;
+  quantity?: number;
+  unit_cost?: number;
+  supplier?: string;
+  purchase_date?: string;
+  notes?: string;
+}
+
+export interface MaterialsResponse {
+  materials: ProjectMaterial[];
+}
+
+export interface ReceiptsResponse {
+  receipts: MaterialReceipt[];
+}
+
 // Todo List Types
 export interface TodoItem {
   id: number;

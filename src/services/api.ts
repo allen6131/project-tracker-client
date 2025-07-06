@@ -13,6 +13,12 @@ import {
   ProjectFile,
   ProjectFolder,
   FoldersResponse,
+  ProjectMaterial,
+  MaterialReceipt,
+  CreateMaterialRequest,
+  UpdateMaterialRequest,
+  MaterialsResponse,
+  ReceiptsResponse,
   TodoList,
   TodoItem,
   ActiveUsersResponse,
@@ -436,6 +442,58 @@ export const paymentsAPI = {
     const response: AxiosResponse<{ publishable_key: string }> = await api.get('/payments/public-key');
     return response.data;
   },
+};
+
+// Materials API
+export const materialsAPI = {
+  getProjectMaterials: async (projectId: number): Promise<MaterialsResponse> => {
+    const response: AxiosResponse<MaterialsResponse> = await api.get(`/materials/project/${projectId}`);
+    return response.data;
+  },
+
+  createMaterial: async (materialData: CreateMaterialRequest): Promise<{ material: ProjectMaterial }> => {
+    const response: AxiosResponse<{ material: ProjectMaterial }> = await api.post('/materials', materialData);
+    return response.data;
+  },
+
+  updateMaterial: async (materialId: number, materialData: UpdateMaterialRequest): Promise<{ material: ProjectMaterial }> => {
+    const response: AxiosResponse<{ material: ProjectMaterial }> = await api.put(`/materials/${materialId}`, materialData);
+    return response.data;
+  },
+
+  deleteMaterial: async (materialId: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/materials/${materialId}`);
+    return response.data;
+  },
+
+  uploadReceipt: async (materialId: number, receiptFile: File): Promise<{ receipt: MaterialReceipt }> => {
+    const formData = new FormData();
+    formData.append('receipt', receiptFile);
+
+    const response: AxiosResponse<{ receipt: MaterialReceipt }> = await api.post(
+      `/materials/${materialId}/receipts`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  },
+
+  getMaterialReceipts: async (materialId: number): Promise<ReceiptsResponse> => {
+    const response: AxiosResponse<ReceiptsResponse> = await api.get(`/materials/${materialId}/receipts`);
+    return response.data;
+  },
+
+  downloadReceipt: async (receiptId: number): Promise<Blob> => {
+    const response: AxiosResponse<Blob> = await api.get(`/materials/receipts/${receiptId}/download`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  deleteReceipt: async (receiptId: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/materials/receipts/${receiptId}`);
+    return response.data;
+  }
 };
 
 export default api; 

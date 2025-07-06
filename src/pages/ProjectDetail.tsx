@@ -4,6 +4,7 @@ import { Project, TodoList as TodoListType } from '../types';
 import { projectsAPI, todoAPI, invoicesAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TodoList from '../components/TodoList';
+import MaterialCosts from '../components/MaterialCosts';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -15,6 +16,7 @@ const ProjectDetail: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
+    const [activeTab, setActiveTab] = useState<'todos' | 'materials'>('todos');
 
     useEffect(() => {
         const fetchProjectDetails = async () => {
@@ -199,31 +201,68 @@ const ProjectDetail: React.FC = () => {
                 </div>
             </div>
 
+            {/* Tab Navigation */}
             <div className="mt-8">
-                <h2 className="text-2xl font-bold mb-4">Todo Lists</h2>
-                
-                {/* Add new list form */}
-                <form onSubmit={handleAddList} className="mb-6 flex gap-2">
-                    <input
-                        type="text"
-                        value={newListName}
-                        onChange={e => setNewListName(e.target.value)}
-                        placeholder="New list title"
-                        className="border rounded px-2 py-1 flex-grow"
-                    />
-                    <button type="submit" className="bg-blue-600 text-white px-4 py-1 rounded">Add List</button>
-                </form>
+                <div className="border-b border-gray-200">
+                    <nav className="-mb-px flex space-x-8">
+                        <button
+                            onClick={() => setActiveTab('todos')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'todos'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Todo Lists
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('materials')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'materials'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Material Costs
+                        </button>
+                    </nav>
+                </div>
 
-                {/* Container for Todo Lists */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {todoLists.map(list => (
-                        <TodoList 
-                            key={list.id} 
-                            list={list}
-                            onListUpdate={handleListUpdate}
-                            onListDelete={handleListDelete}
-                        />
-                    ))}
+                {/* Tab Content */}
+                <div className="mt-6">
+                    {activeTab === 'todos' ? (
+                        <div>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold">Todo Lists</h2>
+                            </div>
+                            
+                            {/* Add new list form */}
+                            <form onSubmit={handleAddList} className="mb-6 flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newListName}
+                                    onChange={e => setNewListName(e.target.value)}
+                                    placeholder="New list title"
+                                    className="border rounded px-2 py-1 flex-grow"
+                                />
+                                <button type="submit" className="bg-blue-600 text-white px-4 py-1 rounded">Add List</button>
+                            </form>
+
+                            {/* Container for Todo Lists */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {todoLists.map(list => (
+                                    <TodoList 
+                                        key={list.id} 
+                                        list={list}
+                                        onListUpdate={handleListUpdate}
+                                        onListDelete={handleListDelete}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <MaterialCosts projectId={parseInt(id || '0')} />
+                    )}
                 </div>
             </div>
         </div>
