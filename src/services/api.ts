@@ -14,6 +14,10 @@ import {
   ProjectFolder,
   FoldersResponse,
   ProjectMaterial,
+  CatalogMaterial,
+  CreateCatalogMaterialRequest,
+  UpdateCatalogMaterialRequest,
+  CatalogMaterialsResponse,
   MaterialReceipt,
   CreateMaterialRequest,
   UpdateMaterialRequest,
@@ -521,6 +525,41 @@ export const materialsAPI = {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/materials/receipts/${receiptId}`);
     return response.data;
   }
+};
+
+// Catalog Materials API
+export const catalogMaterialsAPI = {
+  getCatalogMaterials: async (page = 1, limit = 50, search = '', category = '', activeOnly = true): Promise<CatalogMaterialsResponse> => {
+    const response: AxiosResponse<CatalogMaterialsResponse> = await api.get('/catalog-materials', {
+      params: { page, limit, search, category, active_only: activeOnly },
+    });
+    return response.data;
+  },
+
+  getCategories: async (): Promise<{ categories: string[] }> => {
+    const response: AxiosResponse<{ categories: string[] }> = await api.get('/catalog-materials/categories');
+    return response.data;
+  },
+
+  getCatalogMaterial: async (materialId: number): Promise<{ material: CatalogMaterial }> => {
+    const response: AxiosResponse<{ material: CatalogMaterial }> = await api.get(`/catalog-materials/${materialId}`);
+    return response.data;
+  },
+
+  createCatalogMaterial: async (materialData: CreateCatalogMaterialRequest): Promise<{ material: CatalogMaterial; message: string }> => {
+    const response: AxiosResponse<{ material: CatalogMaterial; message: string }> = await api.post('/catalog-materials', materialData);
+    return response.data;
+  },
+
+  updateCatalogMaterial: async (materialId: number, materialData: UpdateCatalogMaterialRequest): Promise<{ material: CatalogMaterial; message: string }> => {
+    const response: AxiosResponse<{ material: CatalogMaterial; message: string }> = await api.put(`/catalog-materials/${materialId}`, materialData);
+    return response.data;
+  },
+
+  deleteCatalogMaterial: async (materialId: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/catalog-materials/${materialId}`);
+    return response.data;
+  },
 };
 
 export default api; 

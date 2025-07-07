@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ProjectMaterial, MaterialReceipt, CreateMaterialRequest, UpdateMaterialRequest } from '../types';
-import { materialsAPI } from '../services/api';
+import { ProjectMaterial, MaterialReceipt, CreateMaterialRequest, UpdateMaterialRequest, CatalogMaterial } from '../types';
+import { materialsAPI, catalogMaterialsAPI } from '../services/api';
 
 interface MaterialCostsProps {
   projectId: number;
@@ -17,6 +17,15 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
   const [receipts, setReceipts] = useState<MaterialReceipt[]>([]);
   const [showReceiptsModal, setShowReceiptsModal] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
+
+  // Catalog selection state
+  const [showCatalogModal, setShowCatalogModal] = useState(false);
+  const [catalogMaterials, setCatalogMaterials] = useState<CatalogMaterial[]>([]);
+  const [selectedCatalogMaterials, setSelectedCatalogMaterials] = useState<Set<number>>(new Set());
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogSearchTerm, setCatalogSearchTerm] = useState('');
+  const [catalogCategories, setCatalogCategories] = useState<string[]>([]);
+  const [selectedCatalogCategory, setSelectedCatalogCategory] = useState('');
 
   const [formData, setFormData] = useState({
     description: '',
@@ -137,6 +146,82 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
     }
   };
 
+  // Catalog material functions
+  const loadCatalogMaterials = async () => {
+    try {
+      setCatalogLoading(true);
+      const [materialsResponse, categoriesResponse] = await Promise.all([
+        catalogMaterialsAPI.getCatalogMaterials(1, 100, catalogSearchTerm, selectedCatalogCategory),
+        catalogMaterialsAPI.getCategories()
+      ]);
+      setCatalogMaterials(materialsResponse.materials);
+      setCatalogCategories(categoriesResponse.categories);
+    } catch (err: any) {
+      setError('Failed to load catalog materials');
+    } finally {
+      setCatalogLoading(false);
+    }
+  };
+
+  const handleOpenCatalogModal = () => {
+    setShowCatalogModal(true);
+    setSelectedCatalogMaterials(new Set());
+    loadCatalogMaterials();
+  };
+
+  const handleCatalogSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadCatalogMaterials();
+  };
+
+  const handleToggleCatalogMaterial = (materialId: number) => {
+    const newSelected = new Set(selectedCatalogMaterials);
+    if (newSelected.has(materialId)) {
+      newSelected.delete(materialId);
+    } else {
+      newSelected.add(materialId);
+    }
+    setSelectedCatalogMaterials(newSelected);
+  };
+
+  const handleBulkAddFromCatalog = async () => {
+    if (selectedCatalogMaterials.size === 0) {
+      setError('Please select at least one material to add');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const selectedMats = catalogMaterials.filter(m => selectedCatalogMaterials.has(m.id));
+      
+      // Add each selected material to the project
+      for (const catalogMaterial of selectedMats) {
+        const materialData = {
+          project_id: projectId,
+          description: catalogMaterial.name + (catalogMaterial.description ? ` - ${catalogMaterial.description}` : ''),
+          quantity: 1, // Default quantity
+          unit_cost: catalogMaterial.standard_cost,
+          supplier: catalogMaterial.supplier || undefined,
+          notes: catalogMaterial.part_number ? `Part #: ${catalogMaterial.part_number}` : undefined
+        };
+
+        await materialsAPI.createMaterial(materialData);
+      }
+
+      setSuccess(`Added ${selectedMats.length} material(s) from catalog`);
+      setShowCatalogModal(false);
+      setSelectedCatalogMaterials(new Set());
+      loadMaterials();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to add materials from catalog');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleViewReceipts = async (material: ProjectMaterial) => {
     try {
       setSelectedMaterial(material);
@@ -229,15 +314,26 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
           <h3 className="text-lg font-medium text-gray-900">Material Costs</h3>
           <p className="text-sm text-gray-500">Track material costs and upload receipts for this project</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Add Material</span>
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={handleOpenCatalogModal}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span>Add from Catalog</span>
+          </button>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Add Material</span>
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -583,6 +679,135 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Catalog Selection Modal */}
+      {showCatalogModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-screen overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Add Materials from Catalog</h2>
+              <p className="text-sm text-gray-500 mt-1">Select materials from the global catalog to add to this project</p>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="p-6 border-b border-gray-200">
+              <form onSubmit={handleCatalogSearch} className="flex flex-wrap gap-4">
+                <div className="flex-1 min-w-64">
+                  <input
+                    type="text"
+                    placeholder="Search materials..."
+                    value={catalogSearchTerm}
+                    onChange={(e) => setCatalogSearchTerm(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="min-w-48">
+                  <select
+                    value={selectedCatalogCategory}
+                    onChange={(e) => setSelectedCatalogCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Categories</option>
+                    {catalogCategories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Search
+                </button>
+              </form>
+            </div>
+
+            {/* Materials List */}
+            <div className="max-h-96 overflow-y-auto">
+              {catalogLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-gray-600">Loading catalog materials...</div>
+                </div>
+              ) : catalogMaterials.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-500">No materials found</div>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {catalogMaterials.map((material) => (
+                    <div key={material.id} className="p-4 hover:bg-gray-50">
+                      <div className="flex items-start space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedCatalogMaterials.has(material.id)}
+                          onChange={() => handleToggleCatalogMaterial(material.id)}
+                          className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900">{material.name}</h4>
+                              {material.description && (
+                                <p className="text-sm text-gray-500">{material.description}</p>
+                              )}
+                              <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
+                                {material.category && (
+                                  <span className="bg-gray-100 px-2 py-1 rounded">
+                                    {material.category}
+                                  </span>
+                                )}
+                                <span>Unit: {material.unit}</span>
+                                {material.part_number && (
+                                  <span>Part #: {material.part_number}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-gray-900">
+                                {formatCurrency(material.standard_cost)}
+                              </div>
+                              {material.supplier && (
+                                <div className="text-xs text-gray-500">{material.supplier}</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                {selectedCatalogMaterials.size} material(s) selected
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowCatalogModal(false);
+                    setSelectedCatalogMaterials(new Set());
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkAddFromCatalog}
+                  disabled={selectedCatalogMaterials.size === 0 || loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Adding...' : `Add ${selectedCatalogMaterials.size} Material(s)`}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import UserList from '../components/UserList';
 import UserForm from '../components/UserForm';
 import ProjectList from '../components/ProjectList';
 import ProjectForm from '../components/ProjectForm';
+import MaterialsCatalog from '../components/MaterialsCatalog';
 import { 
   User, 
   CreateUserRequest, 
@@ -14,7 +15,7 @@ import {
   CreateProjectRequest,
   UpdateProjectRequest
 } from '../types';
-import { usersAPI, projectsAPI } from '../services/api';
+import { usersAPI, projectsAPI, catalogMaterialsAPI } from '../services/api';
 
 const Dashboard: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -37,7 +38,7 @@ const Dashboard: React.FC = () => {
   const [projectSuccess, setProjectSuccess] = useState<string | null>(null);
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'projects' | 'users' | 'customers' | 'estimates' | 'invoices'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'users' | 'customers' | 'estimates' | 'invoices' | 'materials'>('projects');
 
   const clearMessages = () => {
     setUserError(null);
@@ -152,7 +153,7 @@ const Dashboard: React.FC = () => {
     setEditingProject(null);
   };
 
-  const handleTabChange = (tab: 'projects' | 'users' | 'customers' | 'estimates' | 'invoices') => {
+  const handleTabChange = (tab: 'projects' | 'users' | 'customers' | 'estimates' | 'invoices' | 'materials') => {
     clearMessages();
     if (tab === 'customers') {
       navigate('/customers');
@@ -216,6 +217,16 @@ const Dashboard: React.FC = () => {
               </button>
               {isAdmin && (
                 <>
+                  <button
+                    onClick={() => handleTabChange('materials')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'materials'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Materials Catalog
+                  </button>
                   <button
                     onClick={() => handleTabChange('customers')}
                     className="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
@@ -294,7 +305,7 @@ const Dashboard: React.FC = () => {
               />
             )}
           </div>
-        ) : (
+        ) : activeTab === 'users' ? (
           <div className="space-y-6">
             {/* User Header */}
             <div className="bg-white shadow rounded-lg">
@@ -303,7 +314,7 @@ const Dashboard: React.FC = () => {
                   <div>
                     <h2 className="text-lg font-medium text-gray-900">User Management</h2>
                     <p className="mt-1 text-sm text-gray-500">
-                      Manage system users and their permissions
+                      Manage user accounts and permissions
                     </p>
                   </div>
                   <button
@@ -345,7 +356,9 @@ const Dashboard: React.FC = () => {
               loading={userFormLoading}
             />
           </div>
-        )}
+        ) : activeTab === 'materials' ? (
+          <MaterialsCatalog />
+        ) : null}
       </div>
     </div>
   );

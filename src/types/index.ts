@@ -146,14 +146,66 @@ export interface ProjectMaterial {
   quantity: number;
   unit_cost: number;
   total_cost: number;
-  supplier?: string | null;
-  purchase_date?: string | null;
-  notes?: string | null;
+  supplier?: string;
+  purchase_date?: string;
+  notes?: string;
   created_by?: number;
   created_by_username?: string;
   created_at: string;
   updated_at: string;
   receipt_count?: number;
+}
+
+// Global materials catalog types
+export interface CatalogMaterial {
+  id: number;
+  name: string;
+  description?: string;
+  category?: string;
+  unit: string;
+  standard_cost: number;
+  supplier?: string;
+  part_number?: string;
+  notes?: string;
+  is_active: boolean;
+  created_by?: number;
+  created_by_username?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCatalogMaterialRequest {
+  name: string;
+  description?: string;
+  category?: string;
+  unit?: string;
+  standard_cost?: number;
+  supplier?: string;
+  part_number?: string;
+  notes?: string;
+}
+
+export interface UpdateCatalogMaterialRequest {
+  name: string;
+  description?: string;
+  category?: string;
+  unit?: string;
+  standard_cost?: number;
+  supplier?: string;
+  part_number?: string;
+  notes?: string;
+  is_active?: boolean;
+}
+
+export interface CatalogMaterialsResponse {
+  materials: CatalogMaterial[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalMaterials: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
 export interface MaterialReceipt {
