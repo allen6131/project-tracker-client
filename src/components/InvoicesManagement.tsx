@@ -510,13 +510,16 @@ const InvoicesManagement: React.FC = () => {
               
               <PaymentForm
                 invoice={paymentInvoice}
-                onSuccess={() => {
+                onPaymentSuccess={() => {
                   setShowPaymentForm(false);
                   setPaymentInvoice(null);
                   setSuccess('Payment completed successfully!');
                   loadInvoices();
                 }}
-                onCancel={() => {
+                onPaymentError={(error) => {
+                  setError(error);
+                }}
+                onClose={() => {
                   setShowPaymentForm(false);
                   setPaymentInvoice(null);
                 }}
