@@ -372,6 +372,11 @@ export const estimatesAPI = {
     return response.data;
   },
 
+  getCustomerEstimates: async (customerId: number): Promise<{ estimates: Estimate[] }> => {
+    const response: AxiosResponse<{ estimates: Estimate[] }> = await api.get(`/estimates/customer/${customerId}`);
+    return response.data;
+  },
+
   createEstimate: async (estimateData: CreateEstimateRequest): Promise<{ estimate: Estimate; message: string }> => {
     const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.post('/estimates', estimateData);
     return response.data;
@@ -409,6 +414,11 @@ export const invoicesAPI = {
     const response: AxiosResponse<InvoicesResponse> = await api.get('/invoices', {
       params: { page, limit, search, status },
     });
+    return response.data;
+  },
+
+  getProjectInvoices: async (projectId: number): Promise<{ invoices: Invoice[] }> => {
+    const response: AxiosResponse<{ invoices: Invoice[] }> = await api.get(`/invoices/project/${projectId}`);
     return response.data;
   },
 

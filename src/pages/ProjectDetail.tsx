@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Project, TodoList as TodoListType } from '../types';
-import { projectsAPI, todoAPI, invoicesAPI } from '../services/api';
+import { Project, TodoList as TodoListType, Invoice, Estimate } from '../types';
+import { projectsAPI, todoAPI, invoicesAPI, estimatesAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TodoList from '../components/TodoList';
 import MaterialCosts from '../components/MaterialCosts';
@@ -14,11 +14,13 @@ const ProjectDetail: React.FC = () => {
     const { isAdmin } = useAuth();
     const [project, setProject] = useState<Project | null>(null);
     const [todoLists, setTodoLists] = useState<TodoListType[]>([]);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [estimates, setEstimates] = useState<Estimate[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
-    const [activeTab, setActiveTab] = useState<'todos' | 'materials' | 'customer' | 'rfi'>('todos');
+    const [activeTab, setActiveTab] = useState<'todos' | 'materials' | 'customer' | 'rfi' | 'invoices' | 'estimates'>('todos');
 
     useEffect(() => {
         const fetchProjectDetails = async () => {
@@ -30,6 +32,16 @@ const ProjectDetail: React.FC = () => {
 
                 const todoResponse = await todoAPI.getTodoLists(parseInt(id));
                 setTodoLists(todoResponse);
+
+                // Fetch invoices for this project
+                const invoicesResponse = await invoicesAPI.getProjectInvoices(parseInt(id));
+                setInvoices(invoicesResponse.invoices);
+
+                // Fetch estimates for this project's customer (if customer exists)
+                if (projectResponse.project.customer_id) {
+                    const estimatesResponse = await estimatesAPI.getCustomerEstimates(projectResponse.project.customer_id);
+                    setEstimates(estimatesResponse.estimates);
+                }
 
             } catch (err: any) {
                 setError(err.response?.data?.message || 'Failed to load project details');
@@ -247,6 +259,26 @@ const ProjectDetail: React.FC = () => {
                         >
                             RFI Emails
                         </button>
+                        <button
+                            onClick={() => setActiveTab('invoices')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'invoices'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Invoices
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('estimates')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'estimates'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Estimates
+                        </button>
                     </nav>
                 </div>
 
@@ -302,6 +334,177 @@ const ProjectDetail: React.FC = () => {
                                 onSuccess={setSuccess}
                                 onError={setError}
                             />
+                        </div>
+                    ) : activeTab === 'invoices' ? (
+                        <div>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold">Project Invoices</h2>
+                                <span className="text-sm text-gray-600">{invoices.length} invoice(s) for this project</span>
+                            </div>
+                            
+                            {invoices.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <div className="text-gray-500">
+                                        <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <p className="text-lg">No invoices found for this project</p>
+                                        <p className="text-sm mt-2">Invoices created for this project will appear here</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-white shadow rounded-lg overflow-hidden">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Invoice
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Customer
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Amount
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Status
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Created
+                                                </th>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Actions
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {invoices.map((invoice) => (
+                                                <tr key={invoice.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">{invoice.invoice_number}</div>
+                                                        <div className="text-sm text-gray-500">{invoice.title}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">{invoice.customer_name || 'N/A'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            ${invoice.total_amount.toFixed(2)}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                                            invoice.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                                                            invoice.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                            {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {new Date(invoice.created_at).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <button
+                                                            onClick={() => navigate(`/invoices/${invoice.id}`)}
+                                                            className="text-blue-600 hover:text-blue-900"
+                                                        >
+                                                            View
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    ) : activeTab === 'estimates' ? (
+                        <div>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold">Customer Estimates</h2>
+                                <span className="text-sm text-gray-600">{estimates.length} estimate(s) for this customer</span>
+                            </div>
+                            
+                            {estimates.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <div className="text-gray-500">
+                                        <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        <p className="text-lg">No estimates found for this customer</p>
+                                        <p className="text-sm mt-2">Estimates for the project's customer will appear here</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-white shadow rounded-lg overflow-hidden">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Estimate
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Customer
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Amount
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Status
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Valid Until
+                                                </th>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Actions
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {estimates.map((estimate) => (
+                                                <tr key={estimate.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">{estimate.title}</div>
+                                                        <div className="text-sm text-gray-500">{estimate.description}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">{estimate.customer_name || 'N/A'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            ${estimate.total_amount.toFixed(2)}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            estimate.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                                            estimate.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                                                            estimate.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                                            estimate.status === 'expired' ? 'bg-gray-100 text-gray-800' :
+                                                            'bg-yellow-100 text-yellow-800'
+                                                        }`}>
+                                                            {estimate.status.charAt(0).toUpperCase() + estimate.status.slice(1)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {estimate.valid_until ? new Date(estimate.valid_until).toLocaleDateString() : 'N/A'}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <button
+                                                            onClick={() => navigate(`/estimates/${estimate.id}`)}
+                                                            className="text-blue-600 hover:text-blue-900"
+                                                        >
+                                                            View
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     ) : null}
                 </div>
