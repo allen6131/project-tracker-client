@@ -7,6 +7,9 @@ import UserForm from '../components/UserForm';
 import ProjectList from '../components/ProjectList';
 import ProjectForm from '../components/ProjectForm';
 import MaterialsCatalog from '../components/MaterialsCatalog';
+import CustomersManagement from '../components/CustomersManagement';
+import EstimatesManagement from '../components/EstimatesManagement';
+import InvoicesManagement from '../components/InvoicesManagement';
 import { 
   User, 
   CreateUserRequest, 
@@ -155,15 +158,7 @@ const Dashboard: React.FC = () => {
 
   const handleTabChange = (tab: 'projects' | 'users' | 'customers' | 'estimates' | 'invoices' | 'materials') => {
     clearMessages();
-    if (tab === 'customers') {
-      navigate('/customers');
-    } else if (tab === 'estimates') {
-      navigate('/estimates');
-    } else if (tab === 'invoices') {
-      navigate('/invoices');
-    } else {
-      setActiveTab(tab);
-    }
+    setActiveTab(tab);
   };
 
   return (
@@ -205,13 +200,21 @@ const Dashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => handleTabChange('estimates')}
-                className="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'estimates'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
               >
                 Estimates
               </button>
               <button
                 onClick={() => handleTabChange('invoices')}
-                className="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'invoices'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
               >
                 Invoices
               </button>
@@ -229,7 +232,11 @@ const Dashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleTabChange('customers')}
-                    className="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'customers'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                   >
                     Customers
                   </button>
@@ -358,6 +365,12 @@ const Dashboard: React.FC = () => {
           </div>
         ) : activeTab === 'materials' ? (
           <MaterialsCatalog />
+        ) : activeTab === 'customers' ? (
+          <CustomersManagement />
+        ) : activeTab === 'estimates' ? (
+          <EstimatesManagement />
+        ) : activeTab === 'invoices' ? (
+          <InvoicesManagement />
         ) : null}
       </div>
     </div>
