@@ -214,7 +214,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
           {/* Customer Selection */}
           <div>
             <label htmlFor="customer_id" className="block text-sm font-medium text-gray-700 mb-1">
-              Customer
+              Customer <span className="text-gray-500 font-normal">(optional)</span>
             </label>
             <select
               id="customer_id"
@@ -224,7 +224,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={loading || loadingCustomers}
             >
-              <option value="">Select a customer (optional)</option>
+              <option value="">No customer assigned</option>
               {customers.map((customer) => (
                 <option key={customer.id} value={customer.id}>
                   {customer.name}
@@ -239,7 +239,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
           {/* Main Technician Selection */}
           <div>
             <label htmlFor="main_technician_id" className="block text-sm font-medium text-gray-700 mb-1">
-              Main Technician
+              Main Technician <span className="text-gray-500 font-normal">(optional)</span>
             </label>
             <select
               id="main_technician_id"
@@ -249,7 +249,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={loading || loadingUsers}
             >
-              <option value="">Select a main technician (optional)</option>
+              <option value="">No technician assigned</option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.username} ({user.email})
@@ -264,7 +264,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
           {/* Description */}
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description
+              Description <span className="text-gray-500 font-normal">(optional)</span>
             </label>
             <textarea
               id="description"
@@ -286,7 +286,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
           {/* Address */}
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-              Address
+              Address <span className="text-gray-500 font-normal">(optional)</span>
             </label>
             <input
               type="text"
@@ -308,7 +308,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
           {/* Permit Number */}
           <div>
             <label htmlFor="permit_number" className="block text-sm font-medium text-gray-700 mb-1">
-              Permit Number
+              Permit Number <span className="text-gray-500 font-normal">(optional)</span>
             </label>
             <input
               type="text"
