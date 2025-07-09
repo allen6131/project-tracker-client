@@ -59,6 +59,8 @@ export interface Project {
   name: string;
   description: string;
   status: 'started' | 'active' | 'done';
+  address?: string;
+  permit_number?: string;
   customer_id?: number | null;
   customer_name?: string | null;
   main_technician_id?: number | null;
@@ -74,6 +76,8 @@ export interface CreateProjectRequest {
   name: string;
   description?: string;
   status?: 'started' | 'active' | 'done';
+  address?: string;
+  permit_number?: string;
   customer_id?: number | null;
   main_technician_id?: number | null;
 }
@@ -82,6 +86,8 @@ export interface UpdateProjectRequest {
   name?: string;
   description?: string;
   status?: 'started' | 'active' | 'done';
+  address?: string;
+  permit_number?: string;
   customer_id?: number | null;
 }
 

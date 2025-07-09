@@ -20,6 +20,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    address: '',
+    permit_number: '',
     status: 'started' as 'started' | 'active' | 'done',
     customer_id: '' as string,
     main_technician_id: '' as string
@@ -69,6 +71,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       setFormData({
         name: project.name,
         description: project.description || '',
+        address: project.address || '',
+        permit_number: project.permit_number || '',
         status: project.status,
         customer_id: project.customer_id ? project.customer_id.toString() : '',
         main_technician_id: project.main_technician_id ? project.main_technician_id.toString() : ''
@@ -77,6 +81,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       setFormData({
         name: '',
         description: '',
+        address: '',
+        permit_number: '',
         status: 'started',
         customer_id: '',
         main_technician_id: ''
@@ -98,6 +104,14 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       newErrors.description = 'Description must not exceed 1000 characters';
     }
 
+    if (formData.address && formData.address.length > 500) {
+      newErrors.address = 'Address must not exceed 500 characters';
+    }
+
+    if (formData.permit_number && formData.permit_number.length > 100) {
+      newErrors.permit_number = 'Permit number must not exceed 100 characters';
+    }
+
     if (!['started', 'active', 'done'].includes(formData.status)) {
       newErrors.status = 'Invalid status selected';
     }
@@ -117,6 +131,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       const submitData: CreateProjectRequest | UpdateProjectRequest = {
         name: formData.name.trim(),
         description: formData.description.trim(),
+        address: formData.address.trim(),
+        permit_number: formData.permit_number.trim(),
         status: formData.status,
         customer_id: formData.customer_id ? parseInt(formData.customer_id) : null,
         main_technician_id: formData.main_technician_id ? parseInt(formData.main_technician_id) : null
@@ -133,6 +149,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     setFormData({
       name: '',
       description: '',
+      address: '',
+      permit_number: '',
       status: 'started',
       customer_id: '',
       main_technician_id: ''
@@ -262,6 +280,50 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
             />
             {errors.description && (
               <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+            )}
+          </div>
+
+          {/* Address */}
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+              Address
+            </label>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.address ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter project address (optional)"
+              disabled={loading}
+            />
+            {errors.address && (
+              <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+            )}
+          </div>
+
+          {/* Permit Number */}
+          <div>
+            <label htmlFor="permit_number" className="block text-sm font-medium text-gray-700 mb-1">
+              Permit Number
+            </label>
+            <input
+              type="text"
+              id="permit_number"
+              name="permit_number"
+              value={formData.permit_number}
+              onChange={handleInputChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.permit_number ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter permit number (optional)"
+              disabled={loading}
+            />
+            {errors.permit_number && (
+              <p className="mt-1 text-sm text-red-600">{errors.permit_number}</p>
             )}
           </div>
 
