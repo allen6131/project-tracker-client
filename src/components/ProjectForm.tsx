@@ -22,7 +22,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     description: '',
     address: '',
     permit_number: '',
-    status: 'started' as 'started' | 'active' | 'done',
+    status: 'bidding' as 'bidding' | 'started' | 'active' | 'done',
     customer_id: '' as string,
     main_technician_id: '' as string
   });
@@ -83,7 +83,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         description: '',
         address: '',
         permit_number: '',
-        status: 'started',
+        status: 'bidding',
         customer_id: '',
         main_technician_id: ''
       });
@@ -112,7 +112,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       newErrors.permit_number = 'Permit number must not exceed 100 characters';
     }
 
-    if (!['started', 'active', 'done'].includes(formData.status)) {
+    if (!['bidding', 'started', 'active', 'done'].includes(formData.status)) {
       newErrors.status = 'Invalid status selected';
     }
 
@@ -151,7 +151,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       description: '',
       address: '',
       permit_number: '',
-      status: 'started',
+      status: 'bidding',
       customer_id: '',
       main_technician_id: ''
     });
@@ -342,6 +342,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               }`}
               disabled={loading}
             >
+              <option value="bidding">Bidding</option>
               <option value="started">Started</option>
               <option value="active">Active</option>
               <option value="done">Done</option>

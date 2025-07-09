@@ -89,6 +89,8 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
+      case 'bidding':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'started':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'active':
@@ -129,6 +131,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Statuses</option>
+              <option value="bidding">Bidding</option>
               <option value="started">Started</option>
               <option value="active">Active</option>
               <option value="done">Done</option>

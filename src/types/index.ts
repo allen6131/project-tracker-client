@@ -58,7 +58,7 @@ export interface Project {
   id: number;
   name: string;
   description: string;
-  status: 'started' | 'active' | 'done';
+  status: 'bidding' | 'started' | 'active' | 'done';
   address?: string;
   permit_number?: string;
   customer_id?: number | null;
@@ -75,7 +75,7 @@ export interface Project {
 export interface CreateProjectRequest {
   name: string;
   description?: string;
-  status?: 'started' | 'active' | 'done';
+  status?: 'bidding' | 'started' | 'active' | 'done';
   address?: string;
   permit_number?: string;
   customer_id?: number | null;
@@ -85,7 +85,7 @@ export interface CreateProjectRequest {
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
-  status?: 'started' | 'active' | 'done';
+  status?: 'bidding' | 'started' | 'active' | 'done';
   address?: string;
   permit_number?: string;
   customer_id?: number | null;
