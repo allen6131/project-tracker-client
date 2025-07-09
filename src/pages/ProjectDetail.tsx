@@ -331,6 +331,7 @@ const ProjectDetail: React.FC = () => {
                             </div>
                             <RFIForm 
                                 projectId={parseInt(id || '0')} 
+                                project={project}
                                 onSuccess={setSuccess}
                                 onError={setError}
                             />

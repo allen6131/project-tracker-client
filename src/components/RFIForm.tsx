@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Customer, Contact, RFI, CreateRFIRequest } from '../types';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Customer, Contact, RFI, CreateRFIRequest, Project } from '../types';
 import { customersAPI, rfiAPI } from '../services/api';
 
 interface RFIFormProps {
   projectId: number;
+  project?: Project | null;
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
 }
 
-const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
+const RFIForm: React.FC<RFIFormProps> = ({ projectId, project, onSuccess, onError }) => {
   const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -22,11 +23,6 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
     response_needed_by: ''
   });
 
-  useEffect(() => {
-    fetchCustomers();
-    fetchRFIHistory();
-  }, [projectId]);
-
   const fetchCustomers = async () => {
     try {
       const response = await customersAPI.getSimpleCustomers();
@@ -36,7 +32,7 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
     }
   };
 
-  const fetchRFIHistory = async () => {
+  const fetchRFIHistory = useCallback(async () => {
     try {
       setLoadingHistory(true);
       const response = await rfiAPI.getRFIHistory(projectId);
@@ -46,9 +42,14 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
     } finally {
       setLoadingHistory(false);
     }
-  };
+  }, [projectId]);
 
-  const handleCustomerChange = async (customerId: number) => {
+  useEffect(() => {
+    fetchCustomers();
+    fetchRFIHistory();
+  }, [projectId, fetchRFIHistory]);
+
+  const handleCustomerChange = useCallback(async (customerId: number) => {
     try {
       if (customerId === 0) {
         setSelectedCustomer(null);
@@ -63,7 +64,17 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
       console.error('Error fetching customer details:', error);
       onError('Failed to load customer details');
     }
-  };
+  }, [onError]);
+
+  // Auto-select project customer when project data is available
+  useEffect(() => {
+    if (project && project.customer_id && customers.length > 0) {
+      const projectCustomer = customers.find(c => c.id === project.customer_id);
+      if (projectCustomer) {
+        handleCustomerChange(project.customer_id);
+      }
+    }
+  }, [project, customers, handleCustomerChange]);
 
   const handleContactChange = (contactId: number) => {
     if (contactId === 0) {
@@ -106,7 +117,7 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
         response_needed_by: formData.response_needed_by || undefined
       };
 
-      const response = await rfiAPI.sendRFI(rfiData);
+      await rfiAPI.sendRFI(rfiData);
       onSuccess(`RFI sent successfully to ${selectedContact.first_name} ${selectedContact.last_name}!`);
       
       // Reset form
@@ -116,8 +127,13 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
         priority: 'medium',
         response_needed_by: ''
       });
-      setSelectedCustomer(null);
-      setSelectedContact(null);
+      // Don't reset customer selection if it's the project's customer
+      if (!project || project.customer_id !== selectedCustomer.id) {
+        setSelectedCustomer(null);
+        setSelectedContact(null);
+      } else {
+        setSelectedContact(null);
+      }
       
       // Refresh RFI history
       fetchRFIHistory();
@@ -152,8 +168,24 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
   return (
     <div className="space-y-8">
       {/* RFI Form */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold mb-6 text-gray-800">Send RFI Email</h3>
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Send RFI Email</h3>
+        
+        {/* Project Customer Info */}
+        {project && project.customer_id ? (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-800">
+              <strong>Project Customer:</strong> {project.customer_name}
+              <span className="ml-2 text-blue-600">(This customer will be auto-selected below)</span>
+            </p>
+          </div>
+        ) : (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm text-yellow-800">
+              <strong>Note:</strong> This project doesn't have an associated customer. You'll need to select a customer manually.
+            </p>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Customer Selection */}
@@ -161,6 +193,11 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Select Customer *
+                {project && project.customer_id && (
+                  <span className="text-sm text-blue-600 font-normal ml-2">
+                    (Auto-selected from project)
+                  </span>
+                )}
               </label>
               <select
                 value={selectedCustomer?.id || 0}
@@ -172,6 +209,7 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, onSuccess, onError }) => {
                 {customers.map(customer => (
                   <option key={customer.id} value={customer.id}>
                     {customer.name}
+                    {project && project.customer_id === customer.id && ' (Project Customer)'}
                   </option>
                 ))}
               </select>
