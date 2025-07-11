@@ -24,6 +24,7 @@ import {
   MaterialsResponse,
   ReceiptsResponse,
   TodoList,
+  TodoListWithProject,
   TodoItem,
   ActiveUsersResponse,
   Customer,
@@ -253,6 +254,11 @@ export const todoAPI = {
   // --- Todo List Methods ---
   getTodoLists: async (projectId: number): Promise<TodoList[]> => {
     const response = await api.get(`/projects/${projectId}/todolists`);
+    return response.data;
+  },
+
+  getAllTodoLists: async (): Promise<{ todoLists: TodoListWithProject[] }> => {
+    const response = await api.get('/todolists/all');
     return response.data;
   },
 

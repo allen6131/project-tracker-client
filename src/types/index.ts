@@ -279,6 +279,12 @@ export interface TodoList {
   items: TodoItem[];
 }
 
+export interface TodoListWithProject extends TodoList {
+  project_name: string;
+  project_location: string;
+  project_status: string;
+}
+
 // Users for assignment
 export interface ActiveUsersResponse {
   users: User[];
