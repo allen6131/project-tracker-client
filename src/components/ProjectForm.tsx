@@ -21,7 +21,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     name: '',
     description: '',
     address: '',
-    permit_number: '',
+    master_permit_number: '',
+    electrical_sub_permit: '',
     status: 'bidding' as 'bidding' | 'started' | 'active' | 'done',
     customer_id: '' as string,
     main_technician_id: '' as string
@@ -72,7 +73,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         name: project.name,
         description: project.description || '',
         address: project.address || '',
-        permit_number: project.permit_number || '',
+        master_permit_number: project.master_permit_number || '',
+        electrical_sub_permit: project.electrical_sub_permit || '',
         status: project.status,
         customer_id: project.customer_id ? project.customer_id.toString() : '',
         main_technician_id: project.main_technician_id ? project.main_technician_id.toString() : ''
@@ -82,7 +84,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         name: '',
         description: '',
         address: '',
-        permit_number: '',
+        master_permit_number: '',
+        electrical_sub_permit: '',
         status: 'bidding',
         customer_id: '',
         main_technician_id: ''
@@ -108,8 +111,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       newErrors.address = 'Address must not exceed 500 characters';
     }
 
-    if (formData.permit_number && formData.permit_number.length > 100) {
-      newErrors.permit_number = 'Permit number must not exceed 100 characters';
+    if (formData.master_permit_number && formData.master_permit_number.length > 100) {
+      newErrors.master_permit_number = 'Master permit number must not exceed 100 characters';
+    }
+
+    if (formData.electrical_sub_permit && formData.electrical_sub_permit.length > 100) {
+      newErrors.electrical_sub_permit = 'Electrical sub permit must not exceed 100 characters';
     }
 
     if (!['bidding', 'started', 'active', 'done'].includes(formData.status)) {
@@ -132,7 +139,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         name: formData.name.trim(),
         description: formData.description.trim(),
         address: formData.address.trim(),
-        permit_number: formData.permit_number.trim(),
+        master_permit_number: formData.master_permit_number.trim(),
+        electrical_sub_permit: formData.electrical_sub_permit.trim(),
         status: formData.status,
         customer_id: formData.customer_id ? parseInt(formData.customer_id) : null,
         main_technician_id: formData.main_technician_id ? parseInt(formData.main_technician_id) : null
@@ -150,7 +158,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       name: '',
       description: '',
       address: '',
-      permit_number: '',
+      master_permit_number: '',
+      electrical_sub_permit: '',
       status: 'bidding',
       customer_id: '',
       main_technician_id: ''
@@ -305,25 +314,47 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
             )}
           </div>
 
-          {/* Permit Number */}
+          {/* Master Permit Number */}
           <div>
-            <label htmlFor="permit_number" className="block text-sm font-medium text-gray-700 mb-1">
-              Permit Number <span className="text-gray-500 font-normal">(optional)</span>
+            <label htmlFor="master_permit_number" className="block text-sm font-medium text-gray-700 mb-1">
+              Master Permit Number <span className="text-gray-500 font-normal">(optional)</span>
             </label>
             <input
               type="text"
-              id="permit_number"
-              name="permit_number"
-              value={formData.permit_number}
+              id="master_permit_number"
+              name="master_permit_number"
+              value={formData.master_permit_number}
               onChange={handleInputChange}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.permit_number ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                errors.master_permit_number ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
               }`}
-              placeholder="Enter permit number (optional)"
+              placeholder="Enter master permit number (optional)"
               disabled={loading}
             />
-            {errors.permit_number && (
-              <p className="mt-1 text-sm text-red-600">{errors.permit_number}</p>
+            {errors.master_permit_number && (
+              <p className="mt-1 text-sm text-red-600">{errors.master_permit_number}</p>
+            )}
+          </div>
+
+          {/* Electrical Sub Permit */}
+          <div>
+            <label htmlFor="electrical_sub_permit" className="block text-sm font-medium text-gray-700 mb-1">
+              Electrical Sub Permit <span className="text-gray-500 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              id="electrical_sub_permit"
+              name="electrical_sub_permit"
+              value={formData.electrical_sub_permit}
+              onChange={handleInputChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.electrical_sub_permit ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter electrical sub permit (optional)"
+              disabled={loading}
+            />
+            {errors.electrical_sub_permit && (
+              <p className="mt-1 text-sm text-red-600">{errors.electrical_sub_permit}</p>
             )}
           </div>
 

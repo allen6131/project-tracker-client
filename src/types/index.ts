@@ -60,7 +60,8 @@ export interface Project {
   description: string;
   status: 'bidding' | 'started' | 'active' | 'done';
   address?: string;
-  permit_number?: string;
+  master_permit_number?: string;
+  electrical_sub_permit?: string;
   customer_id?: number | null;
   customer_name?: string | null;
   main_technician_id?: number | null;
@@ -77,7 +78,8 @@ export interface CreateProjectRequest {
   description?: string;
   status?: 'bidding' | 'started' | 'active' | 'done';
   address?: string;
-  permit_number?: string;
+  master_permit_number?: string;
+  electrical_sub_permit?: string;
   customer_id?: number | null;
   main_technician_id?: number | null;
 }
@@ -87,7 +89,8 @@ export interface UpdateProjectRequest {
   description?: string;
   status?: 'bidding' | 'started' | 'active' | 'done';
   address?: string;
-  permit_number?: string;
+  master_permit_number?: string;
+  electrical_sub_permit?: string;
   customer_id?: number | null;
 }
 
