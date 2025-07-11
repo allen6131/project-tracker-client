@@ -624,4 +624,57 @@ export interface InvoicesResponse {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
+}
+
+// Services & Products Catalog
+export interface Service {
+  id: number;
+  name: string;
+  description?: string;
+  category?: string;
+  unit: string; // e.g., 'hour', 'each', 'sq ft', 'linear ft'
+  standard_rate: number;
+  cost?: number; // internal cost if applicable
+  notes?: string;
+  is_active: boolean;
+  created_by?: number;
+  created_by_username?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateServiceRequest {
+  name: string;
+  description?: string;
+  category?: string;
+  unit?: string;
+  standard_rate?: number;
+  cost?: number;
+  notes?: string;
+}
+
+export interface UpdateServiceRequest {
+  name?: string;
+  description?: string;
+  category?: string;
+  unit?: string;
+  standard_rate?: number;
+  cost?: number;
+  notes?: string;
+  is_active?: boolean;
+}
+
+export interface ServicesResponse {
+  services: Service[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalServices: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface ServiceCategoriesResponse {
+  categories: string[];
 } 

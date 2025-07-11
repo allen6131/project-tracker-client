@@ -51,7 +51,12 @@ import {
   CheckoutSession,
   PaymentStatus,
   CreatePaymentIntentRequest,
-  CreateCheckoutSessionRequest
+  CreateCheckoutSessionRequest,
+  Service,
+  CreateServiceRequest,
+  UpdateServiceRequest,
+  ServicesResponse,
+  ServiceCategoriesResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -564,6 +569,41 @@ export const catalogMaterialsAPI = {
 
   deleteCatalogMaterial: async (materialId: number): Promise<{ message: string }> => {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/catalog-materials/${materialId}`);
+    return response.data;
+  },
+};
+
+// Services API
+export const servicesAPI = {
+  getServices: async (page = 1, limit = 50, search = '', category = '', activeOnly = true): Promise<ServicesResponse> => {
+    const response: AxiosResponse<ServicesResponse> = await api.get('/services', {
+      params: { page, limit, search, category, active_only: activeOnly },
+    });
+    return response.data;
+  },
+
+  getCategories: async (): Promise<ServiceCategoriesResponse> => {
+    const response: AxiosResponse<ServiceCategoriesResponse> = await api.get('/services/categories');
+    return response.data;
+  },
+
+  getService: async (serviceId: number): Promise<{ service: Service }> => {
+    const response: AxiosResponse<{ service: Service }> = await api.get(`/services/${serviceId}`);
+    return response.data;
+  },
+
+  createService: async (serviceData: CreateServiceRequest): Promise<{ service: Service; message: string }> => {
+    const response: AxiosResponse<{ service: Service; message: string }> = await api.post('/services', serviceData);
+    return response.data;
+  },
+
+  updateService: async (serviceId: number, serviceData: UpdateServiceRequest): Promise<{ service: Service; message: string }> => {
+    const response: AxiosResponse<{ service: Service; message: string }> = await api.put(`/services/${serviceId}`, serviceData);
+    return response.data;
+  },
+
+  deleteService: async (serviceId: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/services/${serviceId}`);
     return response.data;
   },
 };
