@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Project, ProjectFile } from '../types';
 import { filesAPI } from '../services/api';
+import FileViewer from './FileViewer';
 
 interface ProjectFilesModalProps {
   isOpen: boolean;
@@ -14,6 +15,10 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
   const [error, setError] = useState<string | null>(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isPublic, setIsPublic] = useState(true);
+  
+  // File viewer state
+  const [showFileViewer, setShowFileViewer] = useState(false);
+  const [viewingFile, setViewingFile] = useState<ProjectFile | null>(null);
 
   const loadFiles = useCallback(async () => {
     if (!project) return;
@@ -83,6 +88,21 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
     }
   };
   
+  const handleFileView = (file: ProjectFile) => {
+    setViewingFile(file);
+    setShowFileViewer(true);
+  };
+
+  const handleCloseViewer = () => {
+    setShowFileViewer(false);
+    setViewingFile(null);
+  };
+
+  const handleFileDelete = (file: ProjectFile) => {
+    handleDelete(file.id);
+    handleCloseViewer();
+  };
+
   const formatBytes = (bytes: number, decimals = 2) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -128,7 +148,11 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
           {/* Files list */}
           <div className="space-y-2">
             {files.map(file => (
-              <div key={file.id} className="flex justify-between items-center p-2 border-b">
+              <div 
+                key={file.id} 
+                className="flex justify-between items-center p-2 border-b hover:bg-gray-50 cursor-pointer"
+                onDoubleClick={() => handleFileView(file)}
+              >
                 <div>
                   <p className="font-semibold">{file.original_name}</p>
                   <p className="text-sm text-gray-500">
@@ -136,8 +160,27 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
                   </p>
                 </div>
                 <div className="space-x-2">
-                  <button onClick={() => handleDownload(file)} className="text-blue-600 hover:underline">Download</button>
-                  <button onClick={() => handleDelete(file.id)} className="text-red-600 hover:underline">Delete</button>
+                  <button 
+                    onClick={() => handleFileView(file)} 
+                    className="text-green-600 hover:underline"
+                    title="View file"
+                  >
+                    View
+                  </button>
+                  <button 
+                    onClick={() => handleDownload(file)} 
+                    className="text-blue-600 hover:underline"
+                    title="Download file"
+                  >
+                    Download
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(file.id)} 
+                    className="text-red-600 hover:underline"
+                    title="Delete file"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -146,6 +189,15 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
           </div>
         </div>
       </div>
+
+      {/* File Viewer Modal */}
+      <FileViewer
+        file={viewingFile}
+        isOpen={showFileViewer}
+        onClose={handleCloseViewer}
+        onDownload={handleDownload}
+        onDelete={handleFileDelete}
+      />
     </div>
   );
 };

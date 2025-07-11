@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Project, ProjectFile, ProjectFolder } from '../types';
 import { projectsAPI, filesAPI, foldersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import FileViewer from '../components/FileViewer';
 
 const Files: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,10 @@ const Files: React.FC = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null);
+  
+  // File viewer state
+  const [showFileViewer, setShowFileViewer] = useState(false);
+  const [viewingFile, setViewingFile] = useState<ProjectFile | null>(null);
 
   const loadProject = useCallback(async () => {
     if (!id) return;
@@ -219,7 +224,12 @@ const Files: React.FC = () => {
     return '📁';
   };
 
-  const toggleFileSelection = (fileId: number) => {
+  const toggleFileSelection = (fileId: number, event?: React.MouseEvent) => {
+    // Prevent toggling selection if clicking on action buttons
+    if (event && (event.target as HTMLElement).closest('button')) {
+      return;
+    }
+    
     const newSelected = new Set(selectedFiles);
     if (newSelected.has(fileId)) {
       newSelected.delete(fileId);
@@ -227,6 +237,21 @@ const Files: React.FC = () => {
       newSelected.add(fileId);
     }
     setSelectedFiles(newSelected);
+  };
+
+  const handleFileView = (file: ProjectFile) => {
+    setViewingFile(file);
+    setShowFileViewer(true);
+  };
+
+  const handleCloseViewer = () => {
+    setShowFileViewer(false);
+    setViewingFile(null);
+  };
+
+  const handleFileDelete = (file: ProjectFile) => {
+    handleDelete([file.id]);
+    handleCloseViewer();
   };
 
   const isImage = (fileType: string) => fileType?.startsWith('image/');
@@ -507,6 +532,21 @@ const Files: React.FC = () => {
           </div>
         )}
 
+        {/* Help Text */}
+        {filteredFiles.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-center space-x-2 text-blue-800 text-sm">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>
+                <strong>Tip:</strong> Click the View button or double-click any file to preview it in your browser. 
+                Single-click to select files for bulk operations.
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Files Display */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -540,7 +580,8 @@ const Files: React.FC = () => {
                   className={`bg-white rounded-lg border-2 p-4 cursor-pointer transition-all hover:shadow-md ${
                     selectedFiles.has(file.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                   }`}
-                  onClick={() => toggleFileSelection(file.id)}
+                  onClick={(e) => toggleFileSelection(file.id, e)}
+                  onDoubleClick={() => handleFileView(file)}
                 >
                   <div className="text-center">
                     <div className="text-4xl mb-2">
@@ -568,9 +609,20 @@ const Files: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        handleFileView(file);
+                      }}
+                      className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                      title="View file"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
                         handleDownload(file);
                       }}
                       className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                      title="Download file"
                     >
                       Download
                     </button>
@@ -580,6 +632,7 @@ const Files: React.FC = () => {
                         handleDelete([file.id]);
                       }}
                       className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200"
+                      title="Delete file"
                     >
                       Delete
                     </button>
@@ -591,7 +644,8 @@ const Files: React.FC = () => {
                   className={`bg-white rounded border p-4 cursor-pointer transition-all hover:shadow-sm flex items-center justify-between ${
                     selectedFiles.has(file.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                   }`}
-                  onClick={() => toggleFileSelection(file.id)}
+                  onClick={(e) => toggleFileSelection(file.id, e)}
+                  onDoubleClick={() => handleFileView(file)}
                 >
                   <div className="flex items-center space-x-4">
                     <div className="text-2xl">
@@ -610,6 +664,19 @@ const Files: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFileView(file);
+                      }}
+                      className="text-green-600 hover:text-green-800 p-2"
+                      title="View file"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -641,6 +708,15 @@ const Files: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* File Viewer Modal */}
+      <FileViewer
+        file={viewingFile}
+        isOpen={showFileViewer}
+        onClose={handleCloseViewer}
+        onDownload={handleDownload}
+        onDelete={handleFileDelete}
+      />
     </div>
   );
 };
