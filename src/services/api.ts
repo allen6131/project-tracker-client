@@ -63,7 +63,7 @@ import {
   ChangeOrdersResponse
 } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
 
 // Create axios instance
 const api = axios.create({
