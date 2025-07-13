@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Project, TodoList as TodoListType, Invoice, Estimate } from '../types';
-import { projectsAPI, todoAPI, invoicesAPI, estimatesAPI } from '../services/api';
+import { Project, TodoList as TodoListType, Invoice, Estimate, Customer } from '../types';
+import { projectsAPI, todoAPI, invoicesAPI, estimatesAPI, customersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TodoList from '../components/TodoList';
 import MaterialCosts from '../components/MaterialCosts';
 import CustomerInfo from '../components/CustomerInfo';
 import RFIForm from '../components/RFIForm';
+import ChangeOrdersManagement from '../components/ChangeOrdersManagement';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { isAdmin } = useAuth();
     const [project, setProject] = useState<Project | null>(null);
+    const [customer, setCustomer] = useState<Customer | null>(null);
     const [todoLists, setTodoLists] = useState<TodoListType[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [estimates, setEstimates] = useState<Estimate[]>([]);
@@ -20,7 +22,7 @@ const ProjectDetail: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
-    const [activeTab, setActiveTab] = useState<'todos' | 'materials' | 'customer' | 'rfi' | 'invoices' | 'estimates'>('todos');
+    const [activeTab, setActiveTab] = useState<'todos' | 'materials' | 'customer' | 'rfi' | 'invoices' | 'estimates' | 'change-orders'>('todos');
 
     useEffect(() => {
         const fetchProjectDetails = async () => {
@@ -37,10 +39,17 @@ const ProjectDetail: React.FC = () => {
                 const invoicesResponse = await invoicesAPI.getProjectInvoices(parseInt(id));
                 setInvoices(invoicesResponse.invoices);
 
-                // Fetch estimates for this project's customer (if customer exists)
+                // Fetch customer data and estimates for this project's customer (if customer exists)
                 if (projectResponse.project.customer_id) {
-                    const estimatesResponse = await estimatesAPI.getCustomerEstimates(projectResponse.project.customer_id);
-                    setEstimates(estimatesResponse.estimates);
+                    try {
+                        const customerResponse = await customersAPI.getCustomer(projectResponse.project.customer_id);
+                        setCustomer(customerResponse.customer);
+                        
+                        const estimatesResponse = await estimatesAPI.getCustomerEstimates(projectResponse.project.customer_id);
+                        setEstimates(estimatesResponse.estimates);
+                    } catch (customerErr) {
+                        console.warn('Failed to fetch customer data:', customerErr);
+                    }
                 }
 
             } catch (err: any) {
@@ -337,6 +346,16 @@ const ProjectDetail: React.FC = () => {
                         >
                             Estimates
                         </button>
+                        <button
+                            onClick={() => setActiveTab('change-orders')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'change-orders'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Change Orders
+                        </button>
                     </nav>
                 </div>
 
@@ -564,6 +583,26 @@ const ProjectDetail: React.FC = () => {
                                     </table>
                                 </div>
                             )}
+                        </div>
+                    ) : activeTab === 'change-orders' ? (
+                        <div>
+                            <ChangeOrdersManagement 
+                                projectId={parseInt(id || '0')}
+                                projectName={project.name}
+                                customerInfo={customer ? {
+                                    id: customer.id,
+                                    name: customer.name,
+                                    email: customer.email || '',
+                                    phone: customer.phone || '',
+                                    address: customer.address || project.address || ''
+                                } : project.customer_id ? {
+                                    id: project.customer_id,
+                                    name: project.customer_name || '',
+                                    email: '',
+                                    phone: '',
+                                    address: project.address || ''
+                                } : undefined}
+                            />
                         </div>
                     ) : null}
                 </div>

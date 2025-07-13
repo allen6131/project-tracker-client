@@ -677,4 +677,80 @@ export interface ServicesResponse {
 
 export interface ServiceCategoriesResponse {
   categories: string[];
+}
+
+export interface ChangeOrderItem {
+  id?: number;
+  change_order_id?: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price?: number;
+  created_at?: string;
+}
+
+export interface ChangeOrder {
+  id: number;
+  change_order_number: string;
+  title: string;
+  description?: string;
+  project_id: number;
+  project_name?: string;
+  customer_id?: number | null;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  status: 'draft' | 'sent' | 'approved' | 'rejected' | 'cancelled';
+  reason?: string;
+  justification?: string;
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  total_amount: number;
+  requested_date?: string | null;
+  approved_date?: string | null;
+  notes?: string;
+  created_by: number;
+  created_by_username?: string;
+  created_at: string;
+  updated_at: string;
+  items?: ChangeOrderItem[];
+}
+
+export interface CreateChangeOrderRequest {
+  title: string;
+  description?: string;
+  project_id: number;
+  customer_id?: number | null;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  reason?: string;
+  justification?: string;
+  tax_rate?: number;
+  requested_date?: string | null;
+  notes?: string;
+  items: ChangeOrderItem[];
+}
+
+export interface UpdateChangeOrderRequest {
+  title?: string;
+  description?: string;
+  status?: 'draft' | 'sent' | 'approved' | 'rejected' | 'cancelled';
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  reason?: string;
+  justification?: string;
+  tax_rate?: number;
+  requested_date?: string | null;
+  approved_date?: string | null;
+  notes?: string;
+}
+
+export interface ChangeOrdersResponse {
+  changeOrders: ChangeOrder[];
 } 

@@ -56,7 +56,11 @@ import {
   CreateServiceRequest,
   UpdateServiceRequest,
   ServicesResponse,
-  ServiceCategoriesResponse
+  ServiceCategoriesResponse,
+  ChangeOrder,
+  CreateChangeOrderRequest,
+  UpdateChangeOrderRequest,
+  ChangeOrdersResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -606,6 +610,45 @@ export const servicesAPI = {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/services/${serviceId}`);
     return response.data;
   },
+};
+
+// Change Orders API
+export const changeOrdersAPI = {
+  // Get change orders for a project
+  getProjectChangeOrders: async (projectId: number): Promise<ChangeOrdersResponse> => {
+    const response = await api.get(`/change-orders/project/${projectId}`);
+    return response.data;
+  },
+
+  // Get single change order
+  getChangeOrder: async (id: number): Promise<{ changeOrder: ChangeOrder }> => {
+    const response = await api.get(`/change-orders/${id}`);
+    return response.data;
+  },
+
+  // Create change order
+  createChangeOrder: async (data: CreateChangeOrderRequest): Promise<{ message: string; changeOrder: ChangeOrder }> => {
+    const response = await api.post('/change-orders', data);
+    return response.data;
+  },
+
+  // Update change order
+  updateChangeOrder: async (id: number, data: UpdateChangeOrderRequest): Promise<{ message: string; changeOrder: ChangeOrder }> => {
+    const response = await api.put(`/change-orders/${id}`, data);
+    return response.data;
+  },
+
+  // Delete change order
+  deleteChangeOrder: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete(`/change-orders/${id}`);
+    return response.data;
+  },
+
+  // Send change order email
+  sendChangeOrderEmail: async (id: number, emailData: { recipient_email: string; sender_name?: string }): Promise<{ message: string }> => {
+    const response = await api.post(`/change-orders/${id}/send-email`, emailData);
+    return response.data;
+  }
 };
 
 export default api; 
