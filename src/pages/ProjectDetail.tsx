@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Project, TodoList as TodoListType, Invoice, Estimate, Customer } from '../types';
+import { Project, TodoList as TodoListType, Invoice, Estimate, Customer, CreateEstimateRequest } from '../types';
 import { projectsAPI, todoAPI, invoicesAPI, estimatesAPI, customersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TodoList from '../components/TodoList';
@@ -12,7 +12,7 @@ import ChangeOrdersManagement from '../components/ChangeOrdersManagement';
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { isAdmin } = useAuth();
+    const { user, isAdmin } = useAuth();
     const [project, setProject] = useState<Project | null>(null);
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [todoLists, setTodoLists] = useState<TodoListType[]>([]);
@@ -23,6 +23,17 @@ const ProjectDetail: React.FC = () => {
     const [success, setSuccess] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
     const [activeTab, setActiveTab] = useState<'todos' | 'materials' | 'customer' | 'rfi' | 'invoices' | 'estimates' | 'change-orders'>('todos');
+
+    // Estimate form state
+    const [showEstimateForm, setShowEstimateForm] = useState(false);
+    const [estimateFormLoading, setEstimateFormLoading] = useState(false);
+    const [estimateFormData, setEstimateFormData] = useState({
+        title: '',
+        description: '',
+        total_amount: 0,
+        notes: ''
+    });
+    const [selectedDocument, setSelectedDocument] = useState<File | null>(null);
 
     useEffect(() => {
         const fetchProjectDetails = async () => {
@@ -130,6 +141,108 @@ const ProjectDetail: React.FC = () => {
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to create invoice');
             setTimeout(() => setError(null), 5000);
+        }
+    };
+
+    // Estimate form handlers
+    const handleCreateEstimate = () => {
+        if (!project) return;
+        
+        setError(null);
+        setSuccess(null);
+        setEstimateFormData({
+            title: `Estimate for ${project.name}`,
+            description: '',
+            total_amount: 0,
+            notes: ''
+        });
+        setSelectedDocument(null);
+        setShowEstimateForm(true);
+    };
+
+    const handleEstimateFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!project || !id) return;
+
+        if (!selectedDocument) {
+            setError('Please select a document to upload');
+            return;
+        }
+
+        if (estimateFormData.total_amount <= 0) {
+            setError('Please enter a valid amount');
+            return;
+        }
+
+        setEstimateFormLoading(true);
+        try {
+            const createData: CreateEstimateRequest = {
+                title: estimateFormData.title,
+                description: estimateFormData.description,
+                project_id: parseInt(id),
+                total_amount: estimateFormData.total_amount,
+                notes: estimateFormData.notes
+            };
+
+            await estimatesAPI.createEstimate(createData, selectedDocument);
+            setSuccess('Estimate created successfully!');
+            
+            // Refresh estimates list
+            const estimatesResponse = await estimatesAPI.getProjectEstimates(parseInt(id));
+            setEstimates(estimatesResponse.estimates);
+            
+            // Reset form and close modal
+            setShowEstimateForm(false);
+            setEstimateFormData({
+                title: '',
+                description: '',
+                total_amount: 0,
+                notes: ''
+            });
+            setSelectedDocument(null);
+            
+            // Clear success message after 5 seconds
+            setTimeout(() => setSuccess(null), 5000);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to create estimate');
+            setTimeout(() => setError(null), 5000);
+        } finally {
+            setEstimateFormLoading(false);
+        }
+    };
+
+    const handleEstimateFormCancel = () => {
+        setShowEstimateForm(false);
+        setEstimateFormData({
+            title: '',
+            description: '',
+            total_amount: 0,
+            notes: ''
+        });
+        setSelectedDocument(null);
+        setError(null);
+        setSuccess(null);
+    };
+
+    const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setSelectedDocument(e.target.files[0]);
+        }
+    };
+
+    const handleDownloadEstimate = async (estimateId: number) => {
+        try {
+            const blob = await estimatesAPI.downloadEstimate(estimateId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `estimate-${estimateId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to download estimate');
         }
     };
 
@@ -507,7 +620,20 @@ const ProjectDetail: React.FC = () => {
                         <div>
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-bold">Project Estimates</h2>
-                                <span className="text-sm text-gray-600">{estimates.length} estimate(s) for this project</span>
+                                <div className="flex items-center space-x-4">
+                                    <span className="text-sm text-gray-600">{estimates.length} estimate(s) for this project</span>
+                                    {isAdmin && (
+                                        <button
+                                            onClick={handleCreateEstimate}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            <span>Create Estimate</span>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                             
                             {estimates.length === 0 ? (
@@ -518,6 +644,14 @@ const ProjectDetail: React.FC = () => {
                                         </svg>
                                         <p className="text-lg">No estimates found for this project</p>
                                         <p className="text-sm mt-2">Project estimates will appear here once created</p>
+                                        {isAdmin && (
+                                            <button
+                                                onClick={handleCreateEstimate}
+                                                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                                            >
+                                                Create First Estimate
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -553,7 +687,7 @@ const ProjectDetail: React.FC = () => {
                                                         <div className="text-sm text-gray-500">{estimate.description}</div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">{estimate.customer_name || 'N/A'}</div>
+                                                        <div className="text-sm text-gray-900">{estimate.customer_name || project.customer_name || 'N/A'}</div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="text-sm font-medium text-gray-900">
@@ -573,7 +707,16 @@ const ProjectDetail: React.FC = () => {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {estimate.document_path ? 'Document attached' : 'No document'}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                                        {estimate.document_path && (
+                                                            <button
+                                                                onClick={() => handleDownloadEstimate(estimate.id)}
+                                                                className="text-green-600 hover:text-green-900"
+                                                                title="Download estimate document"
+                                                            >
+                                                                Download
+                                                            </button>
+                                                        )}
                                                         <button
                                                             onClick={() => navigate(`/estimates/${estimate.id}`)}
                                                             className="text-blue-600 hover:text-blue-900"
@@ -611,6 +754,113 @@ const ProjectDetail: React.FC = () => {
                     ) : null}
                 </div>
             </div>
+
+            {/* Estimate Creation Modal */}
+            {showEstimateForm && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
+                        <div className="mt-3">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                                Create New Estimate for {project?.name}
+                            </h3>
+                            
+                            <form onSubmit={handleEstimateFormSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Title *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={estimateFormData.title}
+                                        onChange={(e) => setEstimateFormData({ ...estimateFormData, title: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Enter estimate title"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        value={estimateFormData.description}
+                                        onChange={(e) => setEstimateFormData({ ...estimateFormData, description: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        rows={3}
+                                        placeholder="Enter estimate description"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Total Amount *
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-2 text-gray-500">$</span>
+                                        <input
+                                            type="number"
+                                            required
+                                            min="0"
+                                            step="0.01"
+                                            value={estimateFormData.total_amount}
+                                            onChange={(e) => setEstimateFormData({ ...estimateFormData, total_amount: parseFloat(e.target.value) || 0 })}
+                                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Document *
+                                    </label>
+                                    <input
+                                        type="file"
+                                        required
+                                        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                                        onChange={handleDocumentChange}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Upload a document (PDF, Word, images, etc.)
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Notes
+                                    </label>
+                                    <textarea
+                                        value={estimateFormData.notes}
+                                        onChange={(e) => setEstimateFormData({ ...estimateFormData, notes: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        rows={2}
+                                        placeholder="Additional notes (optional)"
+                                    />
+                                </div>
+
+                                <div className="flex justify-end space-x-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={handleEstimateFormCancel}
+                                        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={estimateFormLoading}
+                                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                    >
+                                        {estimateFormLoading ? 'Creating...' : 'Create Estimate'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
