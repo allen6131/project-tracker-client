@@ -140,17 +140,31 @@ const UserForm: React.FC<UserFormProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {user ? 'Edit User' : 'Create New User'}
-          </h2>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-xl">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+              <svg className="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {user ? 'Edit User' : 'Create New User'}
+            </h2>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-white hover:bg-opacity-50 rounded-full"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-6 space-y-5">
           {/* Username */}
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
               Username *
             </label>
             <input
@@ -159,21 +173,26 @@ const UserForm: React.FC<UserFormProps> = ({
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.username ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                errors.username ? 'border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50' : 'border-gray-300 bg-gray-50 focus:bg-white'
               }`}
               placeholder="Enter username"
               disabled={loading}
             />
             {errors.username && (
-              <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+              <p className="mt-2 text-sm text-red-600 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.username}
+              </p>
             )}
           </div>
 
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email *
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+              Email Address *
             </label>
             <input
               type="email"
@@ -181,21 +200,26 @@ const UserForm: React.FC<UserFormProps> = ({
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50' : 'border-gray-300 bg-gray-50 focus:bg-white'
               }`}
               placeholder="Enter email address"
               disabled={loading}
             />
             {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              <p className="mt-2 text-sm text-red-600 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.email}
+              </p>
             )}
           </div>
 
           {/* Password (only for new users) */}
           {!user && (
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                 Password *
               </label>
               <input
@@ -204,21 +228,26 @@ const UserForm: React.FC<UserFormProps> = ({
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  errors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50' : 'border-gray-300 bg-gray-50 focus:bg-white'
                 }`}
                 placeholder="Enter password (min. 6 characters)"
                 disabled={loading}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                <p className="mt-2 text-sm text-red-600 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.password}
+                </p>
               )}
             </div>
           )}
 
           {/* Role */}
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="role" className="block text-sm font-semibold text-gray-700 mb-2">
               Role *
             </label>
             <select
@@ -226,7 +255,7 @@ const UserForm: React.FC<UserFormProps> = ({
               name="role"
               value={formData.role}
               onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 focus:bg-white ${
                 errors.role ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
               }`}
               disabled={loading}
@@ -235,33 +264,44 @@ const UserForm: React.FC<UserFormProps> = ({
               <option value="admin">Admin</option>
             </select>
             {errors.role && (
-              <p className="mt-1 text-sm text-red-600">{errors.role}</p>
+              <p className="mt-2 text-sm text-red-600 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.role}
+              </p>
             )}
           </div>
 
           {/* Active Status (only for editing) */}
           {user && (
-            <div>
-              <label className="flex items-center">
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   name="is_active"
                   checked={formData.is_active}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
                   disabled={loading}
                 />
-                <span className="ml-2 text-sm font-medium text-gray-700">Active User</span>
+                <span className="ml-3 text-sm font-medium text-gray-700">
+                  Active User
+                </span>
+                <span className="ml-2 text-xs text-gray-500">
+                  (Inactive users cannot log in)
+                </span>
               </label>
             </div>
           )}
         </form>
 
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-end space-x-3">
           <button
             type="button"
             onClick={handleClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:ring-2 focus:ring-gray-500"
+            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
             disabled={loading}
           >
             Cancel
@@ -269,7 +309,7 @@ const UserForm: React.FC<UserFormProps> = ({
           <button
             type="submit"
             onClick={handleSubmit}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             disabled={loading}
           >
             {loading ? (

@@ -12,13 +12,11 @@ import Estimates from './pages/Estimates';
 import Invoices from './pages/Invoices';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
-import './App.css';
-
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="App">
+        <div className="min-h-screen">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route 
