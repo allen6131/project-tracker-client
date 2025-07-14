@@ -607,8 +607,12 @@ const Invoices: React.FC = () => {
                           <div className="flex justify-between items-center">
                             <div>
                               <h4 className="font-medium text-gray-900">{estimate.title}</h4>
-                              <p className="text-sm text-gray-500">{estimate.customer_name}</p>
+                              <p className="text-sm text-gray-500">Project: {estimate.project_name}</p>
+                              <p className="text-sm text-gray-500">Customer: {estimate.customer_name || 'No customer'}</p>
                               <p className="text-sm text-gray-600">${estimate.total_amount.toFixed(2)}</p>
+                              {estimate.document_path && (
+                                <p className="text-sm text-gray-500">📄 Document attached</p>
+                              )}
                             </div>
                             <button
                               onClick={() => handleEstimateSelect(estimate)}

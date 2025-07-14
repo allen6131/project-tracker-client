@@ -384,20 +384,32 @@ export const rfiAPI = {
 
 // Estimates API
 export const estimatesAPI = {
-  getEstimates: async (page = 1, limit = 10, search = '', status = ''): Promise<EstimatesResponse> => {
+  getEstimates: async (page = 1, limit = 10, search = '', status = '', project_id = ''): Promise<EstimatesResponse> => {
     const response: AxiosResponse<EstimatesResponse> = await api.get('/estimates', {
-      params: { page, limit, search, status },
+      params: { page, limit, search, status, project_id },
     });
     return response.data;
   },
 
-  getCustomerEstimates: async (customerId: number): Promise<{ estimates: Estimate[] }> => {
-    const response: AxiosResponse<{ estimates: Estimate[] }> = await api.get(`/estimates/customer/${customerId}`);
+  getProjectEstimates: async (projectId: number): Promise<{ estimates: Estimate[] }> => {
+    const response: AxiosResponse<{ estimates: Estimate[] }> = await api.get(`/estimates/project/${projectId}`);
     return response.data;
   },
 
-  createEstimate: async (estimateData: CreateEstimateRequest): Promise<{ estimate: Estimate; message: string }> => {
-    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.post('/estimates', estimateData);
+  createEstimate: async (estimateData: CreateEstimateRequest, document: File): Promise<{ estimate: Estimate; message: string }> => {
+    const formData = new FormData();
+    formData.append('title', estimateData.title);
+    formData.append('project_id', estimateData.project_id.toString());
+    formData.append('total_amount', estimateData.total_amount.toString());
+    if (estimateData.description) formData.append('description', estimateData.description);
+    if (estimateData.notes) formData.append('notes', estimateData.notes);
+    formData.append('document', document);
+
+    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.post('/estimates', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
@@ -406,8 +418,20 @@ export const estimatesAPI = {
     return response.data;
   },
 
-  updateEstimate: async (id: number, estimateData: UpdateEstimateRequest): Promise<{ estimate: Estimate; message: string }> => {
-    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.put(`/estimates/${id}`, estimateData);
+  updateEstimate: async (id: number, estimateData: UpdateEstimateRequest, document?: File): Promise<{ estimate: Estimate; message: string }> => {
+    const formData = new FormData();
+    if (estimateData.title) formData.append('title', estimateData.title);
+    if (estimateData.description) formData.append('description', estimateData.description);
+    if (estimateData.total_amount !== undefined) formData.append('total_amount', estimateData.total_amount.toString());
+    if (estimateData.status) formData.append('status', estimateData.status);
+    if (estimateData.notes) formData.append('notes', estimateData.notes);
+    if (document) formData.append('document', document);
+
+    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.put(`/estimates/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
@@ -416,8 +440,10 @@ export const estimatesAPI = {
     return response.data;
   },
 
-  createProjectFromEstimate: async (id: number, projectData: { project_name: string; project_description?: string }): Promise<{ project: Project; message: string; estimate_id: number }> => {
-    const response: AxiosResponse<{ project: Project; message: string; estimate_id: number }> = await api.post(`/estimates/${id}/create-project`, projectData);
+  downloadEstimate: async (id: number): Promise<Blob> => {
+    const response: AxiosResponse<Blob> = await api.get(`/estimates/${id}/download`, {
+      responseType: 'blob',
+    });
     return response.data;
   },
 

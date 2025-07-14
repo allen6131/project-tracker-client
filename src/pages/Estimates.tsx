@@ -6,10 +6,9 @@ import {
   Estimate, 
   CreateEstimateRequest, 
   UpdateEstimateRequest,
-  EstimateItem,
-  SimpleCustomersResponse
+  Project
 } from '../types';
-import { estimatesAPI, customersAPI } from '../services/api';
+import { estimatesAPI, projectsAPI } from '../services/api';
 
 const Estimates: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -33,20 +32,13 @@ const Estimates: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    customer_id: null as number | null,
-    customer_name: '',
-    customer_email: '',
-    customer_phone: '',
-    customer_address: '',
-    tax_rate: 0,
-    valid_until: '',
+    project_id: null as number | null,
+    total_amount: 0,
     notes: '',
-    status: 'draft' as 'draft' | 'sent' | 'approved' | 'rejected' | 'expired'
+    status: 'draft' as 'draft' | 'sent' | 'approved' | 'rejected'
   });
   
-  const [items, setItems] = useState<EstimateItem[]>([
-    { description: '', quantity: 1, unit_price: 0 }
-  ]);
+  const [selectedDocument, setSelectedDocument] = useState<File | null>(null);
 
   // Email form data
   const [emailData, setEmailData] = useState({
@@ -54,24 +46,25 @@ const Estimates: React.FC = () => {
     sender_name: ''
   });
   
-  const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   
   // Pagination and filtering
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [projectFilter, setProjectFilter] = useState('');
 
-  // Load estimates and customers
+  // Load estimates and projects
   useEffect(() => {
     loadEstimates();
-    loadCustomers();
-  }, [currentPage, searchTerm, statusFilter]);
+    loadProjects();
+  }, [currentPage, searchTerm, statusFilter, projectFilter]);
 
   const loadEstimates = async () => {
     try {
       setLoading(true);
-      const response = await estimatesAPI.getEstimates(currentPage, 10, searchTerm, statusFilter);
+      const response = await estimatesAPI.getEstimates(currentPage, 10, searchTerm, statusFilter, projectFilter);
       setEstimates(response.estimates);
       setTotalPages(response.pagination.totalPages);
     } catch (err: any) {
@@ -81,12 +74,12 @@ const Estimates: React.FC = () => {
     }
   };
 
-  const loadCustomers = async () => {
+  const loadProjects = async () => {
     try {
-      const response = await customersAPI.getSimpleCustomers();
-      setCustomers(response.customers);
+      const response = await projectsAPI.getProjects(1, 100, '', '');
+      setProjects(response.projects);
     } catch (err) {
-      console.error('Failed to load customers:', err);
+      console.error('Failed to load projects:', err);
     }
   };
 
@@ -99,17 +92,12 @@ const Estimates: React.FC = () => {
     setFormData({
       title: '',
       description: '',
-      customer_id: null,
-      customer_name: '',
-      customer_email: '',
-      customer_phone: '',
-      customer_address: '',
-      tax_rate: 0,
-      valid_until: '',
+      project_id: null,
+      total_amount: 0,
       notes: '',
       status: 'draft'
     });
-    setItems([{ description: '', quantity: 1, unit_price: 0 }]);
+    setSelectedDocument(null);
   };
 
   const handleCreateEstimate = () => {
@@ -125,17 +113,12 @@ const Estimates: React.FC = () => {
     setFormData({
       title: estimate.title,
       description: estimate.description || '',
-      customer_id: estimate.customer_id ?? null,
-      customer_name: estimate.customer_name || '',
-      customer_email: estimate.customer_email || '',
-      customer_phone: estimate.customer_phone || '',
-      customer_address: estimate.customer_address || '',
-      tax_rate: estimate.tax_rate,
-      valid_until: estimate.valid_until || '',
+      project_id: estimate.project_id,
+      total_amount: estimate.total_amount,
       notes: estimate.notes || '',
       status: estimate.status
     });
-    setItems(estimate.items || [{ description: '', quantity: 1, unit_price: 0 }]);
+    setSelectedDocument(null);
     setShowForm(true);
   };
 
@@ -151,23 +134,7 @@ const Estimates: React.FC = () => {
     }
   };
 
-  const handleCreateProject = async (estimate: Estimate) => {
-    const projectName = prompt('Enter project name:');
-    if (projectName) {
-      try {
-        const response = await estimatesAPI.createProjectFromEstimate(estimate.id, {
-          project_name: projectName,
-          project_description: estimate.description
-        });
-        setSuccess(`Project "${response.project.name}" created successfully from estimate`);
-        loadEstimates();
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to create project');
-      }
-    }
-  };
-
-  const handleQuickStatusUpdate = async (estimateId: number, newStatus: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired') => {
+  const handleQuickStatusUpdate = async (estimateId: number, newStatus: 'draft' | 'sent' | 'approved' | 'rejected') => {
     try {
       await estimatesAPI.updateEstimate(estimateId, { status: newStatus });
       setSuccess(`Estimate status updated to ${newStatus}`);
@@ -181,7 +148,7 @@ const Estimates: React.FC = () => {
     clearMessages();
     setEmailingEstimate(estimate);
     setEmailData({
-      recipient_email: estimate.customer_email || '',
+      recipient_email: estimate.customer_name || '',
       sender_name: user?.username || ''
     });
     setShowEmailModal(true);
@@ -211,16 +178,38 @@ const Estimates: React.FC = () => {
     setFormLoading(true);
     
     try {
-      const estimateData: CreateEstimateRequest = {
-        ...formData,
-        items: items.filter(item => item.description.trim() !== '')
-      };
-
       if (editingEstimate) {
-        await estimatesAPI.updateEstimate(editingEstimate.id, estimateData);
+        // Update existing estimate
+        const updateData: UpdateEstimateRequest = {
+          title: formData.title,
+          description: formData.description,
+          status: formData.status,
+          total_amount: formData.total_amount,
+          notes: formData.notes
+        };
+
+        await estimatesAPI.updateEstimate(editingEstimate.id, updateData, selectedDocument || undefined);
         setSuccess('Estimate updated successfully');
       } else {
-        await estimatesAPI.createEstimate(estimateData);
+        // Create new estimate
+        if (!formData.project_id) {
+          setError('Please select a project');
+          return;
+        }
+        if (!selectedDocument) {
+          setError('Please upload a document');
+          return;
+        }
+
+        const createData: CreateEstimateRequest = {
+          title: formData.title,
+          description: formData.description,
+          project_id: formData.project_id,
+          total_amount: formData.total_amount,
+          notes: formData.notes
+        };
+
+        await estimatesAPI.createEstimate(createData, selectedDocument);
         setSuccess('Estimate created successfully');
       }
       
@@ -234,28 +223,21 @@ const Estimates: React.FC = () => {
     }
   };
 
-  const handleItemChange = (index: number, field: keyof EstimateItem, value: string | number) => {
-    const updatedItems = [...items];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
-    setItems(updatedItems);
-  };
-
-  const addItem = () => {
-    setItems([...items, { description: '', quantity: 1, unit_price: 0 }]);
-  };
-
-  const removeItem = (index: number) => {
-    if (items.length > 1) {
-      setItems(items.filter((_, i) => i !== index));
+  const handleDownloadDocument = async (estimateId: number) => {
+    try {
+      const response = await estimatesAPI.downloadEstimate(estimateId);
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([response]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `estimate-${estimateId}-document`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError('Failed to download document');
     }
-  };
-
-  const calculateTotal = () => {
-    const subtotal = items.reduce((sum, item) => {
-      return sum + (parseFloat(String(item.quantity)) * parseFloat(String(item.unit_price)));
-    }, 0);
-    const taxAmount = subtotal * (formData.tax_rate / 100);
-    return { subtotal, taxAmount, total: subtotal + taxAmount };
   };
 
   const getStatusBadge = (status: string) => {
@@ -269,14 +251,16 @@ const Estimates: React.FC = () => {
         return `${baseClasses} bg-green-100 text-green-800`;
       case 'rejected':
         return `${baseClasses} bg-red-100 text-red-800`;
-      case 'expired':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800`;
     }
   };
 
-  const { subtotal, taxAmount, total } = calculateTotal();
+  const getSelectedProjectName = () => {
+    if (!formData.project_id) return '';
+    const project = projects.find(p => p.id === formData.project_id);
+    return project ? project.name : '';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -312,7 +296,7 @@ const Estimates: React.FC = () => {
                 <div>
                   <h2 className="text-lg font-medium text-gray-900">Estimates Management</h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    Create and manage project estimates
+                    Create and manage project estimates with documents
                   </p>
                 </div>
                 <button
@@ -341,7 +325,7 @@ const Estimates: React.FC = () => {
 
         {/* Filters */}
         <div className="mb-6 bg-white shadow rounded-lg p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <input
                 type="text"
@@ -362,7 +346,20 @@ const Estimates: React.FC = () => {
                 <option value="sent">Sent</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
-                <option value="expired">Expired</option>
+              </select>
+            </div>
+            <div>
+              <select
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Projects</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -383,16 +380,19 @@ const Estimates: React.FC = () => {
                       Title
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Project
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Customer
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total
+                      Total Amount
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Valid Until
+                      Document
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -407,6 +407,9 @@ const Estimates: React.FC = () => {
                         <div className="text-sm text-gray-500">{estimate.description}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {estimate.project_name || 'No project'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {estimate.customer_name || 'No customer'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -418,7 +421,16 @@ const Estimates: React.FC = () => {
                         ${estimate.total_amount.toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {estimate.valid_until ? new Date(estimate.valid_until).toLocaleDateString() : 'No expiry'}
+                        {estimate.document_path ? (
+                          <button
+                            onClick={() => handleDownloadDocument(estimate.id)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Download
+                          </button>
+                        ) : (
+                          'No document'
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex flex-col space-y-1">
@@ -436,14 +448,6 @@ const Estimates: React.FC = () => {
                             >
                               Send Email
                             </button>
-                            {estimate.status === 'approved' && (
-                              <button
-                                onClick={() => handleCreateProject(estimate)}
-                                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium"
-                              >
-                                Create Project
-                              </button>
-                            )}
                             <button
                               onClick={() => handleDeleteEstimate(estimate.id)}
                               className="text-red-600 hover:text-red-900 text-xs"
@@ -477,14 +481,6 @@ const Estimates: React.FC = () => {
                                   Reject
                                 </button>
                               </>
-                            )}
-                            {(estimate.status === 'approved' || estimate.status === 'rejected') && (
-                              <button
-                                onClick={() => handleQuickStatusUpdate(estimate.id, 'expired')}
-                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs"
-                              >
-                                Mark Expired
-                              </button>
                             )}
                           </div>
                         </div>
@@ -555,7 +551,7 @@ const Estimates: React.FC = () => {
                 
                 <form onSubmit={handleFormSubmit} className="space-y-6">
                   {/* Basic Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Title *</label>
                       <input
@@ -568,45 +564,24 @@ const Estimates: React.FC = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Customer</label>
+                      <label className="block text-sm font-medium text-gray-700">Project *</label>
                       <select
-                        value={formData.customer_id || ''}
-                        onChange={(e) => {
-                          const customerId = e.target.value ? parseInt(e.target.value) : null;
-                          const customer = customers.find(c => c.id === customerId);
-                          setFormData({ 
-                            ...formData, 
-                            customer_id: customerId,
-                            customer_name: customer?.name || ''
-                          });
-                        }}
+                        required={!editingEstimate}
+                        value={formData.project_id || ''}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          project_id: e.target.value ? parseInt(e.target.value) : null
+                        })}
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="">Select Customer</option>
-                        {customers.map(customer => (
-                          <option key={customer.id} value={customer.id}>
-                            {customer.name}
+                        <option value="">Select Project</option>
+                        {projects.map(project => (
+                          <option key={project.id} value={project.id}>
+                            {project.name} - {project.customer_name || 'No customer'}
                           </option>
                         ))}
                       </select>
                     </div>
-
-                    {editingEstimate && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Status</label>
-                        <select
-                          value={formData.status || 'draft'}
-                          onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'sent' | 'approved' | 'rejected' | 'expired' })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="draft">Draft</option>
-                          <option value="sent">Sent</option>
-                          <option value="approved">Approved</option>
-                          <option value="rejected">Rejected</option>
-                          <option value="expired">Expired</option>
-                        </select>
-                      </div>
-                    )}
                   </div>
 
                   <div>
@@ -619,148 +594,51 @@ const Estimates: React.FC = () => {
                     />
                   </div>
 
-                  {/* Customer Details */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Customer Email</label>
-                      <input
-                        type="email"
-                        value={formData.customer_email}
-                        onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Customer Phone</label>
-                      <input
-                        type="tel"
-                        value={formData.customer_phone}
-                        onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Customer Address</label>
-                    <textarea
-                      rows={2}
-                      value={formData.customer_address}
-                      onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* Items Section */}
-                  <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-md font-medium text-gray-900">Items</h4>
-                      <button
-                        type="button"
-                        onClick={addItem}
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Add Item
-                      </button>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {items.map((item, index) => (
-                        <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                          <div className="col-span-5">
-                            <label className="block text-sm font-medium text-gray-700">Description</label>
-                            <input
-                              type="text"
-                              value={item.description}
-                              onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={item.quantity}
-                              onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Unit Price</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={item.unit_price}
-                              onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Total</label>
-                            <div className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm">
-                              ${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
-                            </div>
-                          </div>
-                          <div className="col-span-1">
-                            {items.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeItem(index)}
-                                className="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded text-sm"
-                              >
-                                ×
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tax and Totals */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                      <label className="block text-sm font-medium text-gray-700">Total Amount *</label>
                       <input
                         type="number"
                         step="0.01"
                         min="0"
-                        max="100"
-                        value={formData.tax_rate}
-                        onChange={(e) => setFormData({ ...formData, tax_rate: parseFloat(e.target.value) || 0 })}
+                        required
+                        value={formData.total_amount}
+                        onChange={(e) => setFormData({ ...formData, total_amount: parseFloat(e.target.value) || 0 })}
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Valid Until</label>
-                      <input
-                        type="date"
-                        value={formData.valid_until}
-                        onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
+
+                    {editingEstimate && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Status</label>
+                        <select
+                          value={formData.status}
+                          onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'sent' | 'approved' | 'rejected' })}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="draft">Draft</option>
+                          <option value="sent">Sent</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Totals Display */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between text-sm">
-                      <span>Subtotal:</span>
-                      <span>${subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Tax ({formData.tax_rate}%):</span>
-                      <span>${taxAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-medium border-t pt-2 mt-2">
-                      <span>Total:</span>
-                      <span>${total.toFixed(2)}</span>
-                    </div>
+                  {/* Document Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Document {!editingEstimate ? '*' : '(Leave empty to keep current)'}
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                      onChange={(e) => setSelectedDocument(e.target.files?.[0] || null)}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Supported formats: PDF, Word documents, images, text files (max 10MB)
+                    </p>
                   </div>
 
                   <div>
@@ -812,6 +690,9 @@ const Estimates: React.FC = () => {
                     </label>
                     <p className="text-sm text-gray-500">
                       Total: ${emailingEstimate.total_amount.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Project: {emailingEstimate.project_name}
                     </p>
                   </div>
 

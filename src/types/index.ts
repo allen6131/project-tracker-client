@@ -435,64 +435,36 @@ export interface SimpleCustomersResponse {
 }
 
 // Estimates types
-export interface EstimateItem {
-  id?: number;
-  estimate_id?: number;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  total_price?: number;
-  created_at?: string;
-}
-
 export interface Estimate {
   id: number;
   title: string;
   description?: string;
-  customer_id?: number | null;
+  project_id: number;
+  project_name?: string;
   customer_name?: string;
-  customer_email?: string;
-  customer_phone?: string;
-  customer_address?: string;
-  status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
-  subtotal: number;
-  tax_rate: number;
-  tax_amount: number;
+  status: 'draft' | 'sent' | 'approved' | 'rejected';
   total_amount: number;
-  valid_until?: string | null;
+  document_path?: string;
   notes?: string;
   created_by: number;
   created_by_username?: string;
   created_at: string;
   updated_at: string;
-  items?: EstimateItem[];
 }
 
 export interface CreateEstimateRequest {
   title: string;
   description?: string;
-  customer_id?: number | null;
-  customer_name?: string;
-  customer_email?: string;
-  customer_phone?: string;
-  customer_address?: string;
-  tax_rate?: number;
-  valid_until?: string | null;
+  project_id: number;
+  total_amount: number;
   notes?: string;
-  items: EstimateItem[];
 }
 
 export interface UpdateEstimateRequest {
   title?: string;
   description?: string;
-  status?: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
-  customer_id?: number | null;
-  customer_name?: string;
-  customer_email?: string;
-  customer_phone?: string;
-  customer_address?: string;
-  tax_rate?: number;
-  valid_until?: string | null;
+  status?: 'draft' | 'sent' | 'approved' | 'rejected';
+  total_amount?: number;
   notes?: string;
 }
 
