@@ -24,12 +24,21 @@ const InvoicesManagement: React.FC = () => {
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [showEstimateSelector, setShowEstimateSelector] = useState(false);
+  const [showPercentageModal, setShowPercentageModal] = useState(false);
+  const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   
   // Payment state
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
+  
+  // Percentage form state
+  const [percentageData, setPercentageData] = useState({
+    percentage: '',
+    title: '',
+    due_date: ''
+  });
   
   // Form data
   const [formData, setFormData] = useState({
@@ -134,6 +143,14 @@ const InvoicesManagement: React.FC = () => {
     setItems([{ description: '', quantity: 1, unit_price: 0 }]);
   };
 
+  const resetPercentageForm = () => {
+    setPercentageData({
+      percentage: '',
+      title: '',
+      due_date: ''
+    });
+  };
+
   const handleCreateInvoice = () => {
     clearMessages();
     resetForm();
@@ -146,14 +163,57 @@ const InvoicesManagement: React.FC = () => {
     setShowEstimateSelector(true);
   };
 
-  const handleEstimateSelect = async (estimate: Estimate) => {
+  const handleEstimateSelect = (estimate: Estimate) => {
+    setSelectedEstimate(estimate);
+    setShowEstimateSelector(false);
+    
+    // Pre-fill percentage form with estimate data
+    setPercentageData({
+      percentage: '',
+      title: `Partial Invoice - ${estimate.title}`,
+      due_date: ''
+    });
+    
+    setShowPercentageModal(true);
+  };
+
+  const handlePercentageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedEstimate) return;
+    
+    const percentage = parseFloat(percentageData.percentage);
+    
+    if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+      setError('Please enter a valid percentage between 1 and 100');
+      return;
+    }
+    
     try {
-      const response = await invoicesAPI.createInvoiceFromEstimate(estimate.id, {});
-      setSuccess(`Invoice created successfully from estimate "${estimate.title}"`);
-      setShowEstimateSelector(false);
+      setFormLoading(true);
+      clearMessages();
+      
+      // Calculate the invoice amount based on percentage
+      const invoiceAmount = (selectedEstimate.total_amount * percentage) / 100;
+      
+      const invoiceData = {
+        title: percentageData.title || `${percentage}% of ${selectedEstimate.title}`,
+        due_date: percentageData.due_date || undefined,
+        percentage: percentage,
+        amount: invoiceAmount
+      };
+      
+      const response = await invoicesAPI.createInvoiceFromEstimate(selectedEstimate.id, invoiceData);
+      setSuccess(`Invoice created successfully for ${percentage}% (${invoiceAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}) of estimate "${selectedEstimate.title}"`);
+      
+      setShowPercentageModal(false);
+      setSelectedEstimate(null);
+      resetPercentageForm();
       loadInvoices();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create invoice from estimate');
+    } finally {
+      setFormLoading(false);
     }
   };
 
@@ -472,7 +532,7 @@ const InvoicesManagement: React.FC = () => {
                             <h4 className="font-medium text-gray-900">{estimate.title}</h4>
                             <p className="text-sm text-gray-500">Project: {estimate.project_name}</p>
                             <p className="text-sm text-gray-500">Customer: {estimate.customer_name || 'No customer'}</p>
-                            <p className="text-sm text-gray-600">${estimate.total_amount.toFixed(2)}</p>
+                            <p className="text-sm text-gray-600 font-medium">${estimate.total_amount.toFixed(2)}</p>
                             {estimate.document_path && (
                               <p className="text-sm text-gray-500">📄 Document attached</p>
                             )}
@@ -481,7 +541,7 @@ const InvoicesManagement: React.FC = () => {
                             onClick={() => handleEstimateSelect(estimate)}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
                           >
-                            Create Invoice
+                            Select
                           </button>
                         </div>
                       </div>
@@ -498,6 +558,105 @@ const InvoicesManagement: React.FC = () => {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Percentage Selection Modal */}
+      {showPercentageModal && selectedEstimate && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Create Invoice from Estimate
+              </h3>
+              
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-900">{selectedEstimate.title}</h4>
+                <p className="text-sm text-gray-500">Project: {selectedEstimate.project_name}</p>
+                <p className="text-sm text-gray-600">Estimate Total: <span className="font-medium">${selectedEstimate.total_amount.toFixed(2)}</span></p>
+              </div>
+              
+              <form onSubmit={handlePercentageSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="percentage" className="block text-sm font-medium text-gray-700 mb-1">
+                    Percentage of Estimate *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      id="percentage"
+                      value={percentageData.percentage}
+                      onChange={(e) => setPercentageData({ ...percentageData, percentage: e.target.value })}
+                      min="0.01"
+                      max="100"
+                      step="0.01"
+                      className="block w-full pr-8 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="10"
+                      required
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 text-sm">%</span>
+                    </div>
+                  </div>
+                  {percentageData.percentage && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      Invoice Amount: <span className="font-medium text-green-600">
+                        ${((selectedEstimate.total_amount * parseFloat(percentageData.percentage || '0')) / 100).toFixed(2)}
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="invoice_title" className="block text-sm font-medium text-gray-700 mb-1">
+                    Invoice Title
+                  </label>
+                  <input
+                    type="text"
+                    id="invoice_title"
+                    value={percentageData.title}
+                    onChange={(e) => setPercentageData({ ...percentageData, title: e.target.value })}
+                    className="block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Invoice title..."
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="due_date" className="block text-sm font-medium text-gray-700 mb-1">
+                    Due Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    id="due_date"
+                    value={percentageData.due_date}
+                    onChange={(e) => setPercentageData({ ...percentageData, due_date: e.target.value })}
+                    className="block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPercentageModal(false);
+                      setSelectedEstimate(null);
+                      resetPercentageForm();
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={formLoading || !percentageData.percentage}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {formLoading ? 'Creating Invoice...' : 'Create Invoice'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
