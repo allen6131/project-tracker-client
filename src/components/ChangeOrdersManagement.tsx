@@ -36,8 +36,10 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [editingChangeOrder, setEditingChangeOrder] = useState<ChangeOrder | null>(null);
   const [emailingChangeOrder, setEmailingChangeOrder] = useState<ChangeOrder | null>(null);
+  const [viewingChangeOrder, setViewingChangeOrder] = useState<ChangeOrder | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
   
@@ -174,6 +176,11 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
       sender_name: user?.username || ''
     });
     setShowEmailModal(true);
+  };
+
+  const handleViewChangeOrder = (changeOrder: ChangeOrder) => {
+    setViewingChangeOrder(changeOrder);
+    setShowViewModal(true);
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -390,6 +397,12 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleViewChangeOrder(changeOrder)}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            View
+                          </button>
                           <button
                             onClick={() => handleEditChangeOrder(changeOrder)}
                             className="text-indigo-600 hover:text-indigo-900"
@@ -697,6 +710,193 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Change Order Modal */}
+      {showViewModal && viewingChangeOrder && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Change Order Details
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setViewingChangeOrder(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Change Order Header Info */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Change Order Number</p>
+                    <p className="font-semibold">{viewingChangeOrder.change_order_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Status</p>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(viewingChangeOrder.status)}`}>
+                      {viewingChangeOrder.status.charAt(0).toUpperCase() + viewingChangeOrder.status.slice(1)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Date Created</p>
+                    <p className="font-semibold">{formatDate(viewingChangeOrder.created_at)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Total Amount</p>
+                    <p className="font-semibold text-lg">${viewingChangeOrder.total_amount.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Change Order Details */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Title</h4>
+                  <p className="text-gray-700">{viewingChangeOrder.title}</p>
+                </div>
+
+                {viewingChangeOrder.description && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
+                    <p className="text-gray-700 whitespace-pre-wrap">{viewingChangeOrder.description}</p>
+                  </div>
+                )}
+
+                {viewingChangeOrder.reason && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Reason for Change</h4>
+                    <p className="text-gray-700 whitespace-pre-wrap">{viewingChangeOrder.reason}</p>
+                  </div>
+                )}
+
+                {viewingChangeOrder.justification && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Justification</h4>
+                    <p className="text-gray-700 whitespace-pre-wrap">{viewingChangeOrder.justification}</p>
+                  </div>
+                )}
+
+                {/* Customer Information */}
+                {(viewingChangeOrder.customer_name || viewingChangeOrder.customer_email) && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Customer Information</h4>
+                    <div className="bg-gray-50 p-3 rounded-lg space-y-1">
+                      {viewingChangeOrder.customer_name && (
+                        <p className="text-sm"><span className="font-medium">Name:</span> {viewingChangeOrder.customer_name}</p>
+                      )}
+                      {viewingChangeOrder.customer_email && (
+                        <p className="text-sm"><span className="font-medium">Email:</span> {viewingChangeOrder.customer_email}</p>
+                      )}
+                      {viewingChangeOrder.customer_phone && (
+                        <p className="text-sm"><span className="font-medium">Phone:</span> {viewingChangeOrder.customer_phone}</p>
+                      )}
+                      {viewingChangeOrder.customer_address && (
+                        <p className="text-sm"><span className="font-medium">Address:</span> {viewingChangeOrder.customer_address}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Items */}
+                {viewingChangeOrder.items && viewingChangeOrder.items.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Items</h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {viewingChangeOrder.items.map((item, index) => (
+                            <tr key={index}>
+                              <td className="px-4 py-2 text-sm text-gray-900">{item.description}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900">{item.quantity}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900">${item.unit_price.toFixed(2)}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900">${(item.quantity * item.unit_price).toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Totals */}
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Subtotal:</span>
+                          <span>${viewingChangeOrder.subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Tax ({viewingChangeOrder.tax_rate}%):</span>
+                          <span>${viewingChangeOrder.tax_amount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between font-medium text-lg border-t pt-2">
+                          <span>Total:</span>
+                          <span>${viewingChangeOrder.total_amount.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {viewingChangeOrder.notes && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Notes</h4>
+                    <p className="text-gray-700 whitespace-pre-wrap">{viewingChangeOrder.notes}</p>
+                  </div>
+                )}
+
+                {viewingChangeOrder.requested_date && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Requested Date</h4>
+                    <p className="text-gray-700">{formatDate(viewingChangeOrder.requested_date)}</p>
+                  </div>
+                )}
+
+                {viewingChangeOrder.approved_date && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Approved Date</h4>
+                    <p className="text-gray-700">{formatDate(viewingChangeOrder.approved_date)}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button
+                  onClick={() => handleEditChangeOrder(viewingChangeOrder)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  Edit Change Order
+                </button>
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setViewingChangeOrder(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
