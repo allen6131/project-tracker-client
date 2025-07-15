@@ -712,6 +712,28 @@ export const changeOrdersAPI = {
   sendChangeOrderEmail: async (id: number, emailData: { recipient_email: string; sender_name?: string }): Promise<{ message: string }> => {
     const response = await api.post(`/change-orders/${id}/send-email`, emailData);
     return response.data;
+  },
+
+  // View change order PDF
+  viewChangeOrderPDF: async (id: number): Promise<string> => {
+    const response: AxiosResponse<Blob> = await api.get(`/change-orders/${id}/view`, {
+      responseType: 'blob',
+    });
+    return URL.createObjectURL(response.data);
+  },
+
+  // Download change order PDF
+  downloadChangeOrderPDF: async (id: number): Promise<Blob> => {
+    const response: AxiosResponse<Blob> = await api.get(`/change-orders/${id}/download`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  // Regenerate change order PDF
+  regenerateChangeOrderPDF: async (id: number): Promise<{ message: string; pdf_path: string }> => {
+    const response: AxiosResponse<{ message: string; pdf_path: string }> = await api.post(`/change-orders/${id}/regenerate-pdf`);
+    return response.data;
   }
 };
 

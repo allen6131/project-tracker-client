@@ -7,6 +7,7 @@ import {
   ChangeOrderItem
 } from '../types';
 import { changeOrdersAPI } from '../services/api';
+import PDFViewer from './PDFViewer';
 
 interface ChangeOrdersManagementProps {
   projectId: number;
@@ -42,6 +43,13 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
   const [viewingChangeOrder, setViewingChangeOrder] = useState<ChangeOrder | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
+  
+  // PDF viewer state
+  const [showPDFViewer, setShowPDFViewer] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfTitle, setPdfTitle] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [currentPDFChangeOrder, setCurrentPDFChangeOrder] = useState<ChangeOrder | null>(null);
   
   // Dropdown state
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
@@ -198,9 +206,69 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
     setShowEmailModal(true);
   };
 
-  const handleViewChangeOrder = (changeOrder: ChangeOrder) => {
+  const handleViewChangeOrder = async (changeOrder: ChangeOrder) => {
+    try {
+      setPdfLoading(true);
+      setPdfTitle(`Change Order PDF - ${changeOrder.title}`);
+      setCurrentPDFChangeOrder(changeOrder);
+      
+      const url = await changeOrdersAPI.viewChangeOrderPDF(changeOrder.id);
+      setPdfUrl(url);
+      setShowPDFViewer(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleViewChangeOrderDetails = (changeOrder: ChangeOrder) => {
     setViewingChangeOrder(changeOrder);
     setShowViewModal(true);
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!currentPDFChangeOrder) return;
+    
+    try {
+      const blob = await changeOrdersAPI.downloadChangeOrderPDF(currentPDFChangeOrder.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `change-order-${currentPDFChangeOrder.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to download PDF');
+    }
+  };
+
+  const handleRegeneratePDF = async () => {
+    if (!currentPDFChangeOrder) return;
+    
+    try {
+      setPdfLoading(true);
+      await changeOrdersAPI.regenerateChangeOrderPDF(currentPDFChangeOrder.id);
+      
+      // Refresh the PDF view
+      const url = await changeOrdersAPI.viewChangeOrderPDF(currentPDFChangeOrder.id);
+      setPdfUrl(url);
+      setSuccess('PDF regenerated successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to regenerate PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleClosePDFViewer = () => {
+    setShowPDFViewer(false);
+    setPdfUrl(null);
+    setCurrentPDFChangeOrder(null);
+    setPdfTitle('');
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -437,6 +505,19 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                               >
                                 <svg className="w-4 h-4 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                View PDF
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  handleViewChangeOrderDetails(changeOrder);
+                                  setOpenDropdown(null);
+                                }}
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                              >
+                                <svg className="w-4 h-4 mr-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
@@ -963,6 +1044,17 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
           </div>
         </div>
       )}
+
+      {/* PDF Viewer */}
+      <PDFViewer
+        isOpen={showPDFViewer}
+        onClose={handleClosePDFViewer}
+        pdfUrl={pdfUrl}
+        title={pdfTitle}
+        onDownload={handleDownloadPDF}
+        onRegenerate={handleRegeneratePDF}
+        loading={pdfLoading}
+      />
     </div>
   );
 };
