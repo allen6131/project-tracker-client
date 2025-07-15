@@ -447,6 +447,25 @@ export const estimatesAPI = {
     return response.data;
   },
 
+  downloadEstimatePDF: async (id: number): Promise<Blob> => {
+    const response: AxiosResponse<Blob> = await api.get(`/estimates/${id}/pdf`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  viewEstimatePDF: async (id: number): Promise<string> => {
+    const response: AxiosResponse<Blob> = await api.get(`/estimates/${id}/view`, {
+      responseType: 'blob',
+    });
+    return URL.createObjectURL(response.data);
+  },
+
+  regenerateEstimatePDF: async (id: number): Promise<{ message: string; pdf_path: string }> => {
+    const response: AxiosResponse<{ message: string; pdf_path: string }> = await api.post(`/estimates/${id}/regenerate-pdf`);
+    return response.data;
+  },
+
   sendEstimateEmail: async (id: number, emailData: { recipient_email: string; sender_name?: string }): Promise<{ message: string; recipient: string }> => {
     const response: AxiosResponse<{ message: string; recipient: string }> = await api.post(`/estimates/${id}/send-email`, emailData);
     return response.data;
@@ -489,6 +508,25 @@ export const invoicesAPI = {
 
   deleteInvoice: async (id: number): Promise<{ message: string }> => {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/invoices/${id}`);
+    return response.data;
+  },
+
+  downloadInvoicePDF: async (id: number): Promise<Blob> => {
+    const response: AxiosResponse<Blob> = await api.get(`/invoices/${id}/download`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  viewInvoicePDF: async (id: number): Promise<string> => {
+    const response: AxiosResponse<Blob> = await api.get(`/invoices/${id}/view`, {
+      responseType: 'blob',
+    });
+    return URL.createObjectURL(response.data);
+  },
+
+  regenerateInvoicePDF: async (id: number): Promise<{ message: string; pdf_path: string }> => {
+    const response: AxiosResponse<{ message: string; pdf_path: string }> = await api.post(`/invoices/${id}/regenerate-pdf`);
     return response.data;
   },
 };

@@ -10,6 +10,7 @@ import {
   Project
 } from '../types';
 import { invoicesAPI, customersAPI, estimatesAPI, projectsAPI } from '../services/api';
+import PDFViewer from './PDFViewer';
 import PaymentForm from './PaymentForm';
 
 const InvoicesManagement: React.FC = () => {
@@ -32,6 +33,13 @@ const InvoicesManagement: React.FC = () => {
   // Payment state
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
+  
+  // PDF viewer state
+  const [showPDFViewer, setShowPDFViewer] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfTitle, setPdfTitle] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [currentPDFInvoice, setCurrentPDFInvoice] = useState<Invoice | null>(null);
   
   // Percentage form state
   const [percentageData, setPercentageData] = useState({
@@ -273,6 +281,66 @@ const InvoicesManagement: React.FC = () => {
     setShowPaymentForm(true);
   };
 
+  const handleViewPDF = async (invoice: Invoice) => {
+    try {
+      setPdfLoading(true);
+      setPdfTitle(`Invoice PDF - ${invoice.title}`);
+      setCurrentPDFInvoice(invoice);
+      
+      const url = await invoicesAPI.viewInvoicePDF(invoice.id);
+      setPdfUrl(url);
+      setShowPDFViewer(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!currentPDFInvoice) return;
+    
+    try {
+      const blob = await invoicesAPI.downloadInvoicePDF(currentPDFInvoice.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${currentPDFInvoice.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to download PDF');
+    }
+  };
+
+  const handleRegeneratePDF = async () => {
+    if (!currentPDFInvoice) return;
+    
+    try {
+      setPdfLoading(true);
+      await invoicesAPI.regenerateInvoicePDF(currentPDFInvoice.id);
+      
+      // Refresh the PDF view
+      const url = await invoicesAPI.viewInvoicePDF(currentPDFInvoice.id);
+      setPdfUrl(url);
+      setSuccess('PDF regenerated successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to regenerate PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleClosePDFViewer = () => {
+    setShowPDFViewer(false);
+    setPdfUrl(null);
+    setCurrentPDFInvoice(null);
+    setPdfTitle('');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -408,6 +476,13 @@ const InvoicesManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleViewPDF(invoice)}
+                          className="text-green-600 hover:text-green-900"
+                          title="View PDF"
+                        >
+                          View PDF
+                        </button>
                         <button
                           onClick={() => handleEditInvoice(invoice)}
                           className="text-indigo-600 hover:text-indigo-900"
@@ -694,6 +769,17 @@ const InvoicesManagement: React.FC = () => {
 
       {/* Form and other modals would go here - keeping same structure as original */}
       {/* Note: For brevity, I'm not including the full modal code, but it would be the same as in the original Invoices.tsx */}
+      
+      {/* PDF Viewer */}
+      <PDFViewer
+        isOpen={showPDFViewer}
+        onClose={handleClosePDFViewer}
+        pdfUrl={pdfUrl}
+        title={pdfTitle}
+        onDownload={handleDownloadPDF}
+        onRegenerate={handleRegeneratePDF}
+        loading={pdfLoading}
+      />
     </div>
   );
 };

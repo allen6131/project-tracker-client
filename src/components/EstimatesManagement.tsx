@@ -7,6 +7,7 @@ import {
   Project
 } from '../types';
 import { estimatesAPI, projectsAPI } from '../services/api';
+import PDFViewer from './PDFViewer';
 
 const EstimatesManagement: React.FC = () => {
   const { user, isAdmin } = useAuth();
@@ -24,6 +25,13 @@ const EstimatesManagement: React.FC = () => {
   const [emailingEstimate, setEmailingEstimate] = useState<Estimate | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
+  
+  // PDF viewer state
+  const [showPDFViewer, setShowPDFViewer] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfTitle, setPdfTitle] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [currentPDFEstimate, setCurrentPDFEstimate] = useState<Estimate | null>(null);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -237,6 +245,66 @@ const EstimatesManagement: React.FC = () => {
     }
   };
 
+  const handleViewPDF = async (estimate: Estimate) => {
+    try {
+      setPdfLoading(true);
+      setPdfTitle(`Estimate PDF - ${estimate.title}`);
+      setCurrentPDFEstimate(estimate);
+      
+      const url = await estimatesAPI.viewEstimatePDF(estimate.id);
+      setPdfUrl(url);
+      setShowPDFViewer(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!currentPDFEstimate) return;
+    
+    try {
+      const blob = await estimatesAPI.downloadEstimatePDF(currentPDFEstimate.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `estimate-${currentPDFEstimate.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to download PDF');
+    }
+  };
+
+  const handleRegeneratePDF = async () => {
+    if (!currentPDFEstimate) return;
+    
+    try {
+      setPdfLoading(true);
+      await estimatesAPI.regenerateEstimatePDF(currentPDFEstimate.id);
+      
+      // Refresh the PDF view
+      const url = await estimatesAPI.viewEstimatePDF(currentPDFEstimate.id);
+      setPdfUrl(url);
+      setSuccess('PDF regenerated successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to regenerate PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleClosePDFViewer = () => {
+    setShowPDFViewer(false);
+    setPdfUrl(null);
+    setCurrentPDFEstimate(null);
+    setPdfTitle('');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-gray-100 text-gray-800';
@@ -420,6 +488,13 @@ const EstimatesManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleViewPDF(estimate)}
+                          className="text-green-600 hover:text-green-900"
+                          title="View PDF"
+                        >
+                          View PDF
+                        </button>
                         <button
                           onClick={() => handleEditEstimate(estimate)}
                           className="text-indigo-600 hover:text-indigo-900"
@@ -727,6 +802,17 @@ const EstimatesManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* PDF Viewer */}
+      <PDFViewer
+        isOpen={showPDFViewer}
+        onClose={handleClosePDFViewer}
+        pdfUrl={pdfUrl}
+        title={pdfTitle}
+        onDownload={handleDownloadPDF}
+        onRegenerate={handleRegeneratePDF}
+        loading={pdfLoading}
+      />
     </div>
   );
 };
