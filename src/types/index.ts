@@ -726,3 +726,62 @@ export interface UpdateChangeOrderRequest {
 export interface ChangeOrdersResponse {
   changeOrders: ChangeOrder[];
 } 
+
+// Technician Scheduling Types
+export interface TechnicianSchedule {
+  id: number;
+  project_id: number;
+  technician_id: number;
+  scheduled_date: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  notes?: string | null;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  technician_name?: string;
+  technician_email?: string;
+  project_name?: string;
+  project_address?: string;
+  project_status?: string;
+  customer_name?: string;
+  created_by_name?: string;
+}
+
+export interface CreateTechnicianScheduleRequest {
+  project_id: number;
+  technician_id: number;
+  scheduled_date: string;
+  start_time?: string;
+  end_time?: string;
+  notes?: string;
+  status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+}
+
+export interface UpdateTechnicianScheduleRequest {
+  project_id?: number;
+  technician_id?: number;
+  scheduled_date?: string;
+  start_time?: string;
+  end_time?: string;
+  notes?: string;
+  status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+}
+
+export interface TechnicianSchedulesResponse {
+  schedules: TechnicianSchedule[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalSchedules: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface CalendarSchedulesResponse {
+  schedules: TechnicianSchedule[];
+  schedulesByDate: Record<string, TechnicianSchedule[]>;
+} 

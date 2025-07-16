@@ -60,7 +60,12 @@ import {
   ChangeOrder,
   CreateChangeOrderRequest,
   UpdateChangeOrderRequest,
-  ChangeOrdersResponse
+  ChangeOrdersResponse,
+  TechnicianSchedule,
+  CreateTechnicianScheduleRequest,
+  UpdateTechnicianScheduleRequest,
+  TechnicianSchedulesResponse,
+  CalendarSchedulesResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -734,6 +739,60 @@ export const changeOrdersAPI = {
   regenerateChangeOrderPDF: async (id: number): Promise<{ message: string; pdf_path: string }> => {
     const response: AxiosResponse<{ message: string; pdf_path: string }> = await api.post(`/change-orders/${id}/regenerate-pdf`);
     return response.data;
+  }
+};
+
+// Schedules API
+export const schedulesAPI = {
+  // Get schedules with filtering
+  getSchedules: async (filters?: {
+    startDate?: string;
+    endDate?: string;
+    technicianId?: number;
+    projectId?: number;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<TechnicianSchedulesResponse> => {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.technicianId) params.append('technicianId', filters.technicianId.toString());
+    if (filters?.projectId) params.append('projectId', filters.projectId.toString());
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    
+    const response = await api.get(`/schedules?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get calendar schedules
+  getCalendarSchedules: async (startDate: string, endDate: string, view?: string): Promise<CalendarSchedulesResponse> => {
+    const params = new URLSearchParams();
+    params.append('startDate', startDate);
+    params.append('endDate', endDate);
+    if (view) params.append('view', view);
+    
+    const response = await api.get(`/schedules/calendar?${params.toString()}`);
+    return response.data;
+  },
+
+  // Create schedule
+  createSchedule: async (data: CreateTechnicianScheduleRequest): Promise<TechnicianSchedule> => {
+    const response = await api.post('/schedules', data);
+    return response.data;
+  },
+
+  // Update schedule
+  updateSchedule: async (id: number, data: UpdateTechnicianScheduleRequest): Promise<TechnicianSchedule> => {
+    const response = await api.put(`/schedules/${id}`, data);
+    return response.data;
+  },
+
+  // Delete schedule
+  deleteSchedule: async (id: number): Promise<void> => {
+    await api.delete(`/schedules/${id}`);
   }
 };
 

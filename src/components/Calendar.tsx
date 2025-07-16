@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TodoListWithProject, TodoItem, User } from '../types';
 import { todoAPI, usersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import TechnicianCalendar from './TechnicianCalendar';
 
 interface CalendarDay {
   date: Date;
@@ -13,6 +14,7 @@ interface CalendarProps {}
 
 const Calendar: React.FC<CalendarProps> = () => {
   const { user, isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState<'todos' | 'technicians'>('todos');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [todoLists, setTodoLists] = useState<TodoListWithProject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -247,21 +249,52 @@ const Calendar: React.FC<CalendarProps> = () => {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('todos')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'todos'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Todo Calendar
+            </button>
+            <button
+              onClick={() => setActiveTab('technicians')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'technicians'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Technician Schedule
+            </button>
+          </nav>
+        </div>
+      </div>
+
       {/* Messages */}
-      {error && (
+      {error && activeTab === 'todos' && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
 
-      {success && (
+      {success && activeTab === 'todos' && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
           {success}
         </div>
       )}
 
-      {/* Calendar */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      {/* Tab Content */}
+      {activeTab === 'todos' && (
+        <>
+          {/* Todo Calendar */}
+          <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="p-6">
           {/* Calendar Header */}
           <div className="grid grid-cols-7 gap-1 mb-2">
@@ -347,87 +380,66 @@ const Calendar: React.FC<CalendarProps> = () => {
                   No todos due on this day.
                 </div>
               ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="space-y-4">
                   {selectedDayTodos.map((todo) => (
-                    <div key={todo.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start flex-grow">
+                    <div key={todo.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{todo.content}</h4>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {todo.projectName} - {todo.listTitle}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
                           <input
                             type="checkbox"
                             checked={todo.is_completed}
                             onChange={() => handleToggleItem(todo)}
-                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <div className="ml-3 flex-grow">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm font-medium text-blue-600">
-                                {todo.projectName}
-                              </span>
-                              <span className="text-xs text-gray-500">•</span>
-                              <span className="text-xs text-gray-600">{todo.listTitle}</span>
-                            </div>
-                            
-                            <div className={`text-sm ${todo.is_completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                              {todo.content}
-                            </div>
-                            
-                            <div className="mt-2 flex items-center gap-2">
-                              {editingItemId === todo.id ? (
-                                <div className="flex items-center gap-2">
-                                  <select
-                                    value={editingAssignment}
-                                    onChange={(e) => setEditingAssignment(e.target.value === '' ? '' : Number(e.target.value))}
-                                    className="text-xs border border-gray-300 rounded px-2 py-1"
-                                  >
-                                    <option value="">Unassigned</option>
-                                    {activeUsers.map(user => (
-                                      <option key={user.id} value={user.id}>
-                                        {user.username} ({user.role})
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <button
-                                    onClick={() => handleAssignmentChange(todo.id, editingAssignment)}
-                                    className="text-xs text-green-600 hover:text-green-800"
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    onClick={cancelEditingAssignment}
-                                    className="text-xs text-gray-500 hover:text-gray-700"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  {todo.assigned_username ? (
-                                    <span 
-                                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border cursor-pointer hover:bg-opacity-80 ${getRoleBadgeColor(todo.assigned_user_role)}`}
-                                      onClick={() => (isAdmin || todo.assigned_to === user?.id) && startEditingAssignment(todo)}
-                                      title={isAdmin || todo.assigned_to === user?.id ? "Click to change assignment" : ""}
-                                    >
-                                      {todo.assigned_username}
-                                    </span>
-                                  ) : (
-                                    <button
-                                      onClick={() => (isAdmin || !todo.assigned_to) && startEditingAssignment(todo)}
-                                      className="text-xs text-gray-500 hover:text-blue-600 border border-dashed border-gray-300 rounded px-2 py-1"
-                                      disabled={!isAdmin && Boolean(todo.assigned_to)}
-                                    >
-                                      Assign
-                                    </button>
-                                  )}
-                                  
-                                  {isOverdue(todo.due_date!, todo.is_completed) && (
-                                    <span className="text-xs text-red-600 font-medium">
-                                      Overdue
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                          {editingItemId === todo.id ? (
+                            <select
+                              value={editingAssignment}
+                              onChange={(e) => setEditingAssignment(e.target.value === '' ? '' : Number(e.target.value))}
+                              className="text-xs border rounded px-2 py-1"
+                            >
+                              <option value="">Unassigned</option>
+                              {activeUsers.map(user => (
+                                <option key={user.id} value={user.id}>
+                                  {user.username}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              todo.assigned_username 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {todo.assigned_username || 'Unassigned'}
+                            </span>
+                          )}
+                          {editingItemId === todo.id ? (
+                            <button
+                              onClick={() => handleAssignmentChange(todo.id, editingAssignment)}
+                              className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                            >
+                              Save
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => startEditingAssignment(todo)}
+                              className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                            >
+                              Assign
+                            </button>
+                          )}
+                          
+                          {isOverdue(todo.due_date!, todo.is_completed) && (
+                            <span className="text-xs text-red-600 font-medium">
+                              Overdue
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -437,6 +449,12 @@ const Calendar: React.FC<CalendarProps> = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
+      )}
+
+      {activeTab === 'technicians' && (
+        <TechnicianCalendar />
       )}
     </div>
   );
