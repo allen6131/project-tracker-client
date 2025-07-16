@@ -16,6 +16,7 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
     const [editingItemId, setEditingItemId] = useState<number | null>(null);
     const [editingAssignment, setEditingAssignment] = useState<number | ''>('');
     const [editingDueDate, setEditingDueDate] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Load active users on component mount
     useEffect(() => {
@@ -32,19 +33,29 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
 
     const handleAddItem = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newItemContent.trim()) return;
+        if (!newItemContent.trim() || isSubmitting) return;
 
         try {
-            const assignedTo = newItemAssignedTo === '' ? null : Number(newItemAssignedTo);
-            const dueDate = newItemDueDate.trim() === '' ? null : newItemDueDate;
+            setIsSubmitting(true);
+            
+            // Handle optional assignment - convert empty string and 0 to null
+            const assignedTo = (newItemAssignedTo === '' || newItemAssignedTo === 0) ? null : Number(newItemAssignedTo);
+            // Handle optional due date - convert empty string to null
+            const dueDate = (newItemDueDate === '' || !newItemDueDate.trim()) ? null : newItemDueDate;
+            
             const newItem = await todoAPI.createTodoItem(list.id, newItemContent.trim(), assignedTo, dueDate);
             const updatedList = { ...list, items: [...list.items, newItem] };
             onListUpdate(updatedList);
+            
+            // Reset form fields
             setNewItemContent('');
             setNewItemAssignedTo('');
             setNewItemDueDate('');
         } catch (error) {
-            console.error("Failed to add item", error);
+            console.error("Failed to add item:", error);
+            // You could add a toast notification here if needed
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -264,16 +275,17 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
                     type="text"
                     value={newItemContent}
                     onChange={e => setNewItemContent(e.target.value)}
-                    placeholder="Add a new task"
-                    className="w-full border-t pt-2 text-sm focus:outline-none"
+                    placeholder="Add a new task..."
+                    className="w-full border-t pt-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
                 />
                 <div className="flex items-center gap-2">
                     <select
                         value={newItemAssignedTo}
                         onChange={e => setNewItemAssignedTo(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+                        className="text-xs border border-gray-300 rounded px-2 py-1 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="">Assign to someone (optional)</option>
+                        <option value="">👤 Assign to someone (optional)</option>
                         {activeUsers.map(user => (
                             <option key={user.id} value={user.id}>
                                 {user.username} ({user.role})
@@ -284,15 +296,16 @@ const TodoList: React.FC<TodoListProps> = ({ list, onListUpdate, onListDelete })
                         type="date"
                         value={newItemDueDate}
                         onChange={e => setNewItemDueDate(e.target.value)}
-                        className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
-                        title="Set due date (optional)"
+                        className="text-xs border border-gray-300 rounded px-2 py-1 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        title="📅 Set due date (optional)"
+                        placeholder="Due date (optional)"
                     />
                     <button
                         type="submit"
-                        className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                        disabled={!newItemContent.trim()}
+                        className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                        disabled={!newItemContent.trim() || isSubmitting}
                     >
-                        Add
+                        {isSubmitting ? 'Adding...' : 'Add'}
                     </button>
                 </div>
             </form>
