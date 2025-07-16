@@ -4,16 +4,18 @@ import { schedulesAPI, projectsAPI, usersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TechnicianScheduleModal from './TechnicianScheduleModal';
 
-interface TechnicianCalendarProps {}
+interface TechnicianCalendarProps {
+  currentDate: Date;
+  navigateMonth: (direction: 'prev' | 'next') => void;
+  setError: (error: string | null) => void;
+  setSuccess: (success: string | null) => void;
+}
 
-const TechnicianCalendar: React.FC<TechnicianCalendarProps> = () => {
+const TechnicianCalendar: React.FC<TechnicianCalendarProps> = ({ currentDate, navigateMonth, setError, setSuccess }) => {
   const { user, isAdmin } = useAuth();
-  const [currentDate, setCurrentDate] = useState(new Date());
   const [schedules, setSchedules] = useState<TechnicianSchedule[]>([]);
   const [schedulesByDate, setSchedulesByDate] = useState<Record<string, TechnicianSchedule[]>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [technicians, setTechnicians] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -109,11 +111,7 @@ const TechnicianCalendar: React.FC<TechnicianCalendarProps> = () => {
     }
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
-    setCurrentDate(newDate);
-  };
+  // Navigation is now handled by parent component
 
   const getCalendarDays = () => {
     const year = currentDate.getFullYear();
@@ -184,53 +182,8 @@ const TechnicianCalendar: React.FC<TechnicianCalendarProps> = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-lg font-medium text-gray-900">Technician Schedule</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Assign technicians to projects and track their schedules
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigateMonth('prev')}
-                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50"
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <h3 className="text-xl font-semibold text-gray-900 min-w-[200px] text-center">
-                {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </h3>
-              <button
-                onClick={() => navigateMonth('next')}
-                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50"
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Messages */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-          {success}
-        </div>
-      )}
+      {/* Messages are now handled by parent component */}
 
       {/* Legend */}
       <div className="bg-white shadow rounded-lg p-4">

@@ -219,9 +219,14 @@ const Calendar: React.FC<CalendarProps> = () => {
         <div className="px-4 py-5 sm:p-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-lg font-medium text-gray-900">Calendar</h2>
+              <h2 className="text-lg font-medium text-gray-900">
+                {activeTab === 'todos' ? 'Calendar' : 'Technician Schedule'}
+              </h2>
               <p className="mt-1 text-sm text-gray-500">
-                View todos by due date
+                {activeTab === 'todos' 
+                  ? 'View todos by due date' 
+                  : 'Assign technicians to projects and track their schedules'
+                }
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -278,13 +283,13 @@ const Calendar: React.FC<CalendarProps> = () => {
       </div>
 
       {/* Messages */}
-      {error && activeTab === 'todos' && (
+      {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
 
-      {success && activeTab === 'todos' && (
+      {success && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
           {success}
         </div>
@@ -454,7 +459,12 @@ const Calendar: React.FC<CalendarProps> = () => {
       )}
 
       {activeTab === 'technicians' && (
-        <TechnicianCalendar />
+        <TechnicianCalendar 
+          currentDate={currentDate}
+          navigateMonth={navigateMonth}
+          setError={setError}
+          setSuccess={setSuccess}
+        />
       )}
     </div>
   );
