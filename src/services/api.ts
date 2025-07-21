@@ -817,13 +817,13 @@ export const commentsAPI = {
 
   // Update comment
   updateComment: async (commentId: number, data: UpdateCommentRequest): Promise<ProjectComment> => {
-    const response = await api.put(`/comments/${commentId}`, data);
+    const response = await api.put(`/projects/comments/${commentId}`, data);
     return response.data.comment;
   },
 
   // Delete comment
   deleteComment: async (commentId: number): Promise<void> => {
-    await api.delete(`/comments/${commentId}`);
+    await api.delete(`/projects/comments/${commentId}`);
   },
 
   // Get mentionable users for a project
