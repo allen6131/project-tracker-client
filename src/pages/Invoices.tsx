@@ -299,8 +299,23 @@ const Invoices: React.FC = () => {
     setFormLoading(true);
     
     try {
+      // Clean up the form data by removing null values for optional fields
+      const cleanedFormData = { ...formData };
+      if (cleanedFormData.customer_id === null) {
+        delete (cleanedFormData as any).customer_id;
+      }
+      if (cleanedFormData.estimate_id === null) {
+        delete (cleanedFormData as any).estimate_id;
+      }
+      if (cleanedFormData.project_id === null) {
+        delete (cleanedFormData as any).project_id;
+      }
+      if (cleanedFormData.due_date === '') {
+        delete (cleanedFormData as any).due_date;
+      }
+
       const invoiceData: CreateInvoiceRequest = {
-        ...formData,
+        ...cleanedFormData,
         items: items.filter(item => item.description.trim() !== '')
       };
 

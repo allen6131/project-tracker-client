@@ -150,7 +150,6 @@ const ProjectDetail: React.FC = () => {
                 title: projectName,
                 description: `Invoice for project: ${project.name}`,
                 project_id: parseInt(id),
-                customer_id: null,
                 customer_name: '',
                 customer_email: '',
                 customer_phone: '',
@@ -161,9 +160,7 @@ const ProjectDetail: React.FC = () => {
                     unit_price: 0
                 }],
                 tax_rate: 0,
-                due_date: '',
-                notes: '',
-                status: 'draft' as const
+                notes: ''
             };
 
             await invoicesAPI.createInvoice(invoiceData);

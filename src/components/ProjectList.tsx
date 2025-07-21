@@ -80,7 +80,6 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
         title: invoiceTitle,
         description: `Invoice for project: ${project.name}`,
         project_id: project.id,
-        customer_id: null,
         customer_name: project.customer_name || '',
         customer_email: '',
         customer_phone: '',
@@ -91,9 +90,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
           unit_price: 0
         }],
         tax_rate: 0,
-        due_date: '',
-        notes: '',
-        status: 'draft' as const
+        notes: ''
       };
 
       await invoicesAPI.createInvoice(invoiceData);
