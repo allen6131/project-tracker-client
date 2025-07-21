@@ -514,7 +514,7 @@ export const invoicesAPI = {
     return response.data;
   },
 
-  createInvoiceFromEstimate: async (estimateId: number, invoiceData: { title?: string; due_date?: string }): Promise<{ invoice: Invoice; message: string }> => {
+  createInvoiceFromEstimate: async (estimateId: number, invoiceData: { title?: string; due_date?: string; percentage?: number; amount?: number }): Promise<{ invoice: Invoice; message: string }> => {
     const response: AxiosResponse<{ invoice: Invoice; message: string }> = await api.post(`/invoices/from-estimate/${estimateId}`, invoiceData);
     return response.data;
   },

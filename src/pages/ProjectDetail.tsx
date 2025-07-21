@@ -51,6 +51,21 @@ const ProjectDetail: React.FC = () => {
     const [invoicePdfLoading, setInvoicePdfLoading] = useState(false);
     const [currentPDFInvoice, setCurrentPDFInvoice] = useState<Invoice | null>(null);
 
+    // Invoice from estimate state
+    const [showInvoiceFromEstimateModal, setShowInvoiceFromEstimateModal] = useState(false);
+    const [selectedEstimateForInvoice, setSelectedEstimateForInvoice] = useState<Estimate | null>(null);
+    const [invoiceFromEstimateLoading, setInvoiceFromEstimateLoading] = useState(false);
+    const [invoiceFromEstimateData, setInvoiceFromEstimateData] = useState({
+        percentage: '',
+        title: '',
+        due_date: ''
+    });
+
+    const clearMessages = () => {
+        setError(null);
+        setSuccess(null);
+    };
+
     useEffect(() => {
         const fetchProjectDetails = async () => {
             if (!id) return;
@@ -381,6 +396,81 @@ const ProjectDetail: React.FC = () => {
         setInvoicePdfUrl(null);
         setCurrentPDFInvoice(null);
         setInvoicePdfTitle('');
+    };
+
+    // Invoice from estimate handlers
+    const handleCreateInvoiceFromEstimate = (estimate: Estimate) => {
+        setSelectedEstimateForInvoice(estimate);
+        setInvoiceFromEstimateData({
+            percentage: '',
+            title: `Partial Invoice - ${estimate.title}`,
+            due_date: ''
+        });
+        setShowInvoiceFromEstimateModal(true);
+    };
+
+    const handleInvoiceFromEstimateSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!selectedEstimateForInvoice) return;
+        
+        const percentage = parseFloat(invoiceFromEstimateData.percentage);
+        
+        if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+            setError('Please enter a valid percentage between 1 and 100');
+            return;
+        }
+        
+        try {
+            setInvoiceFromEstimateLoading(true);
+            clearMessages();
+            
+            // Calculate the invoice amount based on percentage
+            const invoiceAmount = (selectedEstimateForInvoice.total_amount * percentage) / 100;
+            
+            const invoiceData = {
+                title: invoiceFromEstimateData.title || `${percentage}% of ${selectedEstimateForInvoice.title}`,
+                due_date: invoiceFromEstimateData.due_date || undefined,
+                percentage: percentage,
+                amount: invoiceAmount
+            };
+            
+            await invoicesAPI.createInvoiceFromEstimate(selectedEstimateForInvoice.id, invoiceData);
+            
+            // Refresh invoices list
+            if (id) {
+                const invoicesResponse = await invoicesAPI.getProjectInvoices(parseInt(id));
+                setInvoices(invoicesResponse.invoices);
+            }
+            
+            setSuccess(`Invoice created successfully for ${percentage}% ($${invoiceAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}) of estimate "${selectedEstimateForInvoice.title}"`);
+            
+            setShowInvoiceFromEstimateModal(false);
+            setSelectedEstimateForInvoice(null);
+            setInvoiceFromEstimateData({
+                percentage: '',
+                title: '',
+                due_date: ''
+            });
+            
+            setTimeout(() => setSuccess(null), 5000);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to create invoice from estimate');
+            setTimeout(() => setError(null), 5000);
+        } finally {
+            setInvoiceFromEstimateLoading(false);
+        }
+    };
+
+    const handleCloseInvoiceFromEstimateModal = () => {
+        setShowInvoiceFromEstimateModal(false);
+        setSelectedEstimateForInvoice(null);
+        setInvoiceFromEstimateData({
+            percentage: '',
+            title: '',
+            due_date: ''
+        });
+        setError(null);
     };
 
     if (loading) {
@@ -870,6 +960,15 @@ const ProjectDetail: React.FC = () => {
                                                         >
                                                             View
                                                         </button>
+                                                        {estimate.status === 'approved' && isAdmin && (
+                                                            <button
+                                                                onClick={() => handleCreateInvoiceFromEstimate(estimate)}
+                                                                className="text-purple-600 hover:text-purple-900"
+                                                                title="Create invoice from this estimate"
+                                                            >
+                                                                Create Invoice
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -1036,6 +1135,98 @@ const ProjectDetail: React.FC = () => {
                 onRegenerate={handleRegenerateInvoicePDF}
                 loading={invoicePdfLoading}
             />
+
+            {/* Create Invoice from Estimate Modal */}
+            {showInvoiceFromEstimateModal && selectedEstimateForInvoice && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+                        <div className="mt-3">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                                Create Invoice from Estimate
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">
+                                Creating invoice from: <strong>{selectedEstimateForInvoice.title}</strong><br />
+                                Estimate Amount: <strong>${selectedEstimateForInvoice.total_amount.toFixed(2)}</strong>
+                            </p>
+                            
+                            <form onSubmit={handleInvoiceFromEstimateSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Percentage of Estimate Amount to Invoice *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="1"
+                                        max="100"
+                                        value={invoiceFromEstimateData.percentage}
+                                        onChange={(e) => setInvoiceFromEstimateData({ 
+                                            ...invoiceFromEstimateData, 
+                                            percentage: e.target.value 
+                                        })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Enter percentage (1-100)"
+                                        required
+                                    />
+                                    {invoiceFromEstimateData.percentage && (
+                                        <p className="mt-1 text-sm text-gray-600">
+                                            Invoice Amount: ${((selectedEstimateForInvoice.total_amount * parseFloat(invoiceFromEstimateData.percentage || '0')) / 100).toFixed(2)}
+                                        </p>
+                                    )}
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Invoice Title (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={invoiceFromEstimateData.title}
+                                        onChange={(e) => setInvoiceFromEstimateData({ 
+                                            ...invoiceFromEstimateData, 
+                                            title: e.target.value 
+                                        })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Custom invoice title"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Due Date (Optional)
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={invoiceFromEstimateData.due_date}
+                                        onChange={(e) => setInvoiceFromEstimateData({ 
+                                            ...invoiceFromEstimateData, 
+                                            due_date: e.target.value 
+                                        })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+
+                                <div className="flex justify-end space-x-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={handleCloseInvoiceFromEstimateModal}
+                                        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={invoiceFromEstimateLoading || !invoiceFromEstimateData.percentage}
+                                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {invoiceFromEstimateLoading ? 'Creating Invoice...' : 'Create Invoice'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
