@@ -423,7 +423,7 @@ const ProjectDetail: React.FC = () => {
         setSelectedEstimateForInvoice(estimate);
         setInvoiceFromEstimateData({
             percentage: '',
-            title: `Partial Invoice - ${estimate.title}`,
+            title: '', // Let server generate default title
             due_date: ''
         });
         setShowInvoiceFromEstimateModal(true);
@@ -435,6 +435,9 @@ const ProjectDetail: React.FC = () => {
         if (!selectedEstimateForInvoice) return;
         
         const percentage = parseFloat(invoiceFromEstimateData.percentage);
+        
+        console.log('Form data before validation:', invoiceFromEstimateData);
+        console.log('Parsed percentage:', percentage);
         
         if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
             setError('Please enter a valid percentage between 1 and 100');
@@ -449,11 +452,14 @@ const ProjectDetail: React.FC = () => {
             const invoiceAmount = (selectedEstimateForInvoice.total_amount * percentage) / 100;
             
             const invoiceData = {
-                title: invoiceFromEstimateData.title || `${percentage}% of ${selectedEstimateForInvoice.title}`,
-                due_date: invoiceFromEstimateData.due_date || undefined,
+                title: invoiceFromEstimateData.title.trim() || `${percentage}% of ${selectedEstimateForInvoice.title}`,
+                due_date: invoiceFromEstimateData.due_date.trim() || undefined,
                 percentage: percentage,
                 amount: invoiceAmount
             };
+            
+            console.log('Sending invoice data:', invoiceData);
+            console.log('Selected estimate:', selectedEstimateForInvoice);
             
             await invoicesAPI.createInvoiceFromEstimate(selectedEstimateForInvoice.id, invoiceData);
             
