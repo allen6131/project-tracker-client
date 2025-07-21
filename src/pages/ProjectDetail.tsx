@@ -9,6 +9,7 @@ import CustomerInfo from '../components/CustomerInfo';
 import RFIForm from '../components/RFIForm';
 import ChangeOrdersManagement from '../components/ChangeOrdersManagement';
 import ProjectComments from '../components/ProjectComments';
+import PDFViewer from '../components/PDFViewer';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -35,6 +36,13 @@ const ProjectDetail: React.FC = () => {
         notes: ''
     });
     const [selectedDocument, setSelectedDocument] = useState<File | null>(null);
+
+    // PDF viewer state for estimates
+    const [showEstimatePDFViewer, setShowEstimatePDFViewer] = useState(false);
+    const [estimatePdfUrl, setEstimatePdfUrl] = useState<string | null>(null);
+    const [estimatePdfTitle, setEstimatePdfTitle] = useState('');
+    const [estimatePdfLoading, setEstimatePdfLoading] = useState(false);
+    const [currentPDFEstimate, setCurrentPDFEstimate] = useState<Estimate | null>(null);
 
     useEffect(() => {
         const fetchProjectDetails = async () => {
@@ -245,6 +253,66 @@ const ProjectDetail: React.FC = () => {
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to download estimate');
         }
+    };
+
+    const handleViewEstimate = async (estimate: Estimate) => {
+        try {
+            setEstimatePdfLoading(true);
+            setEstimatePdfTitle(`Estimate PDF - ${estimate.title}`);
+            setCurrentPDFEstimate(estimate);
+            
+            const url = await estimatesAPI.viewEstimatePDF(estimate.id);
+            setEstimatePdfUrl(url);
+            setShowEstimatePDFViewer(true);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to load estimate PDF');
+        } finally {
+            setEstimatePdfLoading(false);
+        }
+    };
+
+    const handleDownloadEstimatePDF = async () => {
+        if (!currentPDFEstimate) return;
+        
+        try {
+            const blob = await estimatesAPI.downloadEstimate(currentPDFEstimate.id);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `estimate-${currentPDFEstimate.id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to download estimate PDF');
+        }
+    };
+
+    const handleRegenerateEstimatePDF = async () => {
+        if (!currentPDFEstimate) return;
+        
+        try {
+            setEstimatePdfLoading(true);
+            await estimatesAPI.regenerateEstimatePDF(currentPDFEstimate.id);
+            
+            // Refresh the PDF view
+            const url = await estimatesAPI.viewEstimatePDF(currentPDFEstimate.id);
+            setEstimatePdfUrl(url);
+            setSuccess('Estimate PDF regenerated successfully');
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to regenerate estimate PDF');
+        } finally {
+            setEstimatePdfLoading(false);
+        }
+    };
+
+    const handleCloseEstimatePDFViewer = () => {
+        setShowEstimatePDFViewer(false);
+        setEstimatePdfUrl(null);
+        setCurrentPDFEstimate(null);
+        setEstimatePdfTitle('');
     };
 
     if (loading) {
@@ -729,7 +797,7 @@ const ProjectDetail: React.FC = () => {
                                                             </button>
                                                         )}
                                                         <button
-                                                            onClick={() => navigate(`/estimates/${estimate.id}`)}
+                                                            onClick={() => handleViewEstimate(estimate)}
                                                             className="text-blue-600 hover:text-blue-900"
                                                         >
                                                             View
@@ -878,6 +946,17 @@ const ProjectDetail: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Estimate PDF Viewer Modal */}
+            <PDFViewer
+                isOpen={showEstimatePDFViewer}
+                onClose={handleCloseEstimatePDFViewer}
+                pdfUrl={estimatePdfUrl}
+                title={estimatePdfTitle}
+                onDownload={handleDownloadEstimatePDF}
+                onRegenerate={handleRegenerateEstimatePDF}
+                loading={estimatePdfLoading}
+            />
         </div>
     );
 };
