@@ -398,6 +398,26 @@ const ProjectDetail: React.FC = () => {
         setInvoicePdfTitle('');
     };
 
+    const handleQuickStatusUpdate = async (estimateId: number, newStatus: 'approved' | 'rejected' | 'sent' | 'draft') => {
+        try {
+            clearMessages();
+            await estimatesAPI.updateEstimate(estimateId, { status: newStatus });
+            
+            // Refresh estimates list
+            if (id) {
+                const estimatesResponse = await estimatesAPI.getProjectEstimates(parseInt(id));
+                setEstimates(estimatesResponse.estimates);
+            }
+            
+            setSuccess(`Estimate status updated to ${newStatus}`);
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (error: any) {
+            console.error('Error updating estimate status:', error);
+            setError(error.response?.data?.message || 'Failed to update estimate status');
+            setTimeout(() => setError(null), 5000);
+        }
+    };
+
     // Invoice from estimate handlers
     const handleCreateInvoiceFromEstimate = (estimate: Estimate) => {
         setSelectedEstimateForInvoice(estimate);
@@ -455,8 +475,21 @@ const ProjectDetail: React.FC = () => {
             
             setTimeout(() => setSuccess(null), 5000);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to create invoice from estimate');
-            setTimeout(() => setError(null), 5000);
+            console.error('Error creating invoice from estimate:', err);
+            
+            let errorMessage = 'Failed to create invoice from estimate';
+            
+            if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.response?.data?.errors) {
+                const validationErrors = err.response.data.errors.map((e: any) => e.msg || e.message).join(', ');
+                errorMessage = `Validation failed: ${validationErrors}`;
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            
+            setError(errorMessage);
+            setTimeout(() => setError(null), 8000);
         } finally {
             setInvoiceFromEstimateLoading(false);
         }
@@ -960,7 +993,20 @@ const ProjectDetail: React.FC = () => {
                                                         >
                                                             View
                                                         </button>
-                                                        {estimate.status === 'approved' && isAdmin && (
+                                                        
+                                                        {/* Status management - allow admins to approve estimates */}
+                                                        {isAdmin && estimate.status !== 'approved' && (
+                                                            <button
+                                                                onClick={() => handleQuickStatusUpdate(estimate.id, 'approved')}
+                                                                className="text-green-600 hover:text-green-900"
+                                                                title="Approve this estimate to enable invoice creation"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                        )}
+                                                        
+                                                        {/* Create Invoice button */}
+                                                        {estimate.status === 'approved' && isAdmin ? (
                                                             <button
                                                                 onClick={() => handleCreateInvoiceFromEstimate(estimate)}
                                                                 className="text-purple-600 hover:text-purple-900"
@@ -968,7 +1014,21 @@ const ProjectDetail: React.FC = () => {
                                                             >
                                                                 Create Invoice
                                                             </button>
-                                                        )}
+                                                        ) : !isAdmin ? (
+                                                            <span 
+                                                                className="text-gray-400 text-xs"
+                                                                title="Admin access required to create invoices"
+                                                            >
+                                                                Admin Only
+                                                            </span>
+                                                        ) : estimate.status !== 'approved' ? (
+                                                            <span 
+                                                                className="text-gray-400 text-xs"
+                                                                title="Estimate must be approved before creating invoice"
+                                                            >
+                                                                Need Approval
+                                                            </span>
+                                                        ) : null}
                                                     </td>
                                                 </tr>
                                             ))}
