@@ -44,6 +44,13 @@ const ProjectDetail: React.FC = () => {
     const [estimatePdfLoading, setEstimatePdfLoading] = useState(false);
     const [currentPDFEstimate, setCurrentPDFEstimate] = useState<Estimate | null>(null);
 
+    // PDF viewer state for invoices
+    const [showInvoicePDFViewer, setShowInvoicePDFViewer] = useState(false);
+    const [invoicePdfUrl, setInvoicePdfUrl] = useState<string | null>(null);
+    const [invoicePdfTitle, setInvoicePdfTitle] = useState('');
+    const [invoicePdfLoading, setInvoicePdfLoading] = useState(false);
+    const [currentPDFInvoice, setCurrentPDFInvoice] = useState<Invoice | null>(null);
+
     useEffect(() => {
         const fetchProjectDetails = async () => {
             if (!id) return;
@@ -313,6 +320,67 @@ const ProjectDetail: React.FC = () => {
         setEstimatePdfUrl(null);
         setCurrentPDFEstimate(null);
         setEstimatePdfTitle('');
+    };
+
+    // Invoice PDF handlers
+    const handleViewInvoice = async (invoice: Invoice) => {
+        try {
+            setInvoicePdfLoading(true);
+            setInvoicePdfTitle(`Invoice PDF - ${invoice.invoice_number}`);
+            setCurrentPDFInvoice(invoice);
+            
+            const url = await invoicesAPI.viewInvoicePDF(invoice.id);
+            setInvoicePdfUrl(url);
+            setShowInvoicePDFViewer(true);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to load invoice PDF');
+        } finally {
+            setInvoicePdfLoading(false);
+        }
+    };
+
+    const handleDownloadInvoicePDF = async () => {
+        if (!currentPDFInvoice) return;
+        
+        try {
+            const blob = await invoicesAPI.downloadInvoicePDF(currentPDFInvoice.id);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice-${currentPDFInvoice.invoice_number}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to download invoice PDF');
+        }
+    };
+
+    const handleRegenerateInvoicePDF = async () => {
+        if (!currentPDFInvoice) return;
+        
+        try {
+            setInvoicePdfLoading(true);
+            await invoicesAPI.regenerateInvoicePDF(currentPDFInvoice.id);
+            
+            // Refresh the PDF view
+            const url = await invoicesAPI.viewInvoicePDF(currentPDFInvoice.id);
+            setInvoicePdfUrl(url);
+            setSuccess('Invoice PDF regenerated successfully');
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to regenerate invoice PDF');
+        } finally {
+            setInvoicePdfLoading(false);
+        }
+    };
+
+    const handleCloseInvoicePDFViewer = () => {
+        setShowInvoicePDFViewer(false);
+        setInvoicePdfUrl(null);
+        setCurrentPDFInvoice(null);
+        setInvoicePdfTitle('');
     };
 
     if (loading) {
@@ -682,7 +750,7 @@ const ProjectDetail: React.FC = () => {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                         <button
-                                                            onClick={() => navigate(`/invoices/${invoice.id}`)}
+                                                            onClick={() => handleViewInvoice(invoice)}
                                                             className="text-blue-600 hover:text-blue-900"
                                                         >
                                                             View
@@ -956,6 +1024,17 @@ const ProjectDetail: React.FC = () => {
                 onDownload={handleDownloadEstimatePDF}
                 onRegenerate={handleRegenerateEstimatePDF}
                 loading={estimatePdfLoading}
+            />
+
+            {/* Invoice PDF Viewer Modal */}
+            <PDFViewer
+                isOpen={showInvoicePDFViewer}
+                onClose={handleCloseInvoicePDFViewer}
+                pdfUrl={invoicePdfUrl}
+                title={invoicePdfTitle}
+                onDownload={handleDownloadInvoicePDF}
+                onRegenerate={handleRegenerateInvoicePDF}
+                loading={invoicePdfLoading}
             />
         </div>
     );
