@@ -89,19 +89,38 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, project, onSuccess, onErro
   };
 
   const handleSubmit = async (action: 'draft' | 'send') => {
-    if (!selectedCustomer || !selectedContact) {
-      onError('Please select a customer and contact');
-      return;
-    }
+    // For sending, we need complete information
+    if (action === 'send') {
+      if (!selectedCustomer || !selectedContact) {
+        onError('Please select a customer and contact to send RFI');
+        return;
+      }
 
-    if (action === 'send' && !selectedContact.email) {
-      onError('Selected contact does not have an email address');
-      return;
-    }
+      if (!selectedContact.email) {
+        onError('Selected contact does not have an email address');
+        return;
+      }
 
-    if (!formData.subject.trim() || !formData.message.trim()) {
-      onError('Please fill in all required fields');
-      return;
+      if (!formData.subject.trim() || !formData.message.trim()) {
+        onError('Please fill in subject and message to send RFI');
+        return;
+      }
+    } else {
+      // For drafts, we're more flexible but still need basic info
+      if (!selectedCustomer || !selectedContact) {
+        onError('Please select a customer and contact to save RFI draft');
+        return;
+      }
+
+      if (!formData.subject.trim()) {
+        onError('Please enter a subject to save RFI draft');
+        return;
+      }
+
+      if (!formData.message.trim()) {
+        onError('Please enter a message to save RFI draft');
+        return;
+      }
     }
 
     setLoading(true);
@@ -118,7 +137,9 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, project, onSuccess, onErro
         action
       };
 
+      console.log('Creating RFI:', { action, rfiData });
       await rfiAPI.createRFI(rfiData);
+      console.log('RFI created successfully');
       
       if (action === 'draft') {
         onSuccess('RFI saved as draft successfully!');
@@ -146,7 +167,24 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, project, onSuccess, onErro
       
     } catch (error: any) {
       console.error('Error with RFI:', error);
-      onError(error.response?.data?.message || `Failed to ${action === 'draft' ? 'save' : 'send'} RFI`);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      let errorMessage = `Failed to ${action === 'draft' ? 'save' : 'send'} RFI`;
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        errorMessage = error.response.data.errors.map((e: any) => e.msg || e.message).join(', ');
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      onError(errorMessage);
     } finally {
       setLoading(false);
     }
