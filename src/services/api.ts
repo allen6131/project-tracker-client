@@ -381,8 +381,21 @@ export const customersAPI = {
 
 // RFI API
 export const rfiAPI = {
-  sendRFI: async (rfiData: CreateRFIRequest): Promise<SendRFIResponse> => {
-    const response: AxiosResponse<SendRFIResponse> = await api.post('/rfi/send', rfiData);
+  // Create RFI (draft or send immediately)
+  createRFI: async (rfiData: CreateRFIRequest & { action: 'draft' | 'send' }): Promise<SendRFIResponse> => {
+    const response: AxiosResponse<SendRFIResponse> = await api.post('/rfi/create', rfiData);
+    return response.data;
+  },
+
+  // Send existing draft RFI
+  sendRFI: async (rfiId: number, recipientEmail?: string): Promise<SendRFIResponse> => {
+    const response: AxiosResponse<SendRFIResponse> = await api.post(`/rfi/send/${rfiId}`, recipientEmail ? { recipient_email: recipientEmail } : {});
+    return response.data;
+  },
+
+  // Update RFI (only drafts)
+  updateRFI: async (rfiId: number, data: Partial<CreateRFIRequest>): Promise<{ message: string; rfi: RFI }> => {
+    const response: AxiosResponse<{ message: string; rfi: RFI }> = await api.put(`/rfi/${rfiId}`, data);
     return response.data;
   },
 
