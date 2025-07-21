@@ -8,6 +8,7 @@ import MaterialCosts from '../components/MaterialCosts';
 import CustomerInfo from '../components/CustomerInfo';
 import RFIForm from '../components/RFIForm';
 import ChangeOrdersManagement from '../components/ChangeOrdersManagement';
+import ProjectComments from '../components/ProjectComments';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -22,7 +23,7 @@ const ProjectDetail: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
-    const [activeTab, setActiveTab] = useState<'todos' | 'materials' | 'customer' | 'rfi' | 'invoices' | 'estimates' | 'change-orders'>('todos');
+    const [activeTab, setActiveTab] = useState<'todos' | 'materials' | 'customer' | 'rfi' | 'invoices' | 'estimates' | 'change-orders' | 'comments'>('todos');
 
     // Estimate form state
     const [showEstimateForm, setShowEstimateForm] = useState(false);
@@ -474,6 +475,16 @@ const ProjectDetail: React.FC = () => {
                         >
                             Change Orders
                         </button>
+                        <button
+                            onClick={() => setActiveTab('comments')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'comments'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Comments
+                        </button>
                     </nav>
                 </div>
 
@@ -749,6 +760,12 @@ const ProjectDetail: React.FC = () => {
                                     phone: '',
                                     address: project.address || ''
                                 } : undefined}
+                            />
+                        </div>
+                    ) : activeTab === 'comments' ? (
+                        <div>
+                            <ProjectComments 
+                                projectId={parseInt(id || '0')}
                             />
                         </div>
                     ) : null}

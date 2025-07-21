@@ -784,4 +784,47 @@ export interface TechnicianSchedulesResponse {
 export interface CalendarSchedulesResponse {
   schedules: TechnicianSchedule[];
   schedulesByDate: Record<string, TechnicianSchedule[]>;
+}
+
+// Project Comments Types
+export interface ProjectComment {
+  id: number;
+  project_id: number;
+  user_id: number;
+  content: string;
+  mentions: number[];
+  parent_id?: number | null;
+  is_edited: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined fields from query
+  username: string;
+  email: string;
+  role: 'admin' | 'user';
+  mentioned_users: MentionedUser[];
+}
+
+export interface MentionedUser {
+  id: number;
+  username: string;
+  email: string;
+}
+
+export interface CreateCommentRequest {
+  content: string;
+  mentions?: number[];
+  parent_id?: number;
+}
+
+export interface UpdateCommentRequest {
+  content: string;
+  mentions?: number[];
+}
+
+export interface CommentsResponse {
+  comments: ProjectComment[];
+}
+
+export interface MentionableUsersResponse {
+  users: User[];
 } 
