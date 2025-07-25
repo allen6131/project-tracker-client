@@ -25,6 +25,8 @@ const EstimatesManagement: React.FC = () => {
   const [emailingEstimate, setEmailingEstimate] = useState<Estimate | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
+  const [showSendPrompt, setShowSendPrompt] = useState(false);
+  const [newlyCreatedEstimate, setNewlyCreatedEstimate] = useState<Estimate | null>(null);
   
   // PDF viewer state
   const [showPDFViewer, setShowPDFViewer] = useState(false);
@@ -234,8 +236,10 @@ const EstimatesManagement: React.FC = () => {
           notes: formData.notes
         };
 
-        await estimatesAPI.createEstimate(createData, selectedDocument);
+        const response = await estimatesAPI.createEstimate(createData, selectedDocument);
         setSuccess('Estimate created successfully');
+        setNewlyCreatedEstimate(response.estimate);
+        setShowSendPrompt(true);
       }
       
       setShowForm(false);
@@ -793,53 +797,150 @@ const EstimatesManagement: React.FC = () => {
       {/* Email Modal */}
       {showEmailModal && emailingEstimate && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Send Estimate via Email
               </h3>
               
               <form onSubmit={handleEmailSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Estimate: {emailingEstimate.title}
-                  </label>
-                  <p className="text-sm text-gray-500">
-                    Total: ${emailingEstimate.total_amount.toFixed(2)}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Project: {emailingEstimate.project_name}
-                  </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left side - Form inputs */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Estimate Details
+                      </label>
+                      <div className="bg-gray-50 p-3 rounded-md space-y-1">
+                        <p className="text-sm font-medium">{emailingEstimate.title}</p>
+                        <p className="text-sm text-gray-500">
+                          Project: {emailingEstimate.project_name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Total: ${emailingEstimate.total_amount.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Recipient Email *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={emailData.recipient_email}
+                        onChange={(e) => setEmailData({ ...emailData, recipient_email: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="customer@example.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Your Name (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={emailData.sender_name}
+                        onChange={(e) => setEmailData({ ...emailData, sender_name: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Your name or company"
+                      />
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                      <p className="text-sm text-blue-800">
+                        <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        The estimate PDF will be automatically attached to the email.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right side - Email preview */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Preview
+                      </label>
+                      <div className="border border-gray-200 rounded-md overflow-hidden">
+                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                          <p className="text-xs text-gray-600">
+                            Subject: Estimate for {emailingEstimate.project_name || 'Project'} from {emailData.sender_name || user?.username || 'AmpTrack'}
+                          </p>
+                        </div>
+                        <div className="p-4 bg-white max-h-96 overflow-y-auto">
+                          {/* Email Header */}
+                          <div className="bg-green-500 text-white p-4 text-center rounded-t-lg">
+                            <h2 className="text-xl font-bold">Project Estimate</h2>
+                          </div>
+                          
+                          {/* Email Content */}
+                          <div className="bg-gray-50 p-6 rounded-b-lg">
+                            <div className="bg-white p-4 rounded-md mb-4">
+                              <h3 className="font-semibold text-lg mb-2">{emailingEstimate.title}</h3>
+                              {emailingEstimate.description && (
+                                <p className="text-gray-600 mb-3">{emailingEstimate.description}</p>
+                              )}
+                              
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p><strong>Estimate ID:</strong> #{emailingEstimate.id}</p>
+                                  <p><strong>Project:</strong> {emailingEstimate.project_name || 'N/A'}</p>
+                                  <p><strong>Date:</strong> {new Date(emailingEstimate.created_at).toLocaleDateString()}</p>
+                                  <p>
+                                    <strong>Status:</strong> 
+                                    <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(emailingEstimate.status)}`}>
+                                      {emailingEstimate.status.toUpperCase()}
+                                    </span>
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold">From: {emailData.sender_name || user?.username || 'AmpTrack'}</p>
+                                  {emailingEstimate.customer_name && (
+                                    <p><strong>Customer:</strong> {emailingEstimate.customer_name}</p>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="mt-4 text-center">
+                                <div className="border-2 border-green-500 rounded-lg p-4 inline-block">
+                                  <p className="text-sm text-gray-600 mb-1">Total Estimate Amount</p>
+                                  <p className="text-2xl font-bold text-green-600">
+                                    ${emailingEstimate.total_amount.toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="mt-4 bg-yellow-50 border border-yellow-200 p-3 rounded-md">
+                                <p className="text-sm">
+                                  📎 <strong>Estimate Document:</strong> Please find the detailed estimate document attached to this email as a PDF.
+                                </p>
+                              </div>
+                              
+                              {emailingEstimate.notes && (
+                                <div className="mt-4">
+                                  <h4 className="font-semibold mb-2">Notes:</h4>
+                                  <p className="bg-gray-50 p-3 rounded-md text-sm">{emailingEstimate.notes}</p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="text-sm text-gray-600 space-y-2">
+                              <p>Thank you for considering our services for your project. The estimate amount shown above covers all work outlined in the attached document.</p>
+                              <p>If you have any questions about this estimate or would like to discuss the project further, please don't hesitate to contact us.</p>
+                              <p>We look forward to the opportunity to work with you!</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Recipient Email *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={emailData.recipient_email}
-                    onChange={(e) => setEmailData({ ...emailData, recipient_email: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="customer@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Your Name (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={emailData.sender_name}
-                    onChange={(e) => setEmailData({ ...emailData, sender_name: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Your name or company"
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
+                <div className="flex justify-end space-x-3 pt-4 border-t">
                   <button
                     type="button"
                     onClick={() => {
@@ -875,6 +976,61 @@ const EstimatesManagement: React.FC = () => {
         onRegenerate={handleRegeneratePDF}
         loading={pdfLoading}
       />
+
+      {/* Send Estimate Prompt */}
+      {showSendPrompt && newlyCreatedEstimate && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-center mb-4">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                  <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              
+              <h3 className="text-lg font-medium text-gray-900 text-center mb-4">
+                Estimate Created Successfully!
+              </h3>
+              
+              <p className="text-sm text-gray-600 text-center mb-6">
+                Would you like to send this estimate to the customer now?
+              </p>
+              
+              <div className="bg-gray-50 p-4 rounded-md mb-6">
+                <p className="text-sm font-medium text-gray-900">{newlyCreatedEstimate.title}</p>
+                <p className="text-sm text-gray-500">Project: {newlyCreatedEstimate.project_name}</p>
+                <p className="text-sm text-gray-500">Total: ${newlyCreatedEstimate.total_amount.toFixed(2)}</p>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowSendPrompt(false);
+                    setNewlyCreatedEstimate(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Later
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSendPrompt(false);
+                    handleSendEmail(newlyCreatedEstimate);
+                  }}
+                  className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  <svg className="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Send Email Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
