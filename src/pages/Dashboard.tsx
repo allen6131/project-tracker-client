@@ -14,10 +14,11 @@ import ServicesCatalog from '../components/ServicesCatalog';
 import AllTodoLists from '../components/AllTodoLists';
 import Calendar from '../components/Calendar';
 import Logo from '../components/Logo';
+import CompanyProfile from '../components/CompanyProfile';
 
 const Dashboard: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'projects' | 'users' | 'customers' | 'estimates' | 'invoices' | 'materials' | 'services' | 'todos' | 'calendar'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'users' | 'customers' | 'estimates' | 'invoices' | 'materials' | 'services' | 'todos' | 'calendar' | 'company'>('projects');
   const [showUserForm, setShowUserForm] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -140,7 +141,7 @@ const Dashboard: React.FC = () => {
     setEditingProject(null);
   };
 
-  const handleTabChange = (tab: 'projects' | 'users' | 'customers' | 'estimates' | 'invoices' | 'materials' | 'services' | 'todos' | 'calendar') => {
+  const handleTabChange = (tab: 'projects' | 'users' | 'customers' | 'estimates' | 'invoices' | 'materials' | 'services' | 'todos' | 'calendar' | 'company') => {
     setActiveTab(tab);
     clearMessages();
   };
@@ -155,7 +156,8 @@ const Dashboard: React.FC = () => {
       { id: 'invoices', label: 'Invoices', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
       { id: 'materials', label: 'Materials', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
       { id: 'services', label: 'Services', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
-      { id: 'users', label: 'Users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' }
+      { id: 'users', label: 'Users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' },
+      { id: 'company', label: 'Company', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M12 7h.01M12 11h.01M12 15h.01M8 7h.01M8 11h.01M8 15h.01M16 7h.01M16 11h.01M16 15h.01' }
     ] : [])
   ] as const;
 
@@ -340,6 +342,7 @@ const Dashboard: React.FC = () => {
         {isAdmin && activeTab === 'invoices' && <InvoicesManagement />}
         {isAdmin && activeTab === 'materials' && <MaterialsCatalog />}
         {isAdmin && activeTab === 'services' && <ServicesCatalog />}
+        {isAdmin && activeTab === 'company' && <CompanyProfile />}
       </main>
 
       {/* Modals */}

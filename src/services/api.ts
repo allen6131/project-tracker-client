@@ -70,7 +70,8 @@ import {
   CreateCommentRequest,
   UpdateCommentRequest,
   CommentsResponse,
-  MentionableUsersResponse
+  MentionableUsersResponse,
+  CompanyProfile
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -846,6 +847,28 @@ export const commentsAPI = {
   }
 };
 
+// Company Profile API
+export const companyProfileAPI = {
+  getProfile: async (): Promise<{ profile: CompanyProfile }> => {
+    const response = await api.get('/company-profile');
+    return response.data;
+  },
+
+  updateProfile: async (data: FormData): Promise<{ profile: CompanyProfile; message: string }> => {
+    const response = await api.put('/company-profile', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  deleteLogo: async (): Promise<{ message: string }> => {
+    const response = await api.delete('/company-profile/logo');
+    return response.data;
+  },
+};
+
 // Combined export for compatibility
 const apiService = {
   ...authAPI,
@@ -865,7 +888,8 @@ const apiService = {
   ...servicesAPI,
   ...changeOrdersAPI,
   ...schedulesAPI,
-  ...commentsAPI
+  ...commentsAPI,
+  ...companyProfileAPI
 };
 
 export default apiService; 

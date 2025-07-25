@@ -810,6 +810,40 @@ export interface MentionedUser {
   email: string;
 }
 
+export interface Comment {
+  id: number;
+  project_id: number;
+  user_id: number;
+  username: string;
+  content: string;
+  mentions: number[];
+  parent_id: number | null;
+  is_edited: boolean;
+  created_at: string;
+  updated_at: string;
+  replies?: Comment[];
+}
+
+export interface CompanyProfile {
+  id: number;
+  company_name: string;
+  logo_path?: string | null;
+  logo_url?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  tax_id?: string | null;
+  footer_text?: string | null;
+  created_by?: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CreateCommentRequest {
   content: string;
   mentions?: number[];
