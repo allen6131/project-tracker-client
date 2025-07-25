@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';
+import ThemeToggle from '../components/ThemeToggle';
 import { 
   Invoice, 
   CreateInvoiceRequest, 
@@ -382,19 +383,20 @@ const Invoices: React.FC = () => {
   const { subtotal, taxAmount, total } = calculateTotal();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 transition-colors">
       {/* Navigation */}
-      <nav className="bg-white shadow-lg">
+      <nav className="bg-white dark:bg-gray-800 shadow-lg transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/dashboard">
                 <Logo size="md" />
               </Link>
-              <span className="ml-4 text-lg text-gray-600">Invoices</span>
+              <span className="ml-4 text-lg text-gray-600 dark:text-gray-300">Invoices</span>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-700">Welcome, {user?.username}</span>
+              <ThemeToggle size="sm" />
+              <span className="text-gray-700 dark:text-gray-300">Welcome, {user?.username}</span>
               <button
                 onClick={logout}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
@@ -409,12 +411,12 @@ const Invoices: React.FC = () => {
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg transition-colors">
             <div className="px-4 py-5 sm:p-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900">Invoices Management</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Invoices Management</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Create and manage customer invoices
                   </p>
                 </div>
@@ -439,13 +441,13 @@ const Invoices: React.FC = () => {
 
         {/* Messages */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg">
             {success}
           </div>
         )}
