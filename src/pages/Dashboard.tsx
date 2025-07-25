@@ -306,7 +306,6 @@ const Dashboard: React.FC = () => {
         {isAdmin && activeTab === 'materials' && <MaterialsCatalog />}
         {isAdmin && activeTab === 'services' && <ServicesCatalog />}
         {isAdmin && activeTab === 'company' && <CompanyProfile />}
-      </main>
 
       {/* Modals */}
       <UserForm
