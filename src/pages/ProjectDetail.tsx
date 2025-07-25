@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Project, TodoList as TodoListType, Invoice, Estimate, Customer, CreateEstimateRequest } from '../types';
+import { Project, TodoList as TodoListType, Invoice, Estimate, Customer, CreateEstimateRequest, CreateInvoiceRequest, UpdateInvoiceRequest, InvoiceItem } from '../types';
 import { projectsAPI, todoAPI, invoicesAPI, estimatesAPI, customersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TodoList from '../components/TodoList';
@@ -60,6 +60,25 @@ const ProjectDetail: React.FC = () => {
         title: '',
         due_date: ''
     });
+
+    // Invoice form state
+    const [showInvoiceForm, setShowInvoiceForm] = useState(false);
+    const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+    const [invoiceFormLoading, setInvoiceFormLoading] = useState(false);
+    const [invoiceFormData, setInvoiceFormData] = useState({
+        title: '',
+        description: '',
+        customer_name: '',
+        customer_email: '',
+        customer_phone: '',
+        customer_address: '',
+        tax_rate: 0,
+        due_date: '',
+        notes: ''
+    });
+    const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([
+        { description: '', quantity: 1, unit_price: 0 }
+    ]);
 
     const clearMessages = () => {
         setError(null);
@@ -509,6 +528,143 @@ const ProjectDetail: React.FC = () => {
         setError(null);
     };
 
+    // Invoice form handlers
+    const handleCreateInvoiceForm = () => {
+        if (!project) return;
+        
+        clearMessages();
+        setEditingInvoice(null);
+        setInvoiceFormData({
+            title: `Invoice for ${project.name}`,
+            description: `Invoice for project: ${project.name}`,
+            customer_name: project.customer_name || '',
+            customer_email: '',
+            customer_phone: '',
+            customer_address: '',
+            tax_rate: 0,
+            due_date: '',
+            notes: ''
+        });
+        setInvoiceItems([
+            { description: `Work on project: ${project.name}`, quantity: 1, unit_price: 0 }
+        ]);
+        setShowInvoiceForm(true);
+    };
+
+    const handleEditInvoice = (invoice: Invoice) => {
+        clearMessages();
+        setEditingInvoice(invoice);
+        setInvoiceFormData({
+            title: invoice.title,
+            description: invoice.description || '',
+            customer_name: invoice.customer_name || '',
+            customer_email: invoice.customer_email || '',
+            customer_phone: invoice.customer_phone || '',
+            customer_address: invoice.customer_address || '',
+            tax_rate: invoice.tax_rate,
+            due_date: invoice.due_date || '',
+            notes: invoice.notes || ''
+        });
+        setInvoiceItems(invoice.items && invoice.items.length > 0 
+            ? invoice.items 
+            : [{ description: '', quantity: 1, unit_price: 0 }]);
+        setShowInvoiceForm(true);
+    };
+
+    const handleDeleteInvoice = async (invoiceId: number) => {
+        if (!window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            await invoicesAPI.deleteInvoice(invoiceId);
+            setSuccess('Invoice deleted successfully');
+            
+            // Refresh invoices list
+            if (id) {
+                const invoicesResponse = await invoicesAPI.getProjectInvoices(parseInt(id));
+                setInvoices(invoicesResponse.invoices);
+            }
+            
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to delete invoice');
+            setTimeout(() => setError(null), 5000);
+        }
+    };
+
+    const handleInvoiceFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!project || !id) return;
+
+        if (invoiceItems.length === 0 || invoiceItems.every(item => !item.description.trim())) {
+            setError('Please add at least one item with a description');
+            return;
+        }
+
+        setInvoiceFormLoading(true);
+        try {
+            const invoiceData: CreateInvoiceRequest | UpdateInvoiceRequest = {
+                ...invoiceFormData,
+                project_id: parseInt(id),
+                items: invoiceItems.filter(item => item.description.trim() !== '')
+            };
+
+            if (editingInvoice) {
+                await invoicesAPI.updateInvoice(editingInvoice.id, invoiceData);
+                setSuccess('Invoice updated successfully');
+            } else {
+                await invoicesAPI.createInvoice(invoiceData as CreateInvoiceRequest);
+                setSuccess('Invoice created successfully');
+            }
+
+            // Refresh invoices list
+            const invoicesResponse = await invoicesAPI.getProjectInvoices(parseInt(id));
+            setInvoices(invoicesResponse.invoices);
+
+            // Close modal and reset form
+            setShowInvoiceForm(false);
+            setEditingInvoice(null);
+            
+            setTimeout(() => setSuccess(null), 5000);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to save invoice');
+            setTimeout(() => setError(null), 5000);
+        } finally {
+            setInvoiceFormLoading(false);
+        }
+    };
+
+    const handleInvoiceFormCancel = () => {
+        setShowInvoiceForm(false);
+        setEditingInvoice(null);
+        clearMessages();
+    };
+
+    const handleInvoiceItemChange = (index: number, field: keyof InvoiceItem, value: string | number) => {
+        const updatedItems = [...invoiceItems];
+        updatedItems[index] = { ...updatedItems[index], [field]: value };
+        setInvoiceItems(updatedItems);
+    };
+
+    const addInvoiceItem = () => {
+        setInvoiceItems([...invoiceItems, { description: '', quantity: 1, unit_price: 0 }]);
+    };
+
+    const removeInvoiceItem = (index: number) => {
+        if (invoiceItems.length > 1) {
+            setInvoiceItems(invoiceItems.filter((_, i) => i !== index));
+        }
+    };
+
+    const calculateInvoiceTotal = () => {
+        const subtotal = invoiceItems.reduce((sum, item) => {
+            return sum + (parseFloat(String(item.quantity)) * parseFloat(String(item.unit_price)));
+        }, 0);
+        const taxAmount = subtotal * (invoiceFormData.tax_rate / 100);
+        return { subtotal, taxAmount, total: subtotal + taxAmount };
+    };
+
     if (loading) {
         return <div className="p-8">Loading project details...</div>;
     }
@@ -642,7 +798,7 @@ const ProjectDetail: React.FC = () => {
                 <div className="flex space-x-3">
                     {isAdmin && (
                         <button 
-                            onClick={handleCreateInvoice}
+                            onClick={handleCreateInvoiceForm}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -808,7 +964,20 @@ const ProjectDetail: React.FC = () => {
                         <div>
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-bold">Project Invoices</h2>
-                                <span className="text-sm text-gray-600">{invoices.length} invoice(s) for this project</span>
+                                <div className="flex items-center space-x-4">
+                                    <span className="text-sm text-gray-600">{invoices.length} invoice(s) for this project</span>
+                                    {isAdmin && (
+                                        <button
+                                            onClick={handleCreateInvoiceForm}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            <span>Create Invoice</span>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                             
                             {invoices.length === 0 ? (
@@ -819,6 +988,14 @@ const ProjectDetail: React.FC = () => {
                                         </svg>
                                         <p className="text-lg">No invoices found for this project</p>
                                         <p className="text-sm mt-2">Invoices created for this project will appear here</p>
+                                        {isAdmin && (
+                                            <button
+                                                onClick={handleCreateInvoiceForm}
+                                                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                                            >
+                                                Create First Invoice
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -875,12 +1052,30 @@ const ProjectDetail: React.FC = () => {
                                                         {new Date(invoice.created_at).toLocaleDateString()}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        <button
-                                                            onClick={() => handleViewInvoice(invoice)}
-                                                            className="text-blue-600 hover:text-blue-900"
-                                                        >
-                                                            View
-                                                        </button>
+                                                        <div className="flex justify-end space-x-2">
+                                                            <button
+                                                                onClick={() => handleViewInvoice(invoice)}
+                                                                className="text-blue-600 hover:text-blue-900"
+                                                            >
+                                                                View
+                                                            </button>
+                                                            {isAdmin && (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => handleEditInvoice(invoice)}
+                                                                        className="text-indigo-600 hover:text-indigo-900"
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteInvoice(invoice.id)}
+                                                                        className="text-red-600 hover:text-red-900"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -1283,6 +1478,231 @@ const ProjectDetail: React.FC = () => {
                                         className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {invoiceFromEstimateLoading ? 'Creating Invoice...' : 'Create Invoice'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Invoice Form Modal */}
+            {showInvoiceForm && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+                        <div className="mt-3">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                                {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
+                            </h3>
+                            
+                            <form onSubmit={handleInvoiceFormSubmit} className="space-y-6">
+                                {/* Basic Information */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Title *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={invoiceFormData.title}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, title: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Due Date</label>
+                                        <input
+                                            type="date"
+                                            value={invoiceFormData.due_date}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                                    <textarea
+                                        rows={3}
+                                        value={invoiceFormData.description}
+                                        onChange={(e) => setInvoiceFormData({ ...invoiceFormData, description: e.target.value })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+
+                                {/* Customer Details */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Customer Name</label>
+                                        <input
+                                            type="text"
+                                            value={invoiceFormData.customer_name}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, customer_name: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Customer Email</label>
+                                        <input
+                                            type="email"
+                                            value={invoiceFormData.customer_email}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, customer_email: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Customer Phone</label>
+                                        <input
+                                            type="tel"
+                                            value={invoiceFormData.customer_phone}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, customer_phone: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="100"
+                                            value={invoiceFormData.tax_rate}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, tax_rate: parseFloat(e.target.value) || 0 })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Customer Address</label>
+                                    <textarea
+                                        rows={2}
+                                        value={invoiceFormData.customer_address}
+                                        onChange={(e) => setInvoiceFormData({ ...invoiceFormData, customer_address: e.target.value })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+
+                                {/* Items Section */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h4 className="text-md font-medium text-gray-900">Invoice Items</h4>
+                                        <button
+                                            type="button"
+                                            onClick={addInvoiceItem}
+                                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                                        >
+                                            Add Item
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        {invoiceItems.map((item, index) => (
+                                            <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                                                <div className="col-span-5">
+                                                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.description}
+                                                        onChange={(e) => handleInvoiceItemChange(index, 'description', e.target.value)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={item.quantity}
+                                                        onChange={(e) => handleInvoiceItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700">Unit Price</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={item.unit_price}
+                                                        onChange={(e) => handleInvoiceItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700">Total</label>
+                                                    <div className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm">
+                                                        ${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="col-span-1">
+                                                    {invoiceItems.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeInvoiceItem(index)}
+                                                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded text-sm"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Totals Display */}
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    {(() => {
+                                        const { subtotal, taxAmount, total } = calculateInvoiceTotal();
+                                        return (
+                                            <>
+                                                <div className="flex justify-between text-sm">
+                                                    <span>Subtotal:</span>
+                                                    <span>${subtotal.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span>Tax ({invoiceFormData.tax_rate}%):</span>
+                                                    <span>${taxAmount.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-lg font-medium border-t pt-2 mt-2">
+                                                    <span>Total:</span>
+                                                    <span>${total.toFixed(2)}</span>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Notes</label>
+                                    <textarea
+                                        rows={3}
+                                        value={invoiceFormData.notes}
+                                        onChange={(e) => setInvoiceFormData({ ...invoiceFormData, notes: e.target.value })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+
+                                {/* Form Actions */}
+                                <div className="flex justify-end space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={handleInvoiceFormCancel}
+                                        className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={invoiceFormLoading}
+                                        className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                                    >
+                                        {invoiceFormLoading ? 'Saving...' : (editingInvoice ? 'Update Invoice' : 'Create Invoice')}
                                     </button>
                                 </div>
                             </form>
