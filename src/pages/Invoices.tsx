@@ -453,7 +453,7 @@ const Invoices: React.FC = () => {
         )}
 
         {/* Filters */}
-        <div className="mb-6 bg-white shadow rounded-lg p-4">
+        <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-4 transition-colors">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <input
@@ -461,14 +461,14 @@ const Invoices: React.FC = () => {
                 placeholder="Search invoices..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
             <div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">All Statuses</option>
                 <option value="draft">Draft</option>
@@ -483,61 +483,61 @@ const Invoices: React.FC = () => {
 
         {/* Invoices List */}
         {loading ? (
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="text-center">Loading invoices...</div>
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
+            <div className="text-center text-gray-900 dark:text-white">Loading invoices...</div>
           </div>
         ) : (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Invoice #
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Title
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Customer
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Project
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Total
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Due Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {invoices.map((invoice) => (
-                    <tr key={invoice.id}>
+                    <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{invoice.invoice_number}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.invoice_number}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{invoice.title}</div>
-                        <div className="text-sm text-gray-500">{invoice.description}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.title}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{invoice.description}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {invoice.customer_name || 'No customer'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {invoice.project_id ? (
-                          <span className="text-blue-600">
+                          <span className="text-blue-600 dark:text-blue-400">
                             Project #{invoice.project_id}
                           </span>
                         ) : (
-                          <span className="text-gray-400">No project</span>
+                          <span className="text-gray-400 dark:text-gray-500">No project</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -545,10 +545,10 @@ const Invoices: React.FC = () => {
                           {invoice.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         ${invoice.total_amount.toFixed(2)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'No due date'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -668,27 +668,27 @@ const Invoices: React.FC = () => {
         {/* Estimate Selector Modal */}
         {showEstimateSelector && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
               <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                   Select Estimate to Convert to Invoice
                 </h3>
                 
                 <div className="max-h-96 overflow-y-auto">
                   {estimates.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No approved estimates available</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-4">No approved estimates available</p>
                   ) : (
                     <div className="space-y-2">
                       {estimates.map((estimate) => (
-                        <div key={estimate.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                        <div key={estimate.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                           <div className="flex justify-between items-center">
                             <div>
-                              <h4 className="font-medium text-gray-900">{estimate.title}</h4>
-                              <p className="text-sm text-gray-500">Project: {estimate.project_name}</p>
-                              <p className="text-sm text-gray-500">Customer: {estimate.customer_name || 'No customer'}</p>
-                              <p className="text-sm text-gray-600 font-medium">${estimate.total_amount.toFixed(2)}</p>
+                              <h4 className="font-medium text-gray-900 dark:text-white">{estimate.title}</h4>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">Project: {estimate.project_name}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">Customer: {estimate.customer_name || 'No customer'}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">${estimate.total_amount.toFixed(2)}</p>
                               {estimate.document_path && (
-                                <p className="text-sm text-gray-500">📄 Document attached</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">📄 Document attached</p>
                               )}
                             </div>
                             <button
@@ -707,7 +707,7 @@ const Invoices: React.FC = () => {
                 <div className="mt-4 flex justify-end">
                   <button
                     onClick={() => setShowEstimateSelector(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     Cancel
                   </button>
@@ -720,9 +720,9 @@ const Invoices: React.FC = () => {
         {/* Create/Edit Form Modal - Similar to Estimates form but adapted for invoices */}
         {showForm && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
               <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                   {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
                 </h3>
                 
@@ -730,18 +730,18 @@ const Invoices: React.FC = () => {
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Title *</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title *</label>
                       <input
                         type="text"
                         required
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Customer</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer</label>
                       <select
                         value={formData.customer_id || ''}
                         onChange={(e) => {
@@ -753,7 +753,7 @@ const Invoices: React.FC = () => {
                             customer_name: customer?.name || ''
                           });
                         }}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">Select Customer</option>
                         {customers.map(customer => (
@@ -765,11 +765,11 @@ const Invoices: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Project (Optional)</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project (Optional)</label>
                       <select
                         value={formData.project_id || ''}
                         onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">Select Project (Optional)</option>
                         {projects.map(project => (
@@ -782,11 +782,11 @@ const Invoices: React.FC = () => {
 
                     {editingInvoice && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Status</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
                         <select
                           value={formData.status || 'draft'}
                           onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         >
                           <option value="draft">Draft</option>
                           <option value="sent">Sent</option>
@@ -799,12 +799,12 @@ const Invoices: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                     <textarea
                       rows={3}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
 
@@ -998,15 +998,15 @@ const Invoices: React.FC = () => {
         {/* Percentage Modal */}
         {showPercentageModal && selectedEstimate && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
               <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                   Create Partial Invoice from Estimate
                 </h3>
                 
                 <form onSubmit={handlePercentageSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Percentage of Estimate Amount to Invoice
                     </label>
                     <input
@@ -1016,36 +1016,36 @@ const Invoices: React.FC = () => {
                       max="100"
                       value={percentageData.percentage}
                       onChange={(e) => setPercentageData({ ...percentageData, percentage: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Invoice Title (Optional)
                     </label>
                     <input
                       type="text"
                       value={percentageData.title}
                       onChange={(e) => setPercentageData({ ...percentageData, title: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Due Date (Optional)
                     </label>
                     <input
                       type="date"
                       value={percentageData.due_date}
                       onChange={(e) => setPercentageData({ ...percentageData, due_date: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div className="flex justify-end space-x-3">
                     <button
                       type="button"
                       onClick={() => setShowPercentageModal(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                       Cancel
                     </button>

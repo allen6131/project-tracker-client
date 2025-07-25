@@ -46,3 +46,43 @@ code {
 .dark {
   color-scheme: dark;
 }
+
+/* Global dark mode improvements for tables and modals */
+.dark table {
+  color-scheme: dark;
+}
+
+.dark table th {
+  @apply bg-gray-700 text-gray-300;
+}
+
+.dark table td {
+  @apply text-white;
+}
+
+.dark table tbody tr:hover {
+  @apply bg-gray-700;
+}
+
+/* Modal improvements */
+.dark .modal-content {
+  @apply bg-gray-800 border-gray-700;
+}
+
+/* Form input improvements */
+.dark input,
+.dark textarea,
+.dark select {
+  @apply bg-gray-700 border-gray-600 text-white placeholder-gray-400;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  @apply bg-gray-600 border-blue-500;
+}
+
+/* Better button contrast in dark mode */
+.dark button:not(.bg-blue-600):not(.bg-green-600):not(.bg-red-600):not(.bg-amber-600):not(.bg-purple-600):not(.bg-indigo-600) {
+  @apply hover:bg-gray-700;
+}

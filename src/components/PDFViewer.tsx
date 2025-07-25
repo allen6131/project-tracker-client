@@ -49,9 +49,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-4 mx-auto p-5 border w-11/12 h-5/6 max-w-6xl shadow-lg rounded-md bg-white">
+      <div className="relative top-4 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 h-5/6 max-w-6xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
           <div className="flex items-center space-x-2">
             <button
               onClick={handleDownload}
