@@ -7,11 +7,18 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Files from './pages/Files';
 import Customers from './pages/Customers';
 import Estimates from './pages/Estimates';
 import Invoices from './pages/Invoices';
+import Todos from './pages/Todos';
+import CalendarPage from './pages/Calendar';
+import Materials from './pages/Materials';
+import Services from './pages/Services';
+import Users from './pages/Users';
+import Company from './pages/Company';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
 
@@ -31,6 +38,36 @@ function App() {
                   </Layout>
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/projects"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Projects />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/todos"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Todos />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/calendar"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CalendarPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="/customers"
@@ -58,6 +95,46 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Invoices />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/materials"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Materials />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/services"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Services />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Users />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/company"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Company />
                   </Layout>
                 </ProtectedRoute>
               }

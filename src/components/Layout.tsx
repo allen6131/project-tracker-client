@@ -14,10 +14,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/dashboard' || path === '/') return 'Dashboard';
+    if (path.startsWith('/projects')) return 'Projects';
+    if (path.startsWith('/todos')) return 'All Tasks';
+    if (path.startsWith('/calendar')) return 'Calendar';
     if (path.startsWith('/customers')) return 'Customers';
     if (path.startsWith('/estimates')) return 'Estimates';
     if (path.startsWith('/invoices')) return 'Invoices';
-    if (path.startsWith('/projects')) return 'Projects';
+    if (path.startsWith('/materials')) return 'Materials';
+    if (path.startsWith('/services')) return 'Services';
+    if (path.startsWith('/users')) return 'Users';
+    if (path.startsWith('/company')) return 'Company';
     return 'Project Tracker';
   };
 

@@ -1,328 +1,236 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, CreateUserRequest, UpdateUserRequest, Project, CreateProjectRequest, UpdateProjectRequest } from '../types';
-import { usersAPI, projectsAPI } from '../services/api';
-import UserList from '../components/UserList';
-import UserForm from '../components/UserForm';
-import ProjectList from '../components/ProjectList';
-import ProjectForm from '../components/ProjectForm';
-import CustomersManagement from '../components/CustomersManagement';
-import EstimatesManagement from '../components/EstimatesManagement';
-import InvoicesManagement from '../components/InvoicesManagement';
-import MaterialsCatalog from '../components/MaterialsCatalog';
-import ServicesCatalog from '../components/ServicesCatalog';
-import AllTodoLists from '../components/AllTodoLists';
-import Calendar from '../components/Calendar';
-import Logo from '../components/Logo';
-import CompanyProfile from '../components/CompanyProfile';
-import ThemeToggle from '../components/ThemeToggle';
+import { useNavigate } from 'react-router-dom';
+import { projectsAPI, invoicesAPI, estimatesAPI, todoAPI } from '../services/api';
 
 const Dashboard: React.FC = () => {
-  const { user, logout, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'projects' | 'users' | 'customers' | 'estimates' | 'invoices' | 'materials' | 'services' | 'todos' | 'calendar' | 'company'>('projects');
-  const [showUserForm, setShowUserForm] = useState(false);
-  const [showProjectForm, setShowProjectForm] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [userFormLoading, setUserFormLoading] = useState(false);
-  const [projectFormLoading, setProjectFormLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [refreshUsersTrigger, setRefreshUsersTrigger] = useState(0);
-  const [refreshProjectsTrigger, setRefreshProjectsTrigger] = useState(0);
+  const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    projects: { active: 0, total: 0 },
+    invoices: { unpaid: 0, total: 0, totalAmount: 0 },
+    estimates: { pending: 0, total: 0 },
+    tasks: { pending: 0, total: 0 }
+  });
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setError(null);
-      setSuccess(null);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [error, success]);
+    loadDashboardStats();
+  }, []);
 
-  const clearMessages = () => {
-    setError(null);
-    setSuccess(null);
-  };
-
-  const handleUserFormSubmit = async (userData: CreateUserRequest | UpdateUserRequest) => {
+  const loadDashboardStats = async () => {
     try {
-      setUserFormLoading(true);
-      clearMessages();
+      setLoading(true);
       
-      if (editingUser) {
-        await usersAPI.updateUser(editingUser.id, userData as UpdateUserRequest);
-        setSuccess('User updated successfully');
-      } else {
-        await usersAPI.createUser(userData as CreateUserRequest);
-        setSuccess('User created successfully');
-      }
+      // Load project stats
+      const projectsResponse = await projectsAPI.getProjects(1, 100);
+      const activeProjects = projectsResponse.projects.filter((p: any) => p.status === 'active' || p.status === 'started').length;
       
-      setRefreshUsersTrigger(prev => prev + 1);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save user');
-      throw err;
+      // Load invoice stats
+      const invoicesResponse = await invoicesAPI.getInvoices(1, 100);
+      const unpaidInvoices = invoicesResponse.invoices.filter((i: any) => i.status !== 'paid' && i.status !== 'cancelled');
+      const totalInvoiceAmount = unpaidInvoices.reduce((sum: number, i: any) => sum + i.total_amount, 0);
+      
+      // Load estimate stats
+      const estimatesResponse = await estimatesAPI.getEstimates(1, 100);
+      const pendingEstimates = estimatesResponse.estimates.filter((e: any) => e.status === 'sent').length;
+      
+      // Load todo stats
+      const todosResponse = await todoAPI.getAllTodoLists();
+      const allTasks = todosResponse.todoLists.flatMap((list: any) => list.items);
+      const pendingTasks = allTasks.filter((task: any) => !task.is_completed).length;
+      
+      setStats({
+        projects: { active: activeProjects, total: projectsResponse.projects.length },
+        invoices: { 
+          unpaid: unpaidInvoices.length, 
+          total: invoicesResponse.invoices.length,
+          totalAmount: totalInvoiceAmount 
+        },
+        estimates: { pending: pendingEstimates, total: estimatesResponse.estimates.length },
+        tasks: { pending: pendingTasks, total: allTasks.length }
+      });
+    } catch (error) {
+      console.error('Error loading dashboard stats:', error);
     } finally {
-      setUserFormLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleEditUser = (user: User) => {
-    setEditingUser(user);
-    setShowUserForm(true);
-  };
-
-  const handleDeleteUser = async (userId: number) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await usersAPI.deleteUser(userId);
-        setSuccess('User deleted successfully');
-        setRefreshUsersTrigger(prev => prev + 1);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to delete user');
-      }
-    }
-  };
-
-  const handleCreateUser = () => {
-    setEditingUser(null);
-    setShowUserForm(true);
-  };
-
-  const handleCloseUserForm = () => {
-    setShowUserForm(false);
-    setEditingUser(null);
-  };
-
-  const handleProjectFormSubmit = async (projectData: CreateProjectRequest | UpdateProjectRequest) => {
-    try {
-      setProjectFormLoading(true);
-      clearMessages();
-      
-      if (editingProject) {
-        await projectsAPI.updateProject(editingProject.id, projectData as UpdateProjectRequest);
-        setSuccess('Project updated successfully');
-      } else {
-        await projectsAPI.createProject(projectData as CreateProjectRequest);
-        setSuccess('Project created successfully');
-      }
-      
-      setRefreshProjectsTrigger(prev => prev + 1);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save project');
-      throw err;
-    } finally {
-      setProjectFormLoading(false);
-    }
-  };
-
-  const handleEditProject = (project: Project) => {
-    setEditingProject(project);
-    setShowProjectForm(true);
-  };
-
-  const handleDeleteProject = async (projectId: number) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      try {
-        await projectsAPI.deleteProject(projectId);
-        setSuccess('Project deleted successfully');
-        setRefreshProjectsTrigger(prev => prev + 1);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to delete project');
-      }
-    }
-  };
-
-  const handleCreateProject = () => {
-    setEditingProject(null);
-    setShowProjectForm(true);
-  };
-
-  const handleCloseProjectForm = () => {
-    setShowProjectForm(false);
-    setEditingProject(null);
-  };
-
-  const handleTabChange = (tab: 'projects' | 'users' | 'customers' | 'estimates' | 'invoices' | 'materials' | 'services' | 'todos' | 'calendar' | 'company') => {
-    setActiveTab(tab);
-    clearMessages();
-  };
-
-  const tabs = [
-    { id: 'projects', label: 'Projects', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-    { id: 'todos', label: 'All Tasks', icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
-    { id: 'calendar', label: 'Calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-    ...(isAdmin ? [
-      { id: 'customers', label: 'Customers', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-      { id: 'estimates', label: 'Estimates', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-      { id: 'invoices', label: 'Invoices', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
-      { id: 'materials', label: 'Materials', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
-      { id: 'services', label: 'Services', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
-      { id: 'users', label: 'Users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' },
-      { id: 'company', label: 'Company', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M12 7h.01M12 11h.01M12 15h.01M8 7h.01M8 11h.01M8 15h.01M16 7h.01M16 11h.01M16 15h.01' }
-    ] : [])
-  ] as const;
+  const quickLinks = [
+    { name: 'View Projects', href: '/projects', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', color: 'blue' },
+    { name: 'Manage Tasks', href: '/todos', icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', color: 'green' },
+    { name: 'View Calendar', href: '/calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', color: 'purple' },
+    { name: 'Create Invoice', href: '/invoices', icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z', color: 'amber' },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Navigation Tabs */}
+      {/* Welcome Section */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg transition-colors">
         <div className="px-4 py-5 sm:p-6">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Dashboard</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Manage your electrical projects and business operations
-              </p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Welcome back, {user?.username}!
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Here's an overview of your project tracking system
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      {loading ? (
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
+          <div className="text-center text-gray-900 dark:text-white">Loading dashboard statistics...</div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Active Projects */}
+          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg transition-colors">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Active Projects</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.projects.active}</div>
+                      <div className="ml-2 text-sm text-gray-600 dark:text-gray-400">of {stats.projects.total}</div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 px-5 py-3">
+              <button 
+                onClick={() => navigate('/projects')} 
+                className="text-sm text-blue-700 dark:text-blue-300 font-medium hover:text-blue-900 dark:hover:text-blue-100"
+              >
+                View all →
+              </button>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id as any)}
-                className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeTab === tab.id
-                    ? 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/50'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
+
+          {/* Unpaid Invoices */}
+          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg transition-colors">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Unpaid Invoices</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.invoices.unpaid}</div>
+                      <div className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                        ${stats.invoices.totalAmount.toFixed(2)}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 px-5 py-3">
+              <button 
+                onClick={() => navigate('/invoices')} 
+                className="text-sm text-amber-700 dark:text-amber-300 font-medium hover:text-amber-900 dark:hover:text-amber-100"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
+                View all →
+              </button>
+            </div>
+          </div>
+
+          {/* Pending Estimates */}
+          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg transition-colors">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Pending Estimates</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.estimates.pending}</div>
+                      <div className="ml-2 text-sm text-gray-600 dark:text-gray-400">of {stats.estimates.total}</div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 px-5 py-3">
+              <button 
+                onClick={() => navigate('/estimates')} 
+                className="text-sm text-purple-700 dark:text-purple-300 font-medium hover:text-purple-900 dark:hover:text-purple-100"
+              >
+                View all →
+              </button>
+            </div>
+          </div>
+
+          {/* Pending Tasks */}
+          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg transition-colors">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Pending Tasks</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.tasks.pending}</div>
+                      <div className="ml-2 text-sm text-gray-600 dark:text-gray-400">of {stats.tasks.total}</div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 px-5 py-3">
+              <button 
+                onClick={() => navigate('/todos')} 
+                className="text-sm text-green-700 dark:text-green-300 font-medium hover:text-green-900 dark:hover:text-green-100"
+              >
+                View all →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg transition-colors">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {quickLinks.map((link) => (
+              <button
+                key={link.name}
+                onClick={() => navigate(link.href)}
+                className={`relative rounded-lg p-4 text-center hover:shadow-lg transition-all transform hover:scale-105 bg-${link.color}-50 dark:bg-${link.color}-900/30 hover:bg-${link.color}-100 dark:hover:bg-${link.color}-900/50`}
+              >
+                <svg className={`mx-auto h-8 w-8 text-${link.color}-600 dark:text-${link.color}-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={link.icon} />
                 </svg>
-                {tab.label}
+                <span className={`mt-2 block text-sm font-medium text-${link.color}-900 dark:text-${link.color}-100`}>
+                  {link.name}
+                </span>
               </button>
             ))}
           </div>
         </div>
       </div>
-
-      {/* Messages */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              {error}
-            </div>
-            <button onClick={clearMessages} className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg flex items-center justify-between">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            {success}
-          </div>
-          <button onClick={clearMessages} className="text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
-      )}
-
-      {/* Main Content */}
-        {activeTab === 'projects' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Projects</h2>
-                <p className="text-gray-600 dark:text-gray-400">Manage your electrical projects</p>
-              </div>
-              <button
-                onClick={handleCreateProject}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                New Project
-              </button>
-            </div>
-            <ProjectList
-              onEdit={handleEditProject}
-              onDelete={handleDeleteProject}
-              refreshTrigger={refreshProjectsTrigger}
-            />
-          </div>
-        )}
-
-        {activeTab === 'todos' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">All Tasks</h2>
-              <p className="text-gray-600 dark:text-gray-400">Master view of all tasks across projects</p>
-            </div>
-            <AllTodoLists />
-          </div>
-        )}
-
-        {activeTab === 'calendar' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Calendar</h2>
-              <p className="text-gray-600 dark:text-gray-400">View tasks organized by due date</p>
-            </div>
-            <Calendar />
-          </div>
-        )}
-
-        {isAdmin && activeTab === 'users' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h2>
-                <p className="text-gray-600 dark:text-gray-400">Manage system users and permissions</p>
-              </div>
-              <button
-                onClick={handleCreateUser}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add User
-              </button>
-            </div>
-            <UserList
-              onEdit={handleEditUser}
-              onDelete={handleDeleteUser}
-              refreshTrigger={refreshUsersTrigger}
-            />
-          </div>
-        )}
-
-        {isAdmin && activeTab === 'customers' && <CustomersManagement />}
-        {isAdmin && activeTab === 'estimates' && <EstimatesManagement />}
-        {isAdmin && activeTab === 'invoices' && <InvoicesManagement />}
-        {isAdmin && activeTab === 'materials' && <MaterialsCatalog />}
-        {isAdmin && activeTab === 'services' && <ServicesCatalog />}
-        {isAdmin && activeTab === 'company' && <CompanyProfile />}
-
-      {/* Modals */}
-      <UserForm
-        isOpen={showUserForm}
-        onClose={handleCloseUserForm}
-        onSubmit={handleUserFormSubmit}
-        user={editingUser}
-        loading={userFormLoading}
-      />
-
-      <ProjectForm
-        isOpen={showProjectForm}
-        onClose={handleCloseProjectForm}
-        onSubmit={handleProjectFormSubmit}
-        project={editingProject}
-        loading={projectFormLoading}
-      />
     </div>
   );
 };
