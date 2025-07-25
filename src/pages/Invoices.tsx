@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Logo from '../components/Logo';
-import ThemeToggle from '../components/ThemeToggle';
 import { 
   Invoice, 
   CreateInvoiceRequest, 
@@ -383,32 +381,7 @@ const Invoices: React.FC = () => {
   const { subtotal, taxAmount, total } = calculateTotal();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 transition-colors">
-      {/* Navigation */}
-      <nav className="bg-white dark:bg-gray-800 shadow-lg transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/dashboard">
-                <Logo size="md" />
-              </Link>
-              <span className="ml-4 text-lg text-gray-600 dark:text-gray-300">Invoices</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <ThemeToggle size="sm" />
-              <span className="text-gray-700 dark:text-gray-300">Welcome, {user?.username}</span>
-              <button
-                onClick={logout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div className="space-y-6">
         {/* Header */}
         <div className="mb-6">
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg transition-colors">
@@ -1062,7 +1035,6 @@ const Invoices: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 };

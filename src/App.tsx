@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ProjectDetail from './pages/ProjectDetail';
@@ -19,77 +20,91 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
                     <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/customers"
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customers"
+              element={
+                <ProtectedRoute>
+                  <Layout>
                     <Customers />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/estimates"
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/estimates"
+              element={
+                <ProtectedRoute>
+                  <Layout>
                     <Estimates />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/invoices"
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/invoices"
+              element={
+                <ProtectedRoute>
+                  <Layout>
                     <Invoices />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/projects/:id"
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/projects/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
                     <ProjectDetail />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/projects/:id/files"
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/projects/:id/files"
+              element={
+                <ProtectedRoute>
+                  <Layout>
                     <Files />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/payment-success"
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/payment-success"
+              element={
+                <ProtectedRoute>
+                  <Layout>
                     <PaymentSuccess />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/payment-cancelled"
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/payment-cancelled"
+              element={
+                <ProtectedRoute>
+                  <Layout>
                     <PaymentCancelled />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </div>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
           <Analytics />
         </Router>
       </AuthProvider>
