@@ -361,6 +361,71 @@ const InvoicesManagement: React.FC = () => {
     setPdfTitle('');
   };
 
+  const calculateTotal = () => {
+    const subtotal = items.reduce((sum, item) => {
+      return sum + (parseFloat(String(item.quantity)) * parseFloat(String(item.unit_price)));
+    }, 0);
+    const taxAmount = subtotal * (formData.tax_rate / 100);
+    return { subtotal, taxAmount, total: subtotal + taxAmount };
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormLoading(true);
+    
+    try {
+      const invoiceData: CreateInvoiceRequest = {
+        title: formData.title,
+        description: formData.description,
+        customer_id: formData.customer_id,
+        customer_name: formData.customer_name,
+        customer_email: formData.customer_email,
+        customer_phone: formData.customer_phone,
+        customer_address: formData.customer_address,
+        estimate_id: formData.estimate_id,
+        project_id: formData.project_id,
+        tax_rate: formData.tax_rate,
+        due_date: formData.due_date || undefined,
+        notes: formData.notes,
+        items: items.filter(item => item.description.trim() !== '')
+      };
+
+      if (editingInvoice) {
+        await invoicesAPI.updateInvoice(editingInvoice.id, { ...invoiceData, status: formData.status });
+        setSuccess('Invoice updated successfully');
+      } else {
+        await invoicesAPI.createInvoice(invoiceData);
+        setSuccess('Invoice created successfully');
+      }
+      
+      setShowForm(false);
+      resetForm();
+      loadInvoices();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'An error occurred');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleItemChange = (index: number, field: keyof InvoiceItem, value: string | number) => {
+    const updatedItems = [...items];
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
+    setItems(updatedItems);
+  };
+
+  const addItem = () => {
+    setItems([...items, { description: '', quantity: 1, unit_price: 0 }]);
+  };
+
+  const removeItem = (index: number) => {
+    if (items.length > 1) {
+      setItems(items.filter((_, i) => i !== index));
+    }
+  };
+
+  const { subtotal, taxAmount, total } = calculateTotal();
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -829,6 +894,274 @@ const InvoicesManagement: React.FC = () => {
 
       {/* Form and other modals would go here - keeping same structure as original */}
       {/* Note: For brevity, I'm not including the full modal code, but it would be the same as in the original Invoices.tsx */}
+      
+      {/* Create/Edit Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
+              </h3>
+              
+              <form onSubmit={handleFormSubmit} className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Customer</label>
+                    <select
+                      value={formData.customer_id || ''}
+                      onChange={(e) => {
+                        const customerId = e.target.value ? parseInt(e.target.value) : null;
+                        const customer = customers.find(c => c.id === customerId);
+                        setFormData({ 
+                          ...formData, 
+                          customer_id: customerId,
+                          customer_name: customer?.name || ''
+                        });
+                      }}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Customer</option>
+                      {customers.map(customer => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Project (Optional)</label>
+                    <select
+                      value={formData.project_id || ''}
+                      onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Project (Optional)</option>
+                      {projects.map(project => (
+                        <option key={project.id} value={project.id}>
+                          {project.name} ({project.status})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {editingInvoice && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Status</label>
+                      <select
+                        value={formData.status || 'draft'}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="sent">Sent</option>
+                        <option value="paid">Paid</option>
+                        <option value="overdue">Overdue</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <textarea
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Customer Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Customer Email</label>
+                    <input
+                      type="email"
+                      value={formData.customer_email}
+                      onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Customer Phone</label>
+                    <input
+                      type="tel"
+                      value={formData.customer_phone}
+                      onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Customer Address</label>
+                  <textarea
+                    rows={2}
+                    value={formData.customer_address}
+                    onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Items Section */}
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-md font-medium text-gray-900">Items</h4>
+                    <button
+                      type="button"
+                      onClick={addItem}
+                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Add Item
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {items.map((item, index) => (
+                      <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-5">
+                          <label className="block text-sm font-medium text-gray-700">Description</label>
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">Unit Price</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.unit_price}
+                            onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">Total</label>
+                          <div className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm">
+                            ${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="col-span-1">
+                          {items.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeItem(index)}
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded text-sm"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tax and Due Date */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={formData.tax_rate}
+                      onChange={(e) => setFormData({ ...formData, tax_rate: parseFloat(e.target.value) || 0 })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Due Date</label>
+                    <input
+                      type="date"
+                      value={formData.due_date}
+                      onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Totals Display */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal:</span>
+                    <span>${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Tax ({formData.tax_rate}%):</span>
+                    <span>${taxAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-medium border-t pt-2 mt-2">
+                    <span>Total:</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Notes</label>
+                  <textarea
+                    rows={3}
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={formLoading}
+                    className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {formLoading ? 'Saving...' : (editingInvoice ? 'Update Invoice' : 'Create Invoice')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* PDF Viewer */}
       <PDFViewer
