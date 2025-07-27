@@ -531,7 +531,7 @@ const EstimatesManagement: React.FC = () => {
                                   handleViewPDF(estimate);
                                   setOpenDropdown(null);
                                 }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                               >
                                 View PDF
                               </button>
@@ -541,7 +541,7 @@ const EstimatesManagement: React.FC = () => {
                                   handleEditEstimate(estimate);
                                   setOpenDropdown(null);
                                 }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                               >
                                 Edit
                               </button>
@@ -552,7 +552,7 @@ const EstimatesManagement: React.FC = () => {
                                     handleSendEmail(estimate);
                                     setOpenDropdown(null);
                                   }}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                                 >
                                   Send Email
                                 </button>
@@ -564,7 +564,7 @@ const EstimatesManagement: React.FC = () => {
                                     handleDownloadDocument(estimate.id);
                                     setOpenDropdown(null);
                                   }}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                                 >
                                   Download Document
                                 </button>
@@ -577,7 +577,7 @@ const EstimatesManagement: React.FC = () => {
                                   handleDeleteEstimate(estimate.id);
                                   setOpenDropdown(null);
                                 }}
-                                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600"
                               >
                                 Delete
                               </button>
