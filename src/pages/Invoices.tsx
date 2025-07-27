@@ -35,6 +35,17 @@ const Invoices: React.FC = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
   
+  // Email state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailingInvoice, setEmailingInvoice] = useState<Invoice | null>(null);
+  const [emailData, setEmailData] = useState({
+    recipient_email: '',
+    sender_name: ''
+  });
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailPreviewTab, setEmailPreviewTab] = useState<'email' | 'pdf'>('email');
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  
   // Percentage form state
   const [percentageData, setPercentageData] = useState({
     percentage: '',
@@ -293,6 +304,50 @@ const Invoices: React.FC = () => {
     setPaymentInvoice(null);
   };
 
+  const handleSendEmail = (invoice: Invoice) => {
+    clearMessages();
+    setEmailingInvoice(invoice);
+    setEmailData({
+      recipient_email: invoice.customer_email || invoice.customer_name || '',
+      sender_name: user?.username || ''
+    });
+    
+    // Load PDF preview for the email modal
+    loadEmailPDFPreview(invoice);
+    setShowEmailModal(true);
+  };
+
+  const loadEmailPDFPreview = async (invoice: Invoice) => {
+    try {
+      const url = await invoicesAPI.viewInvoicePDF(invoice.id);
+      setPdfUrl(url);
+    } catch (err: any) {
+      console.error('Failed to load PDF preview for email:', err);
+      // Don't show error for PDF preview failure in email context
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailingInvoice) return;
+
+    setEmailLoading(true);
+    try {
+      await invoicesAPI.sendInvoiceEmail(emailingInvoice.id, emailData);
+      setSuccess(`Invoice sent successfully to ${emailData.recipient_email}`);
+      setShowEmailModal(false);
+      setEmailingInvoice(null);
+      setEmailData({ recipient_email: '', sender_name: '' });
+      setPdfUrl(null);
+      setEmailPreviewTab('email');
+      loadInvoices(); // Refresh to show updated status
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send email');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
@@ -540,6 +595,14 @@ const Invoices: React.FC = () => {
                             >
                               Delete
                             </button>
+                            {invoice.status !== 'cancelled' && (
+                              <button
+                                onClick={() => handleSendEmail(invoice)}
+                                className="text-green-600 hover:text-green-900 text-xs"
+                              >
+                                Send Email
+                              </button>
+                            )}
                           </div>
                           
                           {/* Payment Actions */}
@@ -966,6 +1029,250 @@ const Invoices: React.FC = () => {
             onPaymentError={handlePaymentError}
             onClose={handleClosePaymentForm}
           />
+        )}
+
+        {/* Email Modal */}
+        {showEmailModal && emailingInvoice && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                  Send Invoice via Email
+                </h3>
+                
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Left side - Form inputs */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Invoice Details
+                        </label>
+                        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md space-y-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{emailingInvoice.title}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Invoice #: {emailingInvoice.invoice_number}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Customer: {emailingInvoice.customer_name || 'N/A'}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Total: ${emailingInvoice.total_amount.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Recipient Email *
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={emailData.recipient_email}
+                          onChange={(e) => setEmailData({ ...emailData, recipient_email: e.target.value })}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="customer@example.com"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Your Name (optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={emailData.sender_name}
+                          onChange={(e) => setEmailData({ ...emailData, sender_name: e.target.value })}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="Your name or company"
+                        />
+                      </div>
+
+                      <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                          <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          The invoice PDF will be automatically attached to the email. Use the tabs on the right to preview both the email content and PDF attachment.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right side - Email and PDF preview */}
+                    <div className="space-y-4">
+                      {/* Tab Navigation */}
+                      <div className="border-b border-gray-200 dark:border-gray-600">
+                        <nav className="-mb-px flex space-x-8">
+                          <button
+                            type="button"
+                            onClick={() => setEmailPreviewTab('email')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                              emailPreviewTab === 'email'
+                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
+                          >
+                            Email Preview
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEmailPreviewTab('pdf')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                              emailPreviewTab === 'pdf'
+                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
+                          >
+                            PDF Attachment
+                          </button>
+                        </nav>
+                      </div>
+
+                      {/* Tab Content */}
+                      {emailPreviewTab === 'email' ? (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Email Preview
+                          </label>
+                          <div className="border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden">
+                            <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                                Subject: Invoice #{emailingInvoice.invoice_number} from {emailData.sender_name || user?.username || 'AmpTrack'}
+                              </p>
+                            </div>
+                            <div className="p-4 bg-white dark:bg-gray-800 max-h-96 overflow-y-auto">
+                              {/* Email Header */}
+                              <div className="bg-blue-500 text-white p-4 text-center rounded-t-lg">
+                                <h2 className="text-xl font-bold">Invoice</h2>
+                              </div>
+                              
+                              {/* Email Content */}
+                              <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-b-lg">
+                                <div className="bg-white dark:bg-gray-800 p-4 rounded-md mb-4">
+                                  <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">{emailingInvoice.title}</h3>
+                                  {emailingInvoice.description && (
+                                    <p className="text-gray-600 dark:text-gray-300 mb-3">{emailingInvoice.description}</p>
+                                  )}
+                                  
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div className="text-gray-700 dark:text-gray-300">
+                                      <p><strong>Invoice #:</strong> {emailingInvoice.invoice_number}</p>
+                                      <p><strong>Date:</strong> {new Date(emailingInvoice.created_at).toLocaleDateString()}</p>
+                                      {emailingInvoice.due_date && (
+                                        <p><strong>Due Date:</strong> {new Date(emailingInvoice.due_date).toLocaleDateString()}</p>
+                                      )}
+                                      <p>
+                                        <strong>Status:</strong> 
+                                        <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(emailingInvoice.status)}`}>
+                                          {emailingInvoice.status.toUpperCase()}
+                                        </span>
+                                      </p>
+                                    </div>
+                                    <div className="text-right text-gray-700 dark:text-gray-300">
+                                      <p className="font-semibold">From: {emailData.sender_name || user?.username || 'AmpTrack'}</p>
+                                      {emailingInvoice.customer_name && (
+                                        <p><strong>To:</strong> {emailingInvoice.customer_name}</p>
+                                      )}
+                                      {emailingInvoice.project_name && (
+                                        <p><strong>Project:</strong> {emailingInvoice.project_name}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="mt-4 text-center">
+                                    <div className="border-2 border-blue-500 rounded-lg p-4 inline-block">
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Amount Due</p>
+                                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                        ${emailingInvoice.total_amount.toFixed(2)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 p-3 rounded-md">
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                                      📎 <strong>Invoice Document:</strong> Please find the detailed invoice attached to this email as a PDF.
+                                    </p>
+                                  </div>
+                                  
+                                  {emailingInvoice.notes && (
+                                    <div className="mt-4">
+                                      <h4 className="font-semibold mb-2 text-gray-900 dark:text-white">Notes:</h4>
+                                      <p className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md text-sm text-gray-700 dark:text-gray-300">{emailingInvoice.notes}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                                  <p>Thank you for your business. This invoice details the services provided and the amount due.</p>
+                                  {emailingInvoice.due_date && (
+                                    <p>Please ensure payment is made by the due date: {new Date(emailingInvoice.due_date).toLocaleDateString()}</p>
+                                  )}
+                                  <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            PDF Attachment Preview
+                          </label>
+                          <div className="border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden">
+                            <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                                📎 invoice-{emailingInvoice.invoice_number}.pdf
+                              </p>
+                            </div>
+                            <div className="bg-white dark:bg-gray-800 h-96 flex items-center justify-center">
+                              {pdfUrl ? (
+                                <iframe
+                                  src={pdfUrl}
+                                  className="w-full h-full border-0"
+                                  title="Invoice PDF Preview"
+                                />
+                              ) : (
+                                <div className="text-gray-400 dark:text-gray-500">
+                                  <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  <p>PDF preview not available</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEmailModal(false);
+                        setEmailingInvoice(null);
+                        setEmailData({ recipient_email: '', sender_name: '' });
+                        setPdfUrl(null);
+                        setEmailPreviewTab('email');
+                      }}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={emailLoading}
+                      className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {emailLoading ? 'Sending...' : 'Send Email'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Percentage Modal */}
