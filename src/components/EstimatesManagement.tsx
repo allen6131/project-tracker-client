@@ -551,7 +551,7 @@ const EstimatesManagement: React.FC = () => {
                               Edit Estimate
                             </button>
 
-                            {estimate.status === 'draft' && (
+                            {estimate.status !== 'rejected' && (
                               <button
                                 onClick={() => {
                                   handleSendEmail(estimate);
