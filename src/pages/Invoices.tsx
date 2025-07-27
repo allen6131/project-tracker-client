@@ -23,6 +23,9 @@ const Invoices: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
+  // Dropdown state
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [showEstimateSelector, setShowEstimateSelector] = useState(false);
@@ -91,6 +94,26 @@ const Invoices: React.FC = () => {
     loadEstimates();
     loadProjects();
   }, [currentPage, searchTerm, statusFilter]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleDropdown = (invoiceId: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setOpenDropdownId(openDropdownId === invoiceId ? null : invoiceId);
+  };
 
   const loadInvoices = async () => {
     try {
@@ -419,17 +442,17 @@ const Invoices: React.FC = () => {
     const baseClasses = "px-2 py-1 text-xs font-medium rounded-full";
     switch (status) {
       case 'draft':
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300`;
       case 'sent':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
+        return `${baseClasses} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300`;
       case 'paid':
-        return `${baseClasses} bg-green-100 text-green-800`;
+        return `${baseClasses} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300`;
       case 'overdue':
-        return `${baseClasses} bg-red-100 text-red-800`;
+        return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300`;
       case 'cancelled':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
+        return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300`;
       default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300`;
     }
   };
 
@@ -437,777 +460,801 @@ const Invoices: React.FC = () => {
 
   return (
     <div className="space-y-6">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg transition-colors">
-            <div className="px-4 py-5 sm:p-6">
-              <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg transition-colors">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Invoices Management</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Create and manage customer invoices
+              </p>
+            </div>
+            <div className="space-x-2">
+              <button
+                onClick={handleCreateFromEstimate}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+              >
+                Create from Estimate
+              </button>
+              <button
+                onClick={handleCreateInvoice}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+              >
+                Create New Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      {error && (
+        <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-6 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg">
+          {success}
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-4 transition-colors">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <input
+              type="text"
+              placeholder="Search invoices..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+            />
+          </div>
+          <div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Invoices List */}
+      {loading ? (
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
+          <div className="text-center text-gray-900 dark:text-white">Loading invoices...</div>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Invoice #
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Title
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Project
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Due Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {invoices.map((invoice) => (
+                  <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.invoice_number}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.title}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{invoice.description}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {invoice.customer_name || 'No customer'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {invoice.project_id ? (
+                        <span className="text-blue-600 dark:text-blue-400">
+                          Project #{invoice.project_id}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-500">No project</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={getStatusBadge(invoice.status)}>
+                        {invoice.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      ${invoice.total_amount.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'No due date'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="relative dropdown-container">
+                        <button
+                          onClick={(e) => toggleDropdown(invoice.id, e)}
+                          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                          </svg>
+                        </button>
+                        
+                        {openDropdownId === invoice.id && (
+                          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                            <div className="py-1">
+                              <button
+                                onClick={() => {
+                                  handleEditInvoice(invoice);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                              >
+                                Edit
+                              </button>
+                              {invoice.status !== 'cancelled' && (
+                                <button
+                                  onClick={() => {
+                                    handleSendEmail(invoice);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                >
+                                  Send Email
+                                </button>
+                              )}
+                              {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                                <button
+                                  onClick={() => {
+                                    handlePayInvoice(invoice);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                >
+                                  💳 Pay Invoice
+                                </button>
+                              )}
+                              {invoice.status === 'draft' && (
+                                <button
+                                  onClick={() => {
+                                    handleQuickStatusUpdate(invoice.id, 'sent');
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                >
+                                  Mark as Sent
+                                </button>
+                              )}
+                              {invoice.status === 'sent' && (
+                                <button
+                                  onClick={() => {
+                                    handleQuickStatusUpdate(invoice.id, 'paid');
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                >
+                                  Mark as Paid
+                                </button>
+                              )}
+                              {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                                <button
+                                  onClick={() => {
+                                    handleQuickStatusUpdate(invoice.id, 'cancelled');
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                >
+                                  Cancel Invoice
+                                </button>
+                              )}
+                              <hr className="border-gray-200 dark:border-gray-600 my-1" />
+                              <button
+                                onClick={() => {
+                                  handleDeleteInvoice(invoice.id);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Invoices Management</h2>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Create and manage customer invoices
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    Page <span className="font-medium">{currentPage}</span> of{' '}
+                    <span className="font-medium">{totalPages}</span>
                   </p>
                 </div>
-                <div className="space-x-2">
-                  <button
-                    onClick={handleCreateFromEstimate}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                  >
-                    Create from Estimate
-                  </button>
-                  <button
-                    onClick={handleCreateInvoice}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                  >
-                    Create New Invoice
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Messages */}
-        {error && (
-          <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-6 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg">
-            {success}
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-4 transition-colors">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <input
-                type="text"
-                placeholder="Search invoices..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              />
-            </div>
-            <div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="">All Statuses</option>
-                <option value="draft">Draft</option>
-                <option value="sent">Sent</option>
-                <option value="paid">Paid</option>
-                <option value="overdue">Overdue</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Invoices List */}
-        {loading ? (
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
-            <div className="text-center text-gray-900 dark:text-white">Loading invoices...</div>
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Invoice #
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Title
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Customer
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Project
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Total
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Due Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {invoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.invoice_number}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.title}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{invoice.description}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {invoice.customer_name || 'No customer'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {invoice.project_id ? (
-                          <span className="text-blue-600 dark:text-blue-400">
-                            Project #{invoice.project_id}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 dark:text-gray-500">No project</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={getStatusBadge(invoice.status)}>
-                          {invoice.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        ${invoice.total_amount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'No due date'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex flex-col space-y-1">
-                          {/* Primary Actions */}
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEditInvoice(invoice)}
-                              className="text-indigo-600 hover:text-indigo-900 text-xs"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteInvoice(invoice.id)}
-                              className="text-red-600 hover:text-red-900 text-xs"
-                            >
-                              Delete
-                            </button>
-                            {invoice.status !== 'cancelled' && (
-                              <button
-                                onClick={() => handleSendEmail(invoice)}
-                                className="text-green-600 hover:text-green-900 text-xs"
-                              >
-                                Send Email
-                              </button>
-                            )}
-                          </div>
-                          
-                          {/* Payment Actions */}
-                          <div className="flex space-x-1 mb-1">
-                            {(invoice.status === 'sent' || invoice.status === 'overdue') && (
-                              <button
-                                onClick={() => handlePayInvoice(invoice)}
-                                className="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-medium"
-                              >
-                                💳 Pay Invoice
-                              </button>
-                            )}
-                          </div>
-                          
-                          {/* Quick Status Actions */}
-                          <div className="flex space-x-1">
-                            {invoice.status === 'draft' && (
-                              <button
-                                onClick={() => handleQuickStatusUpdate(invoice.id, 'sent')}
-                                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                              >
-                                Send
-                              </button>
-                            )}
-                            {invoice.status === 'sent' && (
-                              <button
-                                onClick={() => handleQuickStatusUpdate(invoice.id, 'paid')}
-                                className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
-                              >
-                                Mark Paid
-                              </button>
-                            )}
-                            {(invoice.status === 'sent' || invoice.status === 'overdue') && (
-                              <button
-                                onClick={() => handleQuickStatusUpdate(invoice.id, 'cancelled')}
-                                className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
-                              >
-                                Cancel
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Page <span className="font-medium">{currentPage}</span> of{' '}
-                      <span className="font-medium">{totalPages}</span>
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            page === currentPage
-                              ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-                    </nav>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Estimate Selector Modal */}
-        {showEstimateSelector && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  Select Estimate to Convert to Invoice
-                </h3>
-                
-                <div className="max-h-96 overflow-y-auto">
-                  {estimates.length === 0 ? (
-                    <p className="text-gray-500 dark:text-gray-400 text-center py-4">No approved estimates available</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {estimates.map((estimate) => (
-                        <div key={estimate.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">{estimate.title}</h4>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">Project: {estimate.project_name}</p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">Customer: {estimate.customer_name || 'No customer'}</p>
-                              <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">${estimate.total_amount.toFixed(2)}</p>
-                              {estimate.document_path && (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">📄 Document attached</p>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => handleEstimateSelect(estimate)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
-                            >
-                              Select
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="mt-4 flex justify-end">
-                  <button
-                    onClick={() => setShowEstimateSelector(false)}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Create/Edit Form Modal - Similar to Estimates form but adapted for invoices */}
-        {showForm && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
-                </h3>
-                
-                <form onSubmit={handleFormSubmit} className="space-y-6">
-                  {/* Basic Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title *</label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer</label>
-                      <select
-                        value={formData.customer_id || ''}
-                        onChange={(e) => {
-                          const customerId = e.target.value ? parseInt(e.target.value) : null;
-                          const customer = customers.find(c => c.id === customerId);
-                          setFormData({ 
-                            ...formData, 
-                            customer_id: customerId,
-                            customer_name: customer?.name || ''
-                          });
-                        }}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          page === currentPage
+                            ? 'z-10 bg-indigo-50 dark:bg-indigo-900 border-indigo-500 dark:border-indigo-400 text-indigo-600 dark:text-indigo-300'
+                            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
                       >
-                        <option value="">Select Customer</option>
-                        {customers.map(customer => (
-                          <option key={customer.id} value={customer.id}>
-                            {customer.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                        {page}
+                      </button>
+                    ))}
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project (Optional)</label>
-                      <select
-                        value={formData.project_id || ''}
-                        onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        <option value="">Select Project (Optional)</option>
-                        {projects.map(project => (
-                          <option key={project.id} value={project.id}>
-                            {project.name} ({project.status})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {editingInvoice && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                        <select
-                          value={formData.status || 'draft'}
-                          onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        >
-                          <option value="draft">Draft</option>
-                          <option value="sent">Sent</option>
-                          <option value="paid">Paid</option>
-                          <option value="overdue">Overdue</option>
-                          <option value="cancelled">Cancelled</option>
-                        </select>
+      {/* Estimate Selector Modal */}
+      {showEstimateSelector && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Select Estimate to Convert to Invoice
+              </h3>
+              
+              <div className="max-h-96 overflow-y-auto">
+                {estimates.length === 0 ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-4">No approved estimates available</p>
+                ) : (
+                  <div className="space-y-2">
+                    {estimates.map((estimate) => (
+                      <div key={estimate.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-medium text-gray-900 dark:text-white">{estimate.title}</h4>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Project: {estimate.project_name}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Customer: {estimate.customer_name || 'No customer'}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">${estimate.total_amount.toFixed(2)}</p>
+                            {estimate.document_path && (
+                              <p className="text-sm text-gray-500 dark:text-gray-400">📄 Document attached</p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleEstimateSelect(estimate)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+                          >
+                            Select
+                          </button>
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
+                )}
+              </div>
+              
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setShowEstimateSelector(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* Create/Edit Form Modal - Similar to Estimates form but adapted for invoices */}
+      {showForm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
+              </h3>
+              
+              <form onSubmit={handleFormSubmit} className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                    <textarea
-                      rows={3}
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
-
-                  {/* Customer Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Customer Email</label>
-                      <input
-                        type="email"
-                        value={formData.customer_email}
-                        onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Customer Phone</label>
-                      <input
-                        type="tel"
-                        value={formData.customer_phone}
-                        onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
+                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Customer Address</label>
-                    <textarea
-                      rows={2}
-                      value={formData.customer_address}
-                      onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* Items Section - Same as estimates */}
-                  <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-md font-medium text-gray-900">Items</h4>
-                      <button
-                        type="button"
-                        onClick={addItem}
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Add Item
-                      </button>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {items.map((item, index) => (
-                        <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                          <div className="col-span-5">
-                            <label className="block text-sm font-medium text-gray-700">Description</label>
-                            <input
-                              type="text"
-                              value={item.description}
-                              onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={item.quantity}
-                              onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Unit Price</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={item.unit_price}
-                              onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Total</label>
-                            <div className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm">
-                              ${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
-                            </div>
-                          </div>
-                          <div className="col-span-1">
-                            {items.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeItem(index)}
-                                className="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded text-sm"
-                              >
-                                ×
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer</label>
+                    <select
+                      value={formData.customer_id || ''}
+                      onChange={(e) => {
+                        const customerId = e.target.value ? parseInt(e.target.value) : null;
+                        const customer = customers.find(c => c.id === customerId);
+                        setFormData({ 
+                          ...formData, 
+                          customer_id: customerId,
+                          customer_name: customer?.name || ''
+                        });
+                      }}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Select Customer</option>
+                      {customers.map(customer => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </option>
                       ))}
-                    </div>
-                  </div>
-
-                  {/* Tax and Due Date */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        value={formData.tax_rate}
-                        onChange={(e) => setFormData({ ...formData, tax_rate: parseFloat(e.target.value) || 0 })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Due Date</label>
-                      <input
-                        type="date"
-                        value={formData.due_date}
-                        onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Totals Display */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between text-sm">
-                      <span>Subtotal:</span>
-                      <span>${subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Tax ({formData.tax_rate}%):</span>
-                      <span>${taxAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-medium border-t pt-2 mt-2">
-                      <span>Total:</span>
-                      <span>${total.toFixed(2)}</span>
-                    </div>
+                    </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Notes</label>
-                    <textarea
-                      rows={3}
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project (Optional)</label>
+                    <select
+                      value={formData.project_id || ''}
+                      onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Select Project (Optional)</option>
+                      {projects.map(project => (
+                        <option key={project.id} value={project.id}>
+                          {project.name} ({project.status})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {editingInvoice && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                      <select
+                        value={formData.status || 'draft'}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="sent">Sent</option>
+                        <option value="paid">Paid</option>
+                        <option value="overdue">Overdue</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                  <textarea
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                {/* Customer Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Customer Email</label>
+                    <input
+                      type="email"
+                      value={formData.customer_email}
+                      onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Customer Phone</label>
+                    <input
+                      type="tel"
+                      value={formData.customer_phone}
+                      onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
 
-                  {/* Form Actions */}
-                  <div className="flex justify-end space-x-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Customer Address</label>
+                  <textarea
+                    rows={2}
+                    value={formData.customer_address}
+                    onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Items Section - Same as estimates */}
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-md font-medium text-gray-900">Items</h4>
                     <button
                       type="button"
-                      onClick={() => setShowForm(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      onClick={addItem}
+                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
                     >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={formLoading}
-                      className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {formLoading ? 'Saving...' : (editingInvoice ? 'Update Invoice' : 'Create Invoice')}
+                      Add Item
                     </button>
                   </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Payment Form Modal */}
-        {showPaymentForm && paymentInvoice && (
-          <PaymentForm
-            invoice={paymentInvoice}
-            onPaymentSuccess={handlePaymentSuccess}
-            onPaymentError={handlePaymentError}
-            onClose={handleClosePaymentForm}
-          />
-        )}
-
-        {/* Email Modal */}
-        {showEmailModal && emailingInvoice && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  Send Invoice via Email
-                </h3>
-                
-                <form onSubmit={handleEmailSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Left side - Form inputs */}
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Invoice Details
-                        </label>
-                        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md space-y-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{emailingInvoice.title}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Invoice #: {emailingInvoice.invoice_number}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Customer: {emailingInvoice.customer_name || 'N/A'}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Total: ${emailingInvoice.total_amount.toFixed(2)}
-                          </p>
+                  
+                  <div className="space-y-3">
+                    {items.map((item, index) => (
+                      <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-5">
+                          <label className="block text-sm font-medium text-gray-700">Description</label>
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">Unit Price</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.unit_price}
+                            onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">Total</label>
+                          <div className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm">
+                            ${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="col-span-1">
+                          {items.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeItem(index)}
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded text-sm"
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Recipient Email *
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          value={emailData.recipient_email}
-                          onChange={(e) => setEmailData({ ...emailData, recipient_email: e.target.value })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="customer@example.com"
-                        />
-                      </div>
+                {/* Tax and Due Date */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={formData.tax_rate}
+                      onChange={(e) => setFormData({ ...formData, tax_rate: parseFloat(e.target.value) || 0 })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Due Date</label>
+                    <input
+                      type="date"
+                      value={formData.due_date}
+                      onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Your Name (optional)
-                        </label>
-                        <input
-                          type="text"
-                          value={emailData.sender_name}
-                          onChange={(e) => setEmailData({ ...emailData, sender_name: e.target.value })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="Your name or company"
-                        />
-                      </div>
+                {/* Totals Display */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal:</span>
+                    <span>${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Tax ({formData.tax_rate}%):</span>
+                    <span>${taxAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-medium border-t pt-2 mt-2">
+                    <span>Total:</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                </div>
 
-                      <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md p-3">
-                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                          <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          The invoice PDF will be automatically attached to the email. Use the tabs on the right to preview both the email content and PDF attachment.
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Notes</label>
+                  <textarea
+                    rows={3}
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={formLoading}
+                    className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {formLoading ? 'Saving...' : (editingInvoice ? 'Update Invoice' : 'Create Invoice')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Form Modal */}
+      {showPaymentForm && paymentInvoice && (
+        <PaymentForm
+          invoice={paymentInvoice}
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentError={handlePaymentError}
+          onClose={handleClosePaymentForm}
+        />
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && emailingInvoice && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Send Invoice via Email
+              </h3>
+              
+              <form onSubmit={handleEmailSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left side - Form inputs */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Invoice Details
+                      </label>
+                      <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md space-y-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{emailingInvoice.title}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Invoice #: {emailingInvoice.invoice_number}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Customer: {emailingInvoice.customer_name || 'N/A'}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Total: ${emailingInvoice.total_amount.toFixed(2)}
                         </p>
                       </div>
                     </div>
 
-                    {/* Right side - Email and PDF preview */}
-                    <div className="space-y-4">
-                      {/* Tab Navigation */}
-                      <div className="border-b border-gray-200 dark:border-gray-600">
-                        <nav className="-mb-px flex space-x-8">
-                          <button
-                            type="button"
-                            onClick={() => setEmailPreviewTab('email')}
-                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                              emailPreviewTab === 'email'
-                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-                            }`}
-                          >
-                            Email Preview
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEmailPreviewTab('pdf')}
-                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                              emailPreviewTab === 'pdf'
-                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-                            }`}
-                          >
-                            PDF Attachment
-                          </button>
-                        </nav>
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Recipient Email *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={emailData.recipient_email}
+                        onChange={(e) => setEmailData({ ...emailData, recipient_email: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="customer@example.com"
+                      />
+                    </div>
 
-                      {/* Tab Content */}
-                      {emailPreviewTab === 'email' ? (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Email Preview
-                          </label>
-                          <div className="border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden">
-                            <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
-                              <p className="text-xs text-gray-600 dark:text-gray-400">
-                                Subject: Invoice #{emailingInvoice.invoice_number} from {emailData.sender_name || user?.username || 'AmpTrack'}
-                              </p>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Your Name (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={emailData.sender_name}
+                        onChange={(e) => setEmailData({ ...emailData, sender_name: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="Your name or company"
+                      />
+                    </div>
+
+                    <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        The invoice PDF will be automatically attached to the email. Use the tabs on the right to preview both the email content and PDF attachment.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right side - Email and PDF preview */}
+                  <div className="space-y-4">
+                    {/* Tab Navigation */}
+                    <div className="border-b border-gray-200 dark:border-gray-600">
+                      <nav className="-mb-px flex space-x-8">
+                        <button
+                          type="button"
+                          onClick={() => setEmailPreviewTab('email')}
+                          className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            emailPreviewTab === 'email'
+                              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                          }`}
+                        >
+                          Email Preview
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEmailPreviewTab('pdf')}
+                          className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            emailPreviewTab === 'pdf'
+                              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                          }`}
+                        >
+                          PDF Attachment
+                        </button>
+                      </nav>
+                    </div>
+
+                    {/* Tab Content */}
+                    {emailPreviewTab === 'email' ? (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Email Preview
+                        </label>
+                        <div className="border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden">
+                          <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                              Subject: Invoice #{emailingInvoice.invoice_number} from {emailData.sender_name || user?.username || 'AmpTrack'}
+                            </p>
+                          </div>
+                          <div className="p-4 bg-white dark:bg-gray-800 max-h-96 overflow-y-auto">
+                            {/* Email Header */}
+                            <div className="bg-blue-500 text-white p-4 text-center rounded-t-lg">
+                              <h2 className="text-xl font-bold">Invoice</h2>
                             </div>
-                            <div className="p-4 bg-white dark:bg-gray-800 max-h-96 overflow-y-auto">
-                              {/* Email Header */}
-                              <div className="bg-blue-500 text-white p-4 text-center rounded-t-lg">
-                                <h2 className="text-xl font-bold">Invoice</h2>
-                              </div>
-                              
-                              {/* Email Content */}
-                              <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-b-lg">
-                                <div className="bg-white dark:bg-gray-800 p-4 rounded-md mb-4">
-                                  <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">{emailingInvoice.title}</h3>
-                                  {emailingInvoice.description && (
-                                    <p className="text-gray-600 dark:text-gray-300 mb-3">{emailingInvoice.description}</p>
-                                  )}
-                                  
-                                  <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="text-gray-700 dark:text-gray-300">
-                                      <p><strong>Invoice #:</strong> {emailingInvoice.invoice_number}</p>
-                                      <p><strong>Date:</strong> {new Date(emailingInvoice.created_at).toLocaleDateString()}</p>
-                                      {emailingInvoice.due_date && (
-                                        <p><strong>Due Date:</strong> {new Date(emailingInvoice.due_date).toLocaleDateString()}</p>
-                                      )}
-                                      <p>
-                                        <strong>Status:</strong> 
-                                        <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(emailingInvoice.status)}`}>
-                                          {emailingInvoice.status.toUpperCase()}
-                                        </span>
-                                      </p>
-                                    </div>
-                                    <div className="text-right text-gray-700 dark:text-gray-300">
-                                      <p className="font-semibold">From: {emailData.sender_name || user?.username || 'AmpTrack'}</p>
-                                      {emailingInvoice.customer_name && (
-                                        <p><strong>To:</strong> {emailingInvoice.customer_name}</p>
-                                      )}
-                                      {emailingInvoice.project_name && (
-                                        <p><strong>Project:</strong> {emailingInvoice.project_name}</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="mt-4 text-center">
-                                    <div className="border-2 border-blue-500 rounded-lg p-4 inline-block">
-                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Amount Due</p>
-                                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                        ${emailingInvoice.total_amount.toFixed(2)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 p-3 rounded-md">
-                                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                                      📎 <strong>Invoice Document:</strong> Please find the detailed invoice attached to this email as a PDF.
+                            
+                            {/* Email Content */}
+                            <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-b-lg">
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-md mb-4">
+                                <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">{emailingInvoice.title}</h3>
+                                {emailingInvoice.description && (
+                                  <p className="text-gray-600 dark:text-gray-300 mb-3">{emailingInvoice.description}</p>
+                                )}
+                                
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div className="text-gray-700 dark:text-gray-300">
+                                    <p><strong>Invoice #:</strong> {emailingInvoice.invoice_number}</p>
+                                    <p><strong>Date:</strong> {new Date(emailingInvoice.created_at).toLocaleDateString()}</p>
+                                    {emailingInvoice.due_date && (
+                                      <p><strong>Due Date:</strong> {new Date(emailingInvoice.due_date).toLocaleDateString()}</p>
+                                    )}
+                                    <p>
+                                      <strong>Status:</strong> 
+                                      <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(emailingInvoice.status)}`}>
+                                        {emailingInvoice.status.toUpperCase()}
+                                      </span>
                                     </p>
                                   </div>
-                                  
-                                  {emailingInvoice.notes && (
-                                    <div className="mt-4">
-                                      <h4 className="font-semibold mb-2 text-gray-900 dark:text-white">Notes:</h4>
-                                      <p className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md text-sm text-gray-700 dark:text-gray-300">{emailingInvoice.notes}</p>
-                                    </div>
-                                  )}
+                                  <div className="text-right text-gray-700 dark:text-gray-300">
+                                    <p className="font-semibold">From: {emailData.sender_name || user?.username || 'AmpTrack'}</p>
+                                    {emailingInvoice.customer_name && (
+                                      <p><strong>To:</strong> {emailingInvoice.customer_name}</p>
+                                    )}
+                                    {emailingInvoice.project_name && (
+                                      <p><strong>Project:</strong> {emailingInvoice.project_name}</p>
+                                    )}
+                                  </div>
                                 </div>
                                 
-                                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                                  <p>Thank you for your business. This invoice details the services provided and the amount due.</p>
-                                  {emailingInvoice.due_date && (
-                                    <p>Please ensure payment is made by the due date: {new Date(emailingInvoice.due_date).toLocaleDateString()}</p>
-                                  )}
+                                <div className="mt-4 text-center">
+                                  <div className="border-2 border-blue-500 rounded-lg p-4 inline-block">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Amount Due</p>
+                                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                      ${emailingInvoice.total_amount.toFixed(2)}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 p-3 rounded-md">
+                                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    📎 <strong>Invoice Document:</strong> Please find the detailed invoice attached to this email as a PDF.
+                                  </p>
+                                </div>
+                                
+                                {emailingInvoice.notes && (
+                                  <div className="mt-4">
+                                    <h4 className="font-semibold mb-2 text-gray-900 dark:text-white">Notes:</h4>
+                                    <p className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md text-sm text-gray-700 dark:text-gray-300">{emailingInvoice.notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                                <p>Thank you for your business. This invoice details the services provided and the amount due.</p>
+                                {emailingInvoice.due_date && (
+                                  <p>Please ensure payment is made by the due date: {new Date(emailingInvoice.due_date).toLocaleDateString()}</p>
+                                                                  )}
                                   <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
                                 </div>
                               </div>
