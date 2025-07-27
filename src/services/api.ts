@@ -553,6 +553,11 @@ export const invoicesAPI = {
     const response: AxiosResponse<{ message: string; pdf_path: string }> = await api.post(`/invoices/${id}/regenerate-pdf`);
     return response.data;
   },
+
+  sendInvoiceEmail: async (id: number, emailData: { recipient_email: string; sender_name: string }): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.post(`/invoices/${id}/send-email`, emailData);
+    return response.data;
+  },
 };
 
 // Payments API
