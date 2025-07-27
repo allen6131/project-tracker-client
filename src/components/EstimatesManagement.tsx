@@ -27,6 +27,7 @@ const EstimatesManagement: React.FC = () => {
   const [emailLoading, setEmailLoading] = useState(false);
   const [showSendPrompt, setShowSendPrompt] = useState(false);
   const [newlyCreatedEstimate, setNewlyCreatedEstimate] = useState<Estimate | null>(null);
+  const [emailPreviewTab, setEmailPreviewTab] = useState<'email' | 'pdf'>('email');
   
   // PDF viewer state
   const [showPDFViewer, setShowPDFViewer] = useState(false);
@@ -178,7 +179,20 @@ const EstimatesManagement: React.FC = () => {
       recipient_email: estimate.customer_name || '',
       sender_name: user?.username || ''
     });
+    
+    // Load PDF preview for the email modal
+    loadEmailPDFPreview(estimate);
     setShowEmailModal(true);
+  };
+
+  const loadEmailPDFPreview = async (estimate: Estimate) => {
+    try {
+      const url = await estimatesAPI.viewEstimatePDF(estimate.id);
+      setPdfUrl(url);
+    } catch (err: any) {
+      console.error('Failed to load PDF preview for email:', err);
+      // Don't show error for PDF preview failure in email context
+    }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -192,6 +206,8 @@ const EstimatesManagement: React.FC = () => {
       setShowEmailModal(false);
       setEmailingEstimate(null);
       setEmailData({ recipient_email: '', sender_name: '' });
+      setPdfUrl(null);
+      setEmailPreviewTab('email');
       loadEstimates(); // Refresh to show updated status
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send email');
@@ -854,89 +870,147 @@ const EstimatesManagement: React.FC = () => {
                         <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        The estimate PDF will be automatically attached to the email.
+                        The estimate PDF will be automatically attached to the email. Use the tabs on the right to preview both the email content and PDF attachment.
                       </p>
                     </div>
                   </div>
 
-                  {/* Right side - Email preview */}
+                  {/* Right side - Email and PDF preview */}
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email Preview
-                      </label>
-                      <div className="border border-gray-200 rounded-md overflow-hidden">
-                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                          <p className="text-xs text-gray-600">
-                            Subject: Estimate for {emailingEstimate.project_name || 'Project'} from {emailData.sender_name || user?.username || 'AmpTrack'}
-                          </p>
-                        </div>
-                        <div className="p-4 bg-white max-h-96 overflow-y-auto">
-                          {/* Email Header */}
-                          <div className="bg-green-500 text-white p-4 text-center rounded-t-lg">
-                            <h2 className="text-xl font-bold">Project Estimate</h2>
+                    {/* Tab Navigation */}
+                    <div className="border-b border-gray-200">
+                      <nav className="-mb-px flex space-x-8">
+                        <button
+                          onClick={() => setEmailPreviewTab('email')}
+                          className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            emailPreviewTab === 'email'
+                              ? 'border-blue-500 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          Email Preview
+                        </button>
+                        <button
+                          onClick={() => setEmailPreviewTab('pdf')}
+                          className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            emailPreviewTab === 'pdf'
+                              ? 'border-blue-500 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          PDF Attachment
+                        </button>
+                      </nav>
+                    </div>
+
+                    {/* Tab Content */}
+                    {emailPreviewTab === 'email' ? (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email Preview
+                        </label>
+                        <div className="border border-gray-200 rounded-md overflow-hidden">
+                          <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                            <p className="text-xs text-gray-600">
+                              Subject: Estimate for {emailingEstimate.project_name || 'Project'} from {emailData.sender_name || user?.username || 'AmpTrack'}
+                            </p>
                           </div>
-                          
-                          {/* Email Content */}
-                          <div className="bg-gray-50 p-6 rounded-b-lg">
-                            <div className="bg-white p-4 rounded-md mb-4">
-                              <h3 className="font-semibold text-lg mb-2">{emailingEstimate.title}</h3>
-                              {emailingEstimate.description && (
-                                <p className="text-gray-600 mb-3">{emailingEstimate.description}</p>
-                              )}
-                              
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <p><strong>Estimate ID:</strong> #{emailingEstimate.id}</p>
-                                  <p><strong>Project:</strong> {emailingEstimate.project_name || 'N/A'}</p>
-                                  <p><strong>Date:</strong> {new Date(emailingEstimate.created_at).toLocaleDateString()}</p>
-                                  <p>
-                                    <strong>Status:</strong> 
-                                    <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(emailingEstimate.status)}`}>
-                                      {emailingEstimate.status.toUpperCase()}
-                                    </span>
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-semibold">From: {emailData.sender_name || user?.username || 'AmpTrack'}</p>
-                                  {emailingEstimate.customer_name && (
-                                    <p><strong>Customer:</strong> {emailingEstimate.customer_name}</p>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="mt-4 text-center">
-                                <div className="border-2 border-green-500 rounded-lg p-4 inline-block">
-                                  <p className="text-sm text-gray-600 mb-1">Total Estimate Amount</p>
-                                  <p className="text-2xl font-bold text-green-600">
-                                    ${emailingEstimate.total_amount.toFixed(2)}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <div className="mt-4 bg-yellow-50 border border-yellow-200 p-3 rounded-md">
-                                <p className="text-sm">
-                                  📎 <strong>Estimate Document:</strong> Please find the detailed estimate document attached to this email as a PDF.
-                                </p>
-                              </div>
-                              
-                              {emailingEstimate.notes && (
-                                <div className="mt-4">
-                                  <h4 className="font-semibold mb-2">Notes:</h4>
-                                  <p className="bg-gray-50 p-3 rounded-md text-sm">{emailingEstimate.notes}</p>
-                                </div>
-                              )}
+                          <div className="p-4 bg-white max-h-96 overflow-y-auto">
+                            {/* Email Header */}
+                            <div className="bg-green-500 text-white p-4 text-center rounded-t-lg">
+                              <h2 className="text-xl font-bold">Project Estimate</h2>
                             </div>
                             
-                            <div className="text-sm text-gray-600 space-y-2">
-                              <p>Thank you for considering our services for your project. The estimate amount shown above covers all work outlined in the attached document.</p>
-                              <p>If you have any questions about this estimate or would like to discuss the project further, please don't hesitate to contact us.</p>
-                              <p>We look forward to the opportunity to work with you!</p>
+                            {/* Email Content */}
+                            <div className="bg-gray-50 p-6 rounded-b-lg">
+                              <div className="bg-white p-4 rounded-md mb-4">
+                                <h3 className="font-semibold text-lg mb-2">{emailingEstimate.title}</h3>
+                                {emailingEstimate.description && (
+                                  <p className="text-gray-600 mb-3">{emailingEstimate.description}</p>
+                                )}
+                                
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p><strong>Estimate ID:</strong> #{emailingEstimate.id}</p>
+                                    <p><strong>Project:</strong> {emailingEstimate.project_name || 'N/A'}</p>
+                                    <p><strong>Date:</strong> {new Date(emailingEstimate.created_at).toLocaleDateString()}</p>
+                                    <p>
+                                      <strong>Status:</strong> 
+                                      <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(emailingEstimate.status)}`}>
+                                        {emailingEstimate.status.toUpperCase()}
+                                      </span>
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-semibold">From: {emailData.sender_name || user?.username || 'AmpTrack'}</p>
+                                    {emailingEstimate.customer_name && (
+                                      <p><strong>Customer:</strong> {emailingEstimate.customer_name}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-4 text-center">
+                                  <div className="border-2 border-green-500 rounded-lg p-4 inline-block">
+                                    <p className="text-sm text-gray-600 mb-1">Total Estimate Amount</p>
+                                    <p className="text-2xl font-bold text-green-600">
+                                      ${emailingEstimate.total_amount.toFixed(2)}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-4 bg-yellow-50 border border-yellow-200 p-3 rounded-md">
+                                  <p className="text-sm">
+                                    📎 <strong>Estimate Document:</strong> Please find the detailed estimate document attached to this email as a PDF.
+                                  </p>
+                                </div>
+                                
+                                {emailingEstimate.notes && (
+                                  <div className="mt-4">
+                                    <h4 className="font-semibold mb-2">Notes:</h4>
+                                    <p className="bg-gray-50 p-3 rounded-md text-sm">{emailingEstimate.notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="text-sm text-gray-600 space-y-2">
+                                <p>Thank you for considering our services for your project. The estimate amount shown above covers all work outlined in the attached document.</p>
+                                <p>If you have any questions about this estimate or would like to discuss the project further, please don't hesitate to contact us.</p>
+                                <p>We look forward to the opportunity to work with you!</p>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          PDF Attachment Preview
+                        </label>
+                        <div className="border border-gray-200 rounded-md overflow-hidden">
+                          <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                            <p className="text-xs text-gray-600">
+                              📎 estimate-{emailingEstimate.id}.pdf
+                            </p>
+                          </div>
+                          <div className="bg-white h-96 flex items-center justify-center">
+                            {pdfUrl ? (
+                              <iframe
+                                src={pdfUrl}
+                                className="w-full h-full border-0"
+                                title="Estimate PDF Preview"
+                              />
+                            ) : (
+                              <div className="text-center text-gray-500">
+                                <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                <p className="text-sm">Loading PDF preview...</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -947,6 +1021,8 @@ const EstimatesManagement: React.FC = () => {
                       setShowEmailModal(false);
                       setEmailingEstimate(null);
                       setEmailData({ recipient_email: '', sender_name: '' });
+                      setPdfUrl(null);
+                      setEmailPreviewTab('email');
                     }}
                     className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
