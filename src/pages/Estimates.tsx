@@ -20,6 +20,9 @@ const Estimates: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
+  // Dropdown state
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null);
@@ -62,6 +65,26 @@ const Estimates: React.FC = () => {
     loadEstimates();
     loadProjects();
   }, [currentPage, searchTerm, statusFilter, projectFilter]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleDropdown = (estimateId: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setOpenDropdownId(openDropdownId === estimateId ? null : estimateId);
+  };
 
   const loadEstimates = async () => {
     try {
@@ -261,15 +284,15 @@ const Estimates: React.FC = () => {
     const baseClasses = "px-2 py-1 text-xs font-medium rounded-full";
     switch (status) {
       case 'draft':
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300`;
       case 'sent':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
+        return `${baseClasses} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300`;
       case 'approved':
-        return `${baseClasses} bg-green-100 text-green-800`;
+        return `${baseClasses} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300`;
       case 'rejected':
-        return `${baseClasses} bg-red-100 text-red-800`;
+        return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300`;
       default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300`;
     }
   };
 
@@ -280,19 +303,19 @@ const Estimates: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       {/* Navigation */}
-      <nav className="bg-white shadow-lg">
+      <nav className="bg-white dark:bg-gray-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/dashboard">
                 <Logo size="md" />
               </Link>
-              <span className="ml-4 text-lg text-gray-600">Estimates</span>
+              <span className="ml-4 text-lg text-gray-600 dark:text-gray-300">Estimates</span>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-700">Welcome, {user?.username}</span>
+              <span className="text-gray-700 dark:text-gray-200">Welcome, {user?.username}</span>
               <button
                 onClick={logout}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
@@ -307,12 +330,12 @@ const Estimates: React.FC = () => {
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg transition-colors">
             <div className="px-4 py-5 sm:p-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900">Estimates Management</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Estimates Management</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Create and manage project estimates with documents
                   </p>
                 </div>
@@ -329,19 +352,19 @@ const Estimates: React.FC = () => {
 
         {/* Messages */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg">
             {success}
           </div>
         )}
 
         {/* Filters */}
-        <div className="mb-6 bg-white shadow rounded-lg p-4">
+        <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-4 transition-colors">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <input
@@ -349,14 +372,14 @@ const Estimates: React.FC = () => {
                 placeholder="Search estimates..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
             <div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">All Statuses</option>
                 <option value="draft">Draft</option>
@@ -369,7 +392,7 @@ const Estimates: React.FC = () => {
               <select
                 value={projectFilter}
                 onChange={(e) => setProjectFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">All Projects</option>
                 {projects.map(project => (
@@ -384,49 +407,49 @@ const Estimates: React.FC = () => {
 
         {/* Estimates List */}
         {loading ? (
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="text-center">Loading estimates...</div>
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
+            <div className="text-center text-gray-900 dark:text-white">Loading estimates...</div>
           </div>
         ) : (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Title
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Project
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Customer
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Total Amount
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Document
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {estimates.map((estimate) => (
-                    <tr key={estimate.id}>
+                    <tr key={estimate.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{estimate.title}</div>
-                        <div className="text-sm text-gray-500">{estimate.description}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{estimate.title}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{estimate.description}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {estimate.project_name || 'No project'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {estimate.customer_name || 'No customer'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -434,14 +457,14 @@ const Estimates: React.FC = () => {
                           {estimate.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         ${estimate.total_amount.toFixed(2)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {estimate.document_path ? (
                           <button
                             onClick={() => handleDownloadDocument(estimate.id)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
                           >
                             Download
                           </button>
@@ -450,56 +473,83 @@ const Estimates: React.FC = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex flex-col space-y-1">
-                          {/* Primary Actions */}
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEditEstimate(estimate)}
-                              className="text-indigo-600 hover:text-indigo-900 text-xs"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleSendEmail(estimate)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium"
-                            >
-                              Send Email
-                            </button>
-                            <button
-                              onClick={() => handleDeleteEstimate(estimate.id)}
-                              className="text-red-600 hover:text-red-900 text-xs"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                        <div className="relative dropdown-container">
+                          <button
+                            onClick={(e) => toggleDropdown(estimate.id, e)}
+                            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                            </svg>
+                          </button>
                           
-                          {/* Quick Status Actions */}
-                          <div className="flex space-x-1">
-                            {estimate.status === 'draft' && (
-                              <button
-                                onClick={() => handleQuickStatusUpdate(estimate.id, 'sent')}
-                                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                              >
-                                Send
-                              </button>
-                            )}
-                            {estimate.status === 'sent' && (
-                              <>
+                          {openDropdownId === estimate.id && (
+                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                              <div className="py-1">
                                 <button
-                                  onClick={() => handleQuickStatusUpdate(estimate.id, 'approved')}
-                                  className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
+                                  onClick={() => {
+                                    handleEditEstimate(estimate);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                                 >
-                                  Approve
+                                  Edit
                                 </button>
                                 <button
-                                  onClick={() => handleQuickStatusUpdate(estimate.id, 'rejected')}
-                                  className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
+                                  onClick={() => {
+                                    handleSendEmail(estimate);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                                 >
-                                  Reject
+                                  Send Email
                                 </button>
-                              </>
-                            )}
-                          </div>
+                                {estimate.status === 'draft' && (
+                                  <button
+                                    onClick={() => {
+                                      handleQuickStatusUpdate(estimate.id, 'sent');
+                                      setOpenDropdownId(null);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                  >
+                                    Mark as Sent
+                                  </button>
+                                )}
+                                {estimate.status === 'sent' && (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        handleQuickStatusUpdate(estimate.id, 'approved');
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        handleQuickStatusUpdate(estimate.id, 'rejected');
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
+                                <hr className="border-gray-200 dark:border-gray-600 my-1" />
+                                <button
+                                  onClick={() => {
+                                    handleDeleteEstimate(estimate.id);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -510,26 +560,26 @@ const Estimates: React.FC = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
                   >
                     Next
                   </button>
                 </div>
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       Page <span className="font-medium">{currentPage}</span> of{' '}
                       <span className="font-medium">{totalPages}</span>
                     </p>
@@ -542,8 +592,8 @@ const Estimates: React.FC = () => {
                           onClick={() => setCurrentPage(page)}
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                             page === currentPage
-                              ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              ? 'z-10 bg-indigo-50 dark:bg-indigo-900 border-indigo-500 dark:border-indigo-400 text-indigo-600 dark:text-indigo-300'
+                              : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                         >
                           {page}
@@ -560,9 +610,9 @@ const Estimates: React.FC = () => {
         {/* Create/Edit Form Modal */}
         {showForm && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
               <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                   {editingEstimate ? 'Edit Estimate' : 'Create New Estimate'}
                 </h3>
                 
@@ -570,18 +620,18 @@ const Estimates: React.FC = () => {
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Title *</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title *</label>
                       <input
                         type="text"
                         required
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Project *</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project *</label>
                       <select
                         required={!editingEstimate}
                         value={formData.project_id || ''}
@@ -589,7 +639,7 @@ const Estimates: React.FC = () => {
                           ...formData, 
                           project_id: e.target.value ? parseInt(e.target.value) : null
                         })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">Select Project</option>
                         {projects.map(project => (
@@ -602,18 +652,18 @@ const Estimates: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                     <textarea
                       rows={3}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Total Amount *</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Total Amount *</label>
                       <input
                         type="number"
                         step="0.01"
@@ -621,17 +671,17 @@ const Estimates: React.FC = () => {
                         required
                         value={formData.total_amount}
                         onChange={(e) => setFormData({ ...formData, total_amount: parseFloat(e.target.value) || 0 })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
 
                     {editingEstimate && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Status</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
                         <select
                           value={formData.status}
                           onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'sent' | 'approved' | 'rejected' })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         >
                           <option value="draft">Draft</option>
                           <option value="sent">Sent</option>
@@ -644,27 +694,27 @@ const Estimates: React.FC = () => {
 
                   {/* Document Upload */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Document {!editingEstimate ? '*' : '(Leave empty to keep current)'}
                     </label>
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
                       onChange={(e) => setSelectedDocument(e.target.files?.[0] || null)}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                       Supported formats: PDF, Word documents, images, text files (max 10MB)
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Notes</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
                     <textarea
                       rows={3}
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
 
@@ -673,7 +723,7 @@ const Estimates: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowForm(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                       Cancel
                     </button>
