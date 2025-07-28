@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Project, ProjectsResponse } from '../types';
 import { projectsAPI, invoicesAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface ProjectListProps {
   onEdit: (project: Project) => void;
@@ -12,6 +12,7 @@ interface ProjectListProps {
 
 const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrigger }) => {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +70,10 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
   const toggleDropdown = (projectId: number, event: React.MouseEvent) => {
     event.stopPropagation();
     setOpenDropdown(openDropdown === projectId ? null : projectId);
+  };
+
+  const handleRowClick = (projectId: number) => {
+    navigate(`/projects/${projectId}`);
   };
 
   const handleCreateInvoice = async (project: Project) => {
@@ -214,7 +219,11 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {projects.map((project) => (
-                  <tr key={project.id} className="hover:bg-gray-50">
+                  <tr 
+                    key={project.id} 
+                    onClick={() => handleRowClick(project.id)}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
@@ -290,7 +299,10 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {project.created_at ? new Date(project.created_at).toLocaleDateString() : 'Unknown'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td 
+                      className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="relative">
                         <button
                           onClick={(e) => toggleDropdown(project.id, e)}
