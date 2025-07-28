@@ -50,6 +50,25 @@ const Customers: React.FC = () => {
     notes: ''
   });
 
+  const [expandedIds, setExpandedIds] = useState<number[]>([]);
+  const [customerContacts, setCustomerContacts] = useState<Record<number, Contact[]>>({});
+
+  const toggleExpand = async (customerId: number) => {
+    if (expandedIds.includes(customerId)) {
+      setExpandedIds(expandedIds.filter(id => id !== customerId));
+    } else {
+      setExpandedIds([...expandedIds, customerId]);
+      if (!customerContacts[customerId]) {
+        try {
+          const response = await customersAPI.getCustomer(customerId);
+          setCustomerContacts(prev => ({ ...prev, [customerId]: response.customer.contacts || [] }));
+        } catch (err) {
+          console.error('Failed to load contacts', err);
+        }
+      }
+    }
+  };
+
   const loadCustomers = useCallback(async (page = 1, search = '') => {
     try {
       setLoading(true);
@@ -411,10 +430,10 @@ const Customers: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                       <button
-                        onClick={() => handleViewCustomer(customer)}
+                        onClick={() => toggleExpand(customer.id)}
                         className="text-blue-600 hover:text-blue-900"
                       >
-                        View
+                        {expandedIds.includes(customer.id) ? 'Hide' : 'View'}
                       </button>
                       <button
                         onClick={() => openEditCustomerForm(customer)}
@@ -430,6 +449,80 @@ const Customers: React.FC = () => {
                       </button>
                     </td>
                   </tr>
+                  {expandedIds.includes(customer.id) && <tr>
+                    <td colSpan={5} className="p-4 bg-gray-50">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">Contacts</h3>
+                        <button
+                          onClick={openCreateContactForm}
+                          className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                        >
+                          Add Contact
+                        </button>
+                      </div>
+                      {customerContacts[customer.id] && customerContacts[customer.id].length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {customerContacts[customer.id].map((contact) => (
+                            <div key={contact.id} className="bg-white rounded-lg p-4 border">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <h4 className="font-medium text-gray-900">
+                                    {contact.first_name} {contact.last_name}
+                                    {contact.is_primary && (
+                                      <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        Primary
+                                      </span>
+                                    )}
+                                  </h4>
+                                  {contact.position && (
+                                    <p className="text-sm text-gray-600">{contact.position}</p>
+                                  )}
+                                  {contact.department && (
+                                    <p className="text-sm text-gray-600">{contact.department}</p>
+                                  )}
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => openEditContactForm(contact)}
+                                    className="text-indigo-600 hover:text-indigo-900 text-sm"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteContact(contact.id)}
+                                    className="text-red-600 hover:text-red-900 text-sm"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                {contact.email && (
+                                  <p className="text-sm text-gray-600">📧 {contact.email}</p>
+                                )}
+                                {contact.phone && (
+                                  <p className="text-sm text-gray-600">📞 {contact.phone}</p>
+                                )}
+                                {contact.notes && (
+                                  <p className="text-sm text-gray-600 mt-2 italic">{contact.notes}</p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 bg-white rounded-lg border">
+                          <p className="text-gray-500">No contacts added yet.</p>
+                          <button
+                            onClick={openCreateContactForm}
+                            className="mt-2 text-blue-600 hover:underline text-sm"
+                          >
+                            Add the first contact
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>}
                 ))}
               </tbody>
             </table>
