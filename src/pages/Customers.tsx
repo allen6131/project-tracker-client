@@ -406,123 +406,127 @@ const Customers: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {customers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                        {customer.description && (
-                          <div className="text-sm text-gray-500 truncate max-w-xs">{customer.description}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">{customer.industry || 'Not specified'}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {customer.email && <div>{customer.email}</div>}
-                        {customer.phone && <div>{customer.phone}</div>}
-                        {!customer.email && !customer.phone && <span className="text-gray-500">No contact info</span>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(customer.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => toggleExpand(customer.id)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        {expandedIds.includes(customer.id) ? 'Hide' : 'View'}
-                      </button>
-                      <button
-                        onClick={() => openEditCustomerForm(customer)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteCustomer(customer.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedIds.includes(customer.id) && <tr>
-                    <td colSpan={5} className="p-4 bg-gray-50">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-900">Contacts</h3>
+                  <React.Fragment key={customer.id}>
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                          {customer.description && (
+                            <div className="text-sm text-gray-500 truncate max-w-xs">{customer.description}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-900">{customer.industry || 'Not specified'}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {customer.email && <div>{customer.email}</div>}
+                          {customer.phone && <div>{customer.phone}</div>}
+                          {!customer.email && !customer.phone && <span className="text-gray-500">No contact info</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(customer.created_at)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                         <button
-                          onClick={openCreateContactForm}
-                          className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                          onClick={() => toggleExpand(customer.id)}
+                          className="text-blue-600 hover:text-blue-900"
                         >
-                          Add Contact
+                          {expandedIds.includes(customer.id) ? 'Hide' : 'View'}
                         </button>
-                      </div>
-                      {customerContacts[customer.id] && customerContacts[customer.id].length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {customerContacts[customer.id].map((contact) => (
-                            <div key={contact.id} className="bg-white rounded-lg p-4 border">
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <h4 className="font-medium text-gray-900">
-                                    {contact.first_name} {contact.last_name}
-                                    {contact.is_primary && (
-                                      <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                        Primary
-                                      </span>
+                        <button
+                          onClick={() => openEditCustomerForm(customer)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCustomer(customer.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedIds.includes(customer.id) && (
+                      <tr>
+                        <td colSpan={5} className="p-4 bg-gray-50">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">Contacts</h3>
+                            <button
+                              onClick={openCreateContactForm}
+                              className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                            >
+                              Add Contact
+                            </button>
+                          </div>
+                          {customerContacts[customer.id] && customerContacts[customer.id].length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {customerContacts[customer.id].map((contact) => (
+                                <div key={contact.id} className="bg-white rounded-lg p-4 border">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                      <h4 className="font-medium text-gray-900">
+                                        {contact.first_name} {contact.last_name}
+                                        {contact.is_primary && (
+                                          <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            Primary
+                                          </span>
+                                        )}
+                                      </h4>
+                                      {contact.position && (
+                                        <p className="text-sm text-gray-600">{contact.position}</p>
+                                      )}
+                                      {contact.department && (
+                                        <p className="text-sm text-gray-600">{contact.department}</p>
+                                      )}
+                                    </div>
+                                    <div className="flex space-x-2">
+                                      <button
+                                        onClick={() => openEditContactForm(contact)}
+                                        className="text-indigo-600 hover:text-indigo-900 text-sm"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteContact(contact.id)}
+                                        className="text-red-600 hover:text-red-900 text-sm"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    {contact.email && (
+                                      <p className="text-sm text-gray-600">📧 {contact.email}</p>
                                     )}
-                                  </h4>
-                                  {contact.position && (
-                                    <p className="text-sm text-gray-600">{contact.position}</p>
-                                  )}
-                                  {contact.department && (
-                                    <p className="text-sm text-gray-600">{contact.department}</p>
-                                  )}
+                                    {contact.phone && (
+                                      <p className="text-sm text-gray-600">📞 {contact.phone}</p>
+                                    )}
+                                    {contact.notes && (
+                                      <p className="text-sm text-gray-600 mt-2 italic">{contact.notes}</p>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => openEditContactForm(contact)}
-                                    className="text-indigo-600 hover:text-indigo-900 text-sm"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteContact(contact.id)}
-                                    className="text-red-600 hover:text-red-900 text-sm"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                {contact.email && (
-                                  <p className="text-sm text-gray-600">📧 {contact.email}</p>
-                                )}
-                                {contact.phone && (
-                                  <p className="text-sm text-gray-600">📞 {contact.phone}</p>
-                                )}
-                                {contact.notes && (
-                                  <p className="text-sm text-gray-600 mt-2 italic">{contact.notes}</p>
-                                )}
-                              </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 bg-white rounded-lg border">
-                          <p className="text-gray-500">No contacts added yet.</p>
-                          <button
-                            onClick={openCreateContactForm}
-                            className="mt-2 text-blue-600 hover:underline text-sm"
-                          >
-                            Add the first contact
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>}
+                          ) : (
+                            <div className="text-center py-8 bg-white rounded-lg border">
+                              <p className="text-gray-500">No contacts added yet.</p>
+                              <button
+                                onClick={openCreateContactForm}
+                                className="mt-2 text-blue-600 hover:underline text-sm"
+                              >
+                                Add the first contact
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
