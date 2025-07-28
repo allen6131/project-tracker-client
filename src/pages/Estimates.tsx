@@ -52,6 +52,8 @@ const Estimates: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfPreviewLoading, setPdfPreviewLoading] = useState(false);
   const [downloadingEstimate, setDownloadingEstimate] = useState<number | null>(null);
+  const [showPageLoading, setShowPageLoading] = useState(false);
+  const [pageLoadingMessage, setPageLoadingMessage] = useState('');
   
   const [projects, setProjects] = useState<Project[]>([]);
   
@@ -272,6 +274,15 @@ const Estimates: React.FC = () => {
   const handleDownloadDocument = async (estimateId: number) => {
     try {
       setDownloadingEstimate(estimateId);
+      
+      // Find the estimate to determine if it has a document
+      const estimate = estimates.find(e => e.id === estimateId);
+      const hasDocument = estimate?.document_path;
+      
+      // Show page loading with appropriate message
+      setShowPageLoading(true);
+      setPageLoadingMessage(hasDocument ? 'Downloading PDF...' : 'Generating PDF...');
+      
       const blob = await estimatesAPI.downloadEstimate(estimateId);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -286,6 +297,8 @@ const Estimates: React.FC = () => {
       setError(err.response?.data?.message || 'Failed to download document');
     } finally {
       setDownloadingEstimate(null);
+      setShowPageLoading(false);
+      setPageLoadingMessage('');
     }
   };
 
@@ -1005,6 +1018,39 @@ const Estimates: React.FC = () => {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PDF Generation/Download Loading Overlay */}
+        {showPageLoading && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-sm mx-4 text-center shadow-2xl">
+              <div className="flex flex-col items-center space-y-4">
+                {/* Animated PDF Icon */}
+                <div className="relative">
+                  <svg className="w-16 h-16 text-blue-600 dark:text-blue-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {/* Spinning ring around the icon */}
+                  <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin"></div>
+                </div>
+                
+                {/* Loading Message */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {pageLoadingMessage}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Please wait while we prepare your document...
+                  </p>
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                </div>
               </div>
             </div>
           </div>
