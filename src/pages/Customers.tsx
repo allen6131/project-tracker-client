@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Customer, Contact, CreateCustomerRequest, UpdateCustomerRequest, CreateContactRequest, UpdateContactRequest } from '../types';
-import { customersAPI } from '../services/api';
+import { Customer, Contact, Project, CreateCustomerRequest, UpdateCustomerRequest, CreateContactRequest, UpdateContactRequest } from '../types';
+import { customersAPI, projectsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';
 
@@ -24,6 +24,8 @@ const Customers: React.FC = () => {
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerProjects, setCustomerProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   
@@ -176,10 +178,22 @@ const Customers: React.FC = () => {
   // Contact CRUD operations
   const handleViewCustomer = async (customer: Customer) => {
     try {
+      setProjectsLoading(true);
       const response = await customersAPI.getCustomer(customer.id);
       setSelectedCustomer(response.customer);
+      
+      // Fetch projects for this customer
+      try {
+        const projectsResponse = await projectsAPI.getProjectsByCustomer(customer.id);
+        setCustomerProjects(projectsResponse.projects);
+      } catch (projectsErr) {
+        console.warn('Failed to fetch customer projects:', projectsErr);
+        setCustomerProjects([]);
+      }
     } catch (err: any) {
       setError('Failed to load customer details');
+    } finally {
+      setProjectsLoading(false);
     }
   };
 
@@ -860,7 +874,10 @@ const Customers: React.FC = () => {
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedCustomer.name}</h2>
                 <button
-                  onClick={() => setSelectedCustomer(null)}
+                  onClick={() => {
+                    setSelectedCustomer(null);
+                    setCustomerProjects([]);
+                  }}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1002,6 +1019,95 @@ const Customers: React.FC = () => {
                       >
                         Add the first contact
                       </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Projects Section */}
+                <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Associated Projects ({customerProjects.length})
+                    </h3>
+                  </div>
+
+                  {projectsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading projects...</p>
+                    </div>
+                  ) : customerProjects.length > 0 ? (
+                    <div className="space-y-3">
+                      {customerProjects.map((project) => (
+                        <div key={project.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3">
+                                <h4 className="font-medium text-gray-900 dark:text-white">
+                                  {project.name}
+                                </h4>
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  project.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                                  project.status === 'started' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                                  project.status === 'bidding' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
+                                  'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+                                }`}>
+                                  {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                                </span>
+                              </div>
+                              {project.description && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  {project.description.length > 150 
+                                    ? `${project.description.substring(0, 150)}...` 
+                                    : project.description}
+                                </p>
+                              )}
+                              {project.address && (
+                                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1 flex items-center">
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  </svg>
+                                  {project.address.length > 80 
+                                    ? `${project.address.substring(0, 80)}...` 
+                                    : project.address}
+                                </p>
+                              )}
+                              <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                {project.main_technician_username && (
+                                  <span>👤 {project.main_technician_username}</span>
+                                )}
+                                <span>📅 {new Date(project.created_at).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Link
+                                to={`/projects/${project.id}`}
+                                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                              >
+                                View Project
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <svg className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-2 0H7m14 0V9a2 2 0 00-2-2M9 7h6m-6 4h6m-6 4h6" />
+                      </svg>
+                      <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Projects</h4>
+                      <p className="text-gray-500 dark:text-gray-400">This customer doesn't have any associated projects yet.</p>
+                      <Link
+                        to="/projects"
+                        className="mt-3 inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
+                      >
+                        Create a new project
+                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                      </Link>
                     </div>
                   )}
                 </div>

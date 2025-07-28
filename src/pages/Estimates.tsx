@@ -265,9 +265,8 @@ const Estimates: React.FC = () => {
 
   const handleDownloadDocument = async (estimateId: number) => {
     try {
-      const response = await estimatesAPI.downloadEstimate(estimateId);
-      // Create a download link
-      const url = window.URL.createObjectURL(new Blob([response]));
+      const blob = await estimatesAPI.downloadEstimate(estimateId);
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `estimate-${estimateId}-document`;
@@ -276,7 +275,8 @@ const Estimates: React.FC = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
-      setError('Failed to download document');
+      console.error('Download error:', err);
+      setError(err.response?.data?.message || 'Failed to download document');
     }
   };
 

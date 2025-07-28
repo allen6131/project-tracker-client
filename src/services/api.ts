@@ -203,6 +203,11 @@ export const projectsAPI = {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/projects/${id}`);
     return response.data;
   },
+
+  getProjectsByCustomer: async (customerId: number): Promise<{ projects: Project[] }> => {
+    const response: AxiosResponse<{ projects: Project[] }> = await api.get(`/projects/customer/${customerId}`);
+    return response.data;
+  },
 };
 
 // Files API
@@ -465,17 +470,59 @@ export const estimatesAPI = {
   },
 
   downloadEstimate: async (id: number): Promise<Blob> => {
-    const response: AxiosResponse<Blob> = await api.get(`/estimates/${id}/download`, {
-      responseType: 'blob',
-    });
-    return response.data;
+    try {
+      const response: AxiosResponse<Blob> = await api.get(`/estimates/${id}/download`, {
+        responseType: 'blob',
+      });
+      
+      // Check if the response is actually a blob and not an error
+      if (response.data.size === 0) {
+        throw new Error('Downloaded file is empty');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      // If the error response is JSON, it means the server returned an error message
+      if (error.response && error.response.data instanceof Blob) {
+        try {
+          const errorText = await error.response.data.text();
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.message || 'Failed to download estimate');
+        } catch (parseError) {
+          // If we can't parse the error, throw the original error
+          throw error;
+        }
+      }
+      throw error;
+    }
   },
 
   downloadEstimatePDF: async (id: number): Promise<Blob> => {
-    const response: AxiosResponse<Blob> = await api.get(`/estimates/${id}/pdf`, {
-      responseType: 'blob',
-    });
-    return response.data;
+    try {
+      const response: AxiosResponse<Blob> = await api.get(`/estimates/${id}/pdf`, {
+        responseType: 'blob',
+      });
+      
+      // Check if the response is actually a blob and not an error
+      if (response.data.size === 0) {
+        throw new Error('Downloaded PDF is empty');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      // If the error response is JSON, it means the server returned an error message
+      if (error.response && error.response.data instanceof Blob) {
+        try {
+          const errorText = await error.response.data.text();
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.message || 'Failed to download estimate PDF');
+        } catch (parseError) {
+          // If we can't parse the error, throw the original error
+          throw error;
+        }
+      }
+      throw error;
+    }
   },
 
   viewEstimatePDF: async (id: number): Promise<string> => {
