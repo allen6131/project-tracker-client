@@ -471,8 +471,17 @@ export const estimatesAPI = {
 
   downloadEstimate: async (id: number): Promise<Blob> => {
     try {
+      console.log('Attempting to download estimate with ID:', id);
+      console.log('Request URL:', `/estimates/${id}/download`);
+      
       const response: AxiosResponse<Blob> = await api.get(`/estimates/${id}/download`, {
         responseType: 'blob',
+      });
+      
+      console.log('Download response received:', {
+        status: response.status,
+        contentType: response.headers['content-type'],
+        dataSize: response.data.size
       });
       
       // Check if the response is actually a blob and not an error
@@ -482,13 +491,24 @@ export const estimatesAPI = {
       
       return response.data;
     } catch (error: any) {
+      console.error('Download estimate error details:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      
       // If the error response is JSON, it means the server returned an error message
       if (error.response && error.response.data instanceof Blob) {
         try {
           const errorText = await error.response.data.text();
+          console.log('Error response text:', errorText);
           const errorData = JSON.parse(errorText);
           throw new Error(errorData.message || 'Failed to download estimate');
         } catch (parseError) {
+          console.log('Could not parse error response as JSON');
           // If we can't parse the error, throw the original error
           throw error;
         }
@@ -540,6 +560,16 @@ export const estimatesAPI = {
   sendEstimateEmail: async (id: number, emailData: { recipient_email: string; sender_name?: string }): Promise<{ message: string; recipient: string }> => {
     const response: AxiosResponse<{ message: string; recipient: string }> = await api.post(`/estimates/${id}/send-email`, emailData);
     return response.data;
+  },
+
+  testEstimate: async (id: number): Promise<any> => {
+    try {
+      const response = await api.get(`/estimates/${id}/test`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Test estimate error:', error);
+      throw error;
+    }
   },
 };
 
