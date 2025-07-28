@@ -50,6 +50,8 @@ const Estimates: React.FC = () => {
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailPreviewTab, setEmailPreviewTab] = useState<'email' | 'pdf'>('email');
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfPreviewLoading, setPdfPreviewLoading] = useState(false);
+  const [downloadingEstimate, setDownloadingEstimate] = useState<number | null>(null);
   
   const [projects, setProjects] = useState<Project[]>([]);
   
@@ -184,11 +186,14 @@ const Estimates: React.FC = () => {
 
   const loadEmailPDFPreview = async (estimate: Estimate) => {
     try {
+      setPdfPreviewLoading(true);
       const url = await estimatesAPI.viewEstimatePDF(estimate.id);
       setPdfUrl(url);
     } catch (err: any) {
       console.error('Failed to load PDF preview for email:', err);
       // Don't show error for PDF preview failure in email context
+    } finally {
+      setPdfPreviewLoading(false);
     }
   };
 
@@ -204,6 +209,7 @@ const Estimates: React.FC = () => {
       setEmailingEstimate(null);
       setEmailData({ recipient_email: '', sender_name: '' });
       setPdfUrl(null);
+      setPdfPreviewLoading(false);
       setEmailPreviewTab('email');
       loadEstimates(); // Refresh to show updated status
     } catch (err: any) {
@@ -265,6 +271,7 @@ const Estimates: React.FC = () => {
 
   const handleDownloadDocument = async (estimateId: number) => {
     try {
+      setDownloadingEstimate(estimateId);
       const blob = await estimatesAPI.downloadEstimate(estimateId);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -277,6 +284,8 @@ const Estimates: React.FC = () => {
     } catch (err: any) {
       console.error('Download error:', err);
       setError(err.response?.data?.message || 'Failed to download document');
+    } finally {
+      setDownloadingEstimate(null);
     }
   };
 
@@ -464,9 +473,20 @@ const Estimates: React.FC = () => {
                         {estimate.document_path ? (
                           <button
                             onClick={() => handleDownloadDocument(estimate.id)}
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                            disabled={downloadingEstimate === estimate.id}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                           >
-                            Download
+                            {downloadingEstimate === estimate.id ? (
+                              <>
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Generating...</span>
+                              </>
+                            ) : (
+                              <span>Download</span>
+                            )}
                           </button>
                         ) : (
                           'No document'
@@ -932,7 +952,16 @@ const Estimates: React.FC = () => {
                               </p>
                             </div>
                             <div className="bg-white dark:bg-gray-800 h-96 flex items-center justify-center">
-                              {pdfUrl ? (
+                              {pdfPreviewLoading ? (
+                                <div className="text-center text-gray-600 dark:text-gray-400">
+                                  <svg className="animate-spin mx-auto h-12 w-12 mb-4 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  <p className="text-lg font-medium">Generating PDF Preview...</p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">This may take a few moments</p>
+                                </div>
+                              ) : pdfUrl ? (
                                 <iframe
                                   src={pdfUrl}
                                   className="w-full h-full border-0"
@@ -961,6 +990,7 @@ const Estimates: React.FC = () => {
                         setEmailingEstimate(null);
                         setEmailData({ recipient_email: '', sender_name: '' });
                         setPdfUrl(null);
+                        setPdfPreviewLoading(false);
                         setEmailPreviewTab('email');
                       }}
                       className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
