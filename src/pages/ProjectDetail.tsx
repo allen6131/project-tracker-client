@@ -91,6 +91,9 @@ const ProjectDetail: React.FC = () => {
             setLoading(true);
             try {
                 const projectResponse = await projectsAPI.getProject(parseInt(id));
+                console.log('ProjectDetail: Received project data:', projectResponse.project);
+                console.log('ProjectDetail: Project customer_id:', projectResponse.project.customer_id);
+                console.log('ProjectDetail: Project customer_name:', projectResponse.project.customer_name);
                 setProject(projectResponse.project);
 
                 const todoResponse = await todoAPI.getTodoLists(parseInt(id));
@@ -102,12 +105,16 @@ const ProjectDetail: React.FC = () => {
 
                 // Fetch customer data if exists
                 if (projectResponse.project.customer_id) {
+                    console.log('ProjectDetail: Fetching customer data for customer_id:', projectResponse.project.customer_id);
                     try {
                         const customerResponse = await customersAPI.getCustomer(projectResponse.project.customer_id);
+                        console.log('ProjectDetail: Fetched customer data:', customerResponse.customer);
                         setCustomer(customerResponse.customer);
                     } catch (customerErr) {
-                        console.warn('Failed to fetch customer data:', customerErr);
+                        console.warn('ProjectDetail: Failed to fetch customer data:', customerErr);
                     }
+                } else {
+                    console.log('ProjectDetail: No customer_id found in project data');
                 }
 
                 // Fetch estimates for this project
@@ -945,7 +952,12 @@ const ProjectDetail: React.FC = () => {
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-bold">Customer Information</h2>
                             </div>
-                            <CustomerInfo customerId={project.customer_id || null} customerName={project.customer_name} />
+                            {(() => {
+                                console.log('ProjectDetail: Rendering CustomerInfo with customerId:', project.customer_id, 'customerName:', project.customer_name);
+                                return (
+                                    <CustomerInfo customerId={project.customer_id || null} customerName={project.customer_name} />
+                                );
+                            })()}
                         </div>
                     ) : activeTab === 'rfi' ? (
                         <div>

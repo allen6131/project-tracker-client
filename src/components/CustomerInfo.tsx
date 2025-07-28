@@ -15,16 +15,23 @@ const CustomerInfo: React.FC<CustomerInfoProps> = ({ customerId, customerName })
 
   useEffect(() => {
     const fetchCustomer = async () => {
-      if (!customerId) return;
+      console.log('CustomerInfo: Received customerId:', customerId, 'customerName:', customerName);
+      
+      if (!customerId) {
+        console.log('CustomerInfo: No customerId provided, showing no customer assigned message');
+        return;
+      }
       
       try {
         setLoading(true);
         setError(null);
+        console.log('CustomerInfo: Fetching customer data for ID:', customerId);
         const response = await customersAPI.getCustomer(customerId);
+        console.log('CustomerInfo: Received customer data:', response.customer);
         setCustomer(response.customer);
       } catch (err: any) {
+        console.error('CustomerInfo: Fetch customer error:', err);
         setError('Failed to load customer information');
-        console.error('Fetch customer error:', err);
       } finally {
         setLoading(false);
       }
