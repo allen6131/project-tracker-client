@@ -226,7 +226,13 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
                   >
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div 
+                          className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRowClick(project.id);
+                          }}
+                        >
                           {project.name}
                         </div>
                         {project.description && (
