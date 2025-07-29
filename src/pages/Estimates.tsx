@@ -435,8 +435,8 @@ const Estimates: React.FC = () => {
             <div className="text-center text-gray-900 dark:text-white">Loading estimates...</div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg transition-colors" style={{ overflowY: 'visible' }}>
-            <div className="overflow-x-auto" style={{ overflowY: 'visible' }}>
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors">
+            <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
@@ -590,6 +590,20 @@ const Estimates: React.FC = () => {
                           )}
                         </div>
                       </td>
+                    </tr>
+                  ))}
+                  {/* Add empty rows when there are fewer than 5 estimates to ensure dropdown has space */}
+                  {estimates.length < 5 && Array.from({ length: 5 - estimates.length }).map((_, index) => (
+                    <tr key={`empty-${index}`} className="pointer-events-none">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-transparent">.</div>
+                        <div className="text-sm text-transparent">.</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-transparent">.</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-transparent">.</td>
                     </tr>
                   ))}
                 </tbody>
