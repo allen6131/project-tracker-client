@@ -860,7 +860,7 @@ const ProjectDetail: React.FC = () => {
                     </div>
 
                     {/* Tab Content */}
-                    <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+                    <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6 transition-colors" style={{ overflow: 'visible' }}>
                         {activeTab === 'todos' ? (
                             <div>
                                 <div className="flex justify-between items-center mb-6">
@@ -1016,8 +1016,9 @@ const ProjectDetail: React.FC = () => {
                                                                 </button>
                                                                 
                                                                 {openInvoiceDropdownId === invoice.id && (
-                                                                    <div className="absolute right-0 bottom-full mb-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-50"
+                                                                    <div className="absolute right-0 top-full mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5"
                                                                          style={{ 
+                                                                             zIndex: 9999,
                                                                              boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
                                                                          }}>
                                                                         <div className="py-1">
@@ -1190,8 +1191,9 @@ const ProjectDetail: React.FC = () => {
                                                                 </button>
                                                                 
                                                                 {openEstimateDropdownId === estimate.id && (
-                                                                    <div className="absolute right-0 bottom-full mb-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-50"
+                                                                    <div className="absolute right-0 top-full mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5"
                                                                          style={{ 
+                                                                             zIndex: 9999,
                                                                              boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
                                                                          }}>
                                                                         <div className="py-1">
