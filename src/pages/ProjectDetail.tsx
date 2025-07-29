@@ -82,10 +82,41 @@ const ProjectDetail: React.FC = () => {
         { description: '', quantity: 1, unit_price: 0 }
     ]);
 
+    // Dropdown state for action menus
+    const [openEstimateDropdownId, setOpenEstimateDropdownId] = useState<number | null>(null);
+    const [openInvoiceDropdownId, setOpenInvoiceDropdownId] = useState<number | null>(null);
+
     const clearMessages = () => {
         setError(null);
         setSuccess(null);
     };
+
+    // Dropdown handlers
+    const toggleEstimateDropdown = (estimateId: number, event: React.MouseEvent) => {
+        event.stopPropagation();
+        setOpenEstimateDropdownId(openEstimateDropdownId === estimateId ? null : estimateId);
+    };
+
+    const toggleInvoiceDropdown = (invoiceId: number, event: React.MouseEvent) => {
+        event.stopPropagation();
+        setOpenInvoiceDropdownId(openInvoiceDropdownId === invoiceId ? null : invoiceId);
+    };
+
+    // Handle click outside to close dropdowns
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            if (!target.closest('.dropdown-container')) {
+                setOpenEstimateDropdownId(null);
+                setOpenInvoiceDropdownId(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         const fetchProjectDetails = async () => {
@@ -974,28 +1005,75 @@ const ProjectDetail: React.FC = () => {
                                                             {new Date(invoice.created_at).toLocaleDateString()}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                            <div className="flex justify-end space-x-2">
+                                                            <div className="relative dropdown-container">
                                                                 <button
-                                                                    onClick={() => handleViewInvoice(invoice)}
-                                                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200"
+                                                                    onClick={(e) => toggleInvoiceDropdown(invoice.id, e)}
+                                                                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                                                                 >
-                                                                    View
+                                                                    <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                                                    </svg>
                                                                 </button>
-                                                                {isAdmin && (
-                                                                    <>
-                                                                        <button
-                                                                            onClick={() => handleEditInvoice(invoice)}
-                                                                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200"
-                                                                        >
-                                                                            Edit
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleDeleteInvoice(invoice.id)}
-                                                                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200"
-                                                                        >
-                                                                            Delete
-                                                                        </button>
-                                                                    </>
+                                                                
+                                                                {openInvoiceDropdownId === invoice.id && (
+                                                                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                                                                        <div className="py-1">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleViewInvoice(invoice);
+                                                                                    setOpenInvoiceDropdownId(null);
+                                                                                }}
+                                                                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                            >
+                                                                                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                                </svg>
+                                                                                View PDF
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleDownloadInvoicePDF();
+                                                                                    setOpenInvoiceDropdownId(null);
+                                                                                }}
+                                                                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                            >
+                                                                                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                                </svg>
+                                                                                Download PDF
+                                                                            </button>
+                                                                            {isAdmin && (
+                                                                                <>
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleEditInvoice(invoice);
+                                                                                            setOpenInvoiceDropdownId(null);
+                                                                                        }}
+                                                                                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                                    >
+                                                                                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                                        </svg>
+                                                                                        Edit
+                                                                                    </button>
+                                                                                    <hr className="border-gray-200 dark:border-gray-600 my-1" />
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleDeleteInvoice(invoice.id);
+                                                                                            setOpenInvoiceDropdownId(null);
+                                                                                        }}
+                                                                                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                                    >
+                                                                                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                                        </svg>
+                                                                                        Delete
+                                                                                    </button>
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                         </td>
@@ -1097,56 +1175,125 @@ const ProjectDetail: React.FC = () => {
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                             {estimate.document_path ? 'Document attached' : 'No document'}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                                            {estimate.document_path && (
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                            <div className="relative dropdown-container">
                                                                 <button
-                                                                    onClick={() => handleDownloadEstimate(estimate.id)}
-                                                                    className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-200"
-                                                                    title="Download estimate document"
+                                                                    onClick={(e) => toggleEstimateDropdown(estimate.id, e)}
+                                                                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                                                                 >
-                                                                    Download
+                                                                    <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                                                    </svg>
                                                                 </button>
-                                                            )}
-                                                            <button
-                                                                onClick={() => handleViewEstimate(estimate)}
-                                                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200"
-                                                            >
-                                                                View
-                                                            </button>
-                                                            
-                                                            {isAdmin && estimate.status !== 'approved' && (
-                                                                <button
-                                                                    onClick={() => handleQuickStatusUpdate(estimate.id, 'approved')}
-                                                                    className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-200"
-                                                                    title="Approve this estimate to enable invoice creation"
-                                                                >
-                                                                    Approve
-                                                                </button>
-                                                            )}
-                                                            
-                                                            {estimate.status === 'approved' && isAdmin ? (
-                                                                <button
-                                                                    onClick={() => handleCreateInvoiceFromEstimate(estimate)}
-                                                                    className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-200"
-                                                                    title="Create invoice from this estimate"
-                                                                >
-                                                                    Create Invoice
-                                                                </button>
-                                                            ) : !isAdmin ? (
-                                                                <span 
-                                                                    className="text-gray-400 dark:text-gray-500 text-xs"
-                                                                    title="Admin access required to create invoices"
-                                                                >
-                                                                    Admin Only
-                                                                </span>
-                                                            ) : estimate.status !== 'approved' ? (
-                                                                <span 
-                                                                    className="text-gray-400 dark:text-gray-500 text-xs"
-                                                                    title="Estimate must be approved before creating invoice"
-                                                                >
-                                                                    Need Approval
-                                                                </span>
-                                                            ) : null}
+                                                                
+                                                                {openEstimateDropdownId === estimate.id && (
+                                                                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                                                                        <div className="py-1">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleViewEstimate(estimate);
+                                                                                    setOpenEstimateDropdownId(null);
+                                                                                }}
+                                                                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                            >
+                                                                                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                                </svg>
+                                                                                View PDF
+                                                                            </button>
+                                                                            {estimate.document_path && (
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        handleDownloadEstimate(estimate.id);
+                                                                                        setOpenEstimateDropdownId(null);
+                                                                                    }}
+                                                                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                                >
+                                                                                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                                    </svg>
+                                                                                    {estimate.document_path ? 'Download PDF' : 'Generate PDF'}
+                                                                                </button>
+                                                                            )}
+                                                                            {isAdmin && (
+                                                                                <>
+                                                                                    {estimate.status === 'draft' && (
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                handleQuickStatusUpdate(estimate.id, 'sent');
+                                                                                                setOpenEstimateDropdownId(null);
+                                                                                            }}
+                                                                                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                                        >
+                                                                                            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                                                            </svg>
+                                                                                            Mark as Sent
+                                                                                        </button>
+                                                                                    )}
+                                                                                    {estimate.status === 'sent' && (
+                                                                                        <>
+                                                                                            <button
+                                                                                                onClick={() => {
+                                                                                                    handleQuickStatusUpdate(estimate.id, 'approved');
+                                                                                                    setOpenEstimateDropdownId(null);
+                                                                                                }}
+                                                                                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                                            >
+                                                                                                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                                                </svg>
+                                                                                                Approve
+                                                                                            </button>
+                                                                                            <button
+                                                                                                onClick={() => {
+                                                                                                    handleQuickStatusUpdate(estimate.id, 'rejected');
+                                                                                                    setOpenEstimateDropdownId(null);
+                                                                                                }}
+                                                                                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                                            >
+                                                                                                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                                                </svg>
+                                                                                                Reject
+                                                                                            </button>
+                                                                                        </>
+                                                                                    )}
+                                                                                    {estimate.status !== 'approved' && estimate.status !== 'sent' && (
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                handleQuickStatusUpdate(estimate.id, 'approved');
+                                                                                                setOpenEstimateDropdownId(null);
+                                                                                            }}
+                                                                                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                                        >
+                                                                                            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                                            </svg>
+                                                                                            Approve
+                                                                                        </button>
+                                                                                    )}
+                                                                                    {estimate.status === 'approved' && (
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                handleCreateInvoiceFromEstimate(estimate);
+                                                                                                setOpenEstimateDropdownId(null);
+                                                                                            }}
+                                                                                            className="flex items-center w-full px-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                                                        >
+                                                                                            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                                            </svg>
+                                                                                            Create Invoice
+                                                                                        </button>
+                                                                                    )}
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
