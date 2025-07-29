@@ -882,19 +882,755 @@ const ProjectDetail: React.FC = () => {
                                     onError={setError}
                                 />
                             </div>
-                        ) : activeTab === 'invoices' || activeTab === 'estimates' || activeTab === 'change-orders' || activeTab === 'comments' ? (
-                            <div className="text-center py-12">
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                    {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Section
-                                </h3>
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    This section contains the {activeTab} functionality with full dark mode support.
-                                </p>
+                        ) : activeTab === 'invoices' ? (
+                            <div>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Project Invoices</h2>
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">{invoices.length} invoice(s) for this project</span>
+                                        {isAdmin && (
+                                            <button
+                                                onClick={handleCreateInvoiceForm}
+                                                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2 transition-colors"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                </svg>
+                                                <span>Create Invoice</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                {invoices.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <div className="text-gray-500 dark:text-gray-400">
+                                            <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <p className="text-lg">No invoices found for this project</p>
+                                            <p className="text-sm mt-2">Invoices created for this project will appear here</p>
+                                            {isAdmin && (
+                                                <button
+                                                    onClick={handleCreateInvoiceForm}
+                                                    className="mt-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                                >
+                                                    Create First Invoice
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                            <thead className="bg-gray-50 dark:bg-gray-700">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Invoice
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Customer
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Amount
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Status
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Created
+                                                    </th>
+                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                                {invoices.map((invoice) => (
+                                                    <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.invoice_number}</div>
+                                                            <div className="text-sm text-gray-500 dark:text-gray-400">{invoice.title}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm text-gray-900 dark:text-white">{invoice.customer_name || 'N/A'}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                                                ${invoice.total_amount.toFixed(2)}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                                invoice.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                                                                invoice.status === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                                                                invoice.status === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' :
+                                                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                                            }`}>
+                                                                {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                            {new Date(invoice.created_at).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                            <div className="flex justify-end space-x-2">
+                                                                <button
+                                                                    onClick={() => handleViewInvoice(invoice)}
+                                                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200"
+                                                                >
+                                                                    View
+                                                                </button>
+                                                                {isAdmin && (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => handleEditInvoice(invoice)}
+                                                                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200"
+                                                                        >
+                                                                            Edit
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteInvoice(invoice.id)}
+                                                                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200"
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        ) : activeTab === 'estimates' ? (
+                            <div>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Project Estimates</h2>
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">{estimates.length} estimate(s) for this project</span>
+                                        {isAdmin && (
+                                            <button
+                                                onClick={handleCreateEstimate}
+                                                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2 transition-colors"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                </svg>
+                                                <span>Create Estimate</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                {estimates.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <div className="text-gray-500 dark:text-gray-400">
+                                            <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                            <p className="text-lg">No estimates found for this project</p>
+                                            <p className="text-sm mt-2">Project estimates will appear here once created</p>
+                                            {isAdmin && (
+                                                <button
+                                                    onClick={handleCreateEstimate}
+                                                    className="mt-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                                >
+                                                    Create First Estimate
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                            <thead className="bg-gray-50 dark:bg-gray-700">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Estimate
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Customer
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Amount
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Status
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Document
+                                                    </th>
+                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                                {estimates.map((estimate) => (
+                                                    <tr key={estimate.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-medium text-gray-900 dark:text-white">{estimate.title}</div>
+                                                            <div className="text-sm text-gray-500 dark:text-gray-400">{estimate.description}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm text-gray-900 dark:text-white">{estimate.customer_name || project.customer_name || 'N/A'}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                                                ${estimate.total_amount.toFixed(2)}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                                estimate.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                                                                estimate.status === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                                                                estimate.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' :
+                                                                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                                                            }`}>
+                                                                {estimate.status.charAt(0).toUpperCase() + estimate.status.slice(1)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                            {estimate.document_path ? 'Document attached' : 'No document'}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                                            {estimate.document_path && (
+                                                                <button
+                                                                    onClick={() => handleDownloadEstimate(estimate.id)}
+                                                                    className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-200"
+                                                                    title="Download estimate document"
+                                                                >
+                                                                    Download
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={() => handleViewEstimate(estimate)}
+                                                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200"
+                                                            >
+                                                                View
+                                                            </button>
+                                                            
+                                                            {isAdmin && estimate.status !== 'approved' && (
+                                                                <button
+                                                                    onClick={() => handleQuickStatusUpdate(estimate.id, 'approved')}
+                                                                    className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-200"
+                                                                    title="Approve this estimate to enable invoice creation"
+                                                                >
+                                                                    Approve
+                                                                </button>
+                                                            )}
+                                                            
+                                                            {estimate.status === 'approved' && isAdmin ? (
+                                                                <button
+                                                                    onClick={() => handleCreateInvoiceFromEstimate(estimate)}
+                                                                    className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-200"
+                                                                    title="Create invoice from this estimate"
+                                                                >
+                                                                    Create Invoice
+                                                                </button>
+                                                            ) : !isAdmin ? (
+                                                                <span 
+                                                                    className="text-gray-400 dark:text-gray-500 text-xs"
+                                                                    title="Admin access required to create invoices"
+                                                                >
+                                                                    Admin Only
+                                                                </span>
+                                                            ) : estimate.status !== 'approved' ? (
+                                                                <span 
+                                                                    className="text-gray-400 dark:text-gray-500 text-xs"
+                                                                    title="Estimate must be approved before creating invoice"
+                                                                >
+                                                                    Need Approval
+                                                                </span>
+                                                            ) : null}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        ) : activeTab === 'change-orders' ? (
+                            <div>
+                                <ChangeOrdersManagement 
+                                    projectId={parseInt(id || '0')}
+                                    projectName={project.name}
+                                    customerInfo={customer ? {
+                                        id: customer.id,
+                                        name: customer.name,
+                                        email: customer.email || '',
+                                        phone: customer.phone || '',
+                                        address: customer.address || project.address || ''
+                                    } : project.customer_id ? {
+                                        id: project.customer_id,
+                                        name: project.customer_name || '',
+                                        email: '',
+                                        phone: '',
+                                        address: project.address || ''
+                                    } : undefined}
+                                />
+                            </div>
+                        ) : activeTab === 'comments' ? (
+                            <div>
+                                <ProjectComments 
+                                    projectId={parseInt(id || '0')}
+                                />
                             </div>
                         ) : null}
                     </div>
                 </div>
             </div>
+
+            {/* Estimate Creation Modal */}
+            {showEstimateForm && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800">
+                        <div className="mt-3">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                                Create New Estimate for {project?.name}
+                            </h3>
+                            
+                            <form onSubmit={handleEstimateFormSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Title *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={estimateFormData.title}
+                                        onChange={(e) => setEstimateFormData({ ...estimateFormData, title: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        placeholder="Enter estimate title"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        value={estimateFormData.description}
+                                        onChange={(e) => setEstimateFormData({ ...estimateFormData, description: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        rows={3}
+                                        placeholder="Enter estimate description"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Total Amount *
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">$</span>
+                                        <input
+                                            type="number"
+                                            required
+                                            min="0"
+                                            step="0.01"
+                                            value={estimateFormData.total_amount}
+                                            onChange={(e) => setEstimateFormData({ ...estimateFormData, total_amount: parseFloat(e.target.value) || 0 })}
+                                            className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Document *
+                                    </label>
+                                    <input
+                                        type="file"
+                                        required
+                                        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                                        onChange={handleDocumentChange}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    />
+                                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                        Upload a document (PDF, Word, images, etc.)
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Notes
+                                    </label>
+                                    <textarea
+                                        value={estimateFormData.notes}
+                                        onChange={(e) => setEstimateFormData({ ...estimateFormData, notes: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        rows={2}
+                                        placeholder="Additional notes (optional)"
+                                    />
+                                </div>
+
+                                <div className="flex justify-end space-x-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={handleEstimateFormCancel}
+                                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={estimateFormLoading}
+                                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                    >
+                                        {estimateFormLoading ? 'Creating...' : 'Create Estimate'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Estimate PDF Viewer Modal */}
+            <PDFViewer
+                isOpen={showEstimatePDFViewer}
+                onClose={handleCloseEstimatePDFViewer}
+                pdfUrl={estimatePdfUrl}
+                title={estimatePdfTitle}
+                onDownload={handleDownloadEstimatePDF}
+                onRegenerate={handleRegenerateEstimatePDF}
+                loading={estimatePdfLoading}
+            />
+
+            {/* Invoice PDF Viewer Modal */}
+            <PDFViewer
+                isOpen={showInvoicePDFViewer}
+                onClose={handleCloseInvoicePDFViewer}
+                pdfUrl={invoicePdfUrl}
+                title={invoicePdfTitle}
+                onDownload={handleDownloadInvoicePDF}
+                onRegenerate={handleRegenerateInvoicePDF}
+                loading={invoicePdfLoading}
+            />
+
+            {/* Create Invoice from Estimate Modal */}
+            {showInvoiceFromEstimateModal && selectedEstimateForInvoice && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800">
+                        <div className="mt-3">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                                Create Invoice from Estimate
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                Creating invoice from: <strong>{selectedEstimateForInvoice.title}</strong><br />
+                                Estimate Amount: <strong>${selectedEstimateForInvoice.total_amount.toFixed(2)}</strong>
+                            </p>
+                            
+                            <form onSubmit={handleInvoiceFromEstimateSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Percentage of Estimate Amount to Invoice *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="1"
+                                        max="100"
+                                        value={invoiceFromEstimateData.percentage}
+                                        onChange={(e) => setInvoiceFromEstimateData({ 
+                                            ...invoiceFromEstimateData, 
+                                            percentage: e.target.value 
+                                        })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        placeholder="Enter percentage (1-100)"
+                                        required
+                                    />
+                                    {invoiceFromEstimateData.percentage && (
+                                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                            Invoice Amount: ${((selectedEstimateForInvoice.total_amount * parseFloat(invoiceFromEstimateData.percentage || '0')) / 100).toFixed(2)}
+                                        </p>
+                                    )}
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Invoice Title (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={invoiceFromEstimateData.title}
+                                        onChange={(e) => setInvoiceFromEstimateData({ 
+                                            ...invoiceFromEstimateData, 
+                                            title: e.target.value 
+                                        })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        placeholder="Custom invoice title"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Due Date (Optional)
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={invoiceFromEstimateData.due_date}
+                                        onChange={(e) => setInvoiceFromEstimateData({ 
+                                            ...invoiceFromEstimateData, 
+                                            due_date: e.target.value 
+                                        })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    />
+                                </div>
+
+                                <div className="flex justify-end space-x-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={handleCloseInvoiceFromEstimateModal}
+                                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={invoiceFromEstimateLoading || !invoiceFromEstimateData.percentage}
+                                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {invoiceFromEstimateLoading ? 'Creating Invoice...' : 'Create Invoice'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Invoice Form Modal */}
+            {showInvoiceForm && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
+                        <div className="mt-3">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                                {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
+                            </h3>
+                            
+                            <form onSubmit={handleInvoiceFormSubmit} className="space-y-6">
+                                {/* Basic Information */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={invoiceFormData.title}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, title: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
+                                        <input
+                                            type="date"
+                                            value={invoiceFormData.due_date}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                                    <textarea
+                                        rows={3}
+                                        value={invoiceFormData.description}
+                                        onChange={(e) => setInvoiceFormData({ ...invoiceFormData, description: e.target.value })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    />
+                                </div>
+
+                                {/* Customer Details */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer Name</label>
+                                        <input
+                                            type="text"
+                                            value={invoiceFormData.customer_name}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, customer_name: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer Email</label>
+                                        <input
+                                            type="email"
+                                            value={invoiceFormData.customer_email}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, customer_email: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer Phone</label>
+                                        <input
+                                            type="tel"
+                                            value={invoiceFormData.customer_phone}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, customer_phone: e.target.value })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tax Rate (%)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="100"
+                                            value={invoiceFormData.tax_rate}
+                                            onChange={(e) => setInvoiceFormData({ ...invoiceFormData, tax_rate: parseFloat(e.target.value) || 0 })}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer Address</label>
+                                    <textarea
+                                        rows={2}
+                                        value={invoiceFormData.customer_address}
+                                        onChange={(e) => setInvoiceFormData({ ...invoiceFormData, customer_address: e.target.value })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    />
+                                </div>
+
+                                {/* Items Section */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h4 className="text-md font-medium text-gray-900 dark:text-white">Invoice Items</h4>
+                                        <button
+                                            type="button"
+                                            onClick={addInvoiceItem}
+                                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                                        >
+                                            Add Item
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        {invoiceItems.map((item, index) => (
+                                            <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                                                <div className="col-span-5">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.description}
+                                                        onChange={(e) => handleInvoiceItemChange(index, 'description', e.target.value)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                    />
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={item.quantity}
+                                                        onChange={(e) => handleInvoiceItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                    />
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit Price</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={item.unit_price}
+                                                        onChange={(e) => handleInvoiceItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                    />
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Total</label>
+                                                    <div className="mt-1 px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-white">
+                                                        ${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="col-span-1">
+                                                    {invoiceItems.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeInvoiceItem(index)}
+                                                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded text-sm"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Totals Display */}
+                                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                    {(() => {
+                                        const { subtotal, taxAmount, total } = calculateInvoiceTotal();
+                                        return (
+                                            <>
+                                                <div className="flex justify-between text-sm text-gray-900 dark:text-white">
+                                                    <span>Subtotal:</span>
+                                                    <span>${subtotal.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm text-gray-900 dark:text-white">
+                                                    <span>Tax ({invoiceFormData.tax_rate}%):</span>
+                                                    <span>${taxAmount.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-lg font-medium border-t border-gray-200 dark:border-gray-600 pt-2 mt-2 text-gray-900 dark:text-white">
+                                                    <span>Total:</span>
+                                                    <span>${total.toFixed(2)}</span>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                                    <textarea
+                                        rows={3}
+                                        value={invoiceFormData.notes}
+                                        onChange={(e) => setInvoiceFormData({ ...invoiceFormData, notes: e.target.value })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    />
+                                </div>
+
+                                {/* Form Actions */}
+                                <div className="flex justify-end space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={handleInvoiceFormCancel}
+                                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={invoiceFormLoading}
+                                        className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                                    >
+                                        {invoiceFormLoading ? 'Saving...' : (editingInvoice ? 'Update Invoice' : 'Create Invoice')}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
