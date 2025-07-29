@@ -435,8 +435,8 @@ const Estimates: React.FC = () => {
             <div className="text-center text-gray-900 dark:text-white">Loading estimates...</div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors">
-            <div className="overflow-x-auto">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg transition-colors" style={{ overflowY: 'visible' }}>
+            <div className="overflow-x-auto" style={{ overflowY: 'visible' }}>
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
@@ -493,7 +493,7 @@ const Estimates: React.FC = () => {
                           </button>
                           
                           {openDropdownId === estimate.id && (
-                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-50">
                               <div className="py-1">
                                 <button
                                   onClick={() => {
