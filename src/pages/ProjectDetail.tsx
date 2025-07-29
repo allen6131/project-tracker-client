@@ -1305,6 +1305,24 @@ const ProjectDetail: React.FC = () => {
                                                         </td>
                                                     </tr>
                                                 ))}
+                                                {/* Add empty rows when there are fewer than 5 estimates to ensure dropdown has space */}
+                                                {estimates.length < 5 && Array.from({ length: 5 - estimates.length }).map((_, index) => (
+                                                    <tr key={`empty-estimate-${index}`} className="pointer-events-none">
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-medium text-transparent">.</div>
+                                                            <div className="text-sm text-transparent">.</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm text-transparent">.</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-medium text-transparent">.</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-transparent">.</td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-transparent">.</td>
+                                                    </tr>
+                                                ))}
                                             </tbody>
                                         </table>
                                     </div>
