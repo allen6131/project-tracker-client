@@ -1016,7 +1016,10 @@ const ProjectDetail: React.FC = () => {
                                                                 </button>
                                                                 
                                                                 {openInvoiceDropdownId === invoice.id && (
-                                                                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                                                                    <div className="absolute right-0 bottom-full mb-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-50"
+                                                                         style={{ 
+                                                                             boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                                                                         }}>
                                                                         <div className="py-1">
                                                                             <button
                                                                                 onClick={() => {
@@ -1187,7 +1190,10 @@ const ProjectDetail: React.FC = () => {
                                                                 </button>
                                                                 
                                                                 {openEstimateDropdownId === estimate.id && (
-                                                                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                                                                    <div className="absolute right-0 bottom-full mb-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-50"
+                                                                         style={{ 
+                                                                             boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                                                                         }}>
                                                                         <div className="py-1">
                                                                             <button
                                                                                 onClick={() => {
