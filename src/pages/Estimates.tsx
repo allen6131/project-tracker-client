@@ -479,6 +479,12 @@ const Estimates: React.FC = () => {
                       Total Amount
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Invoiced to Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Paid to Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -503,6 +509,24 @@ const Estimates: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         ${estimate.total_amount.toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {estimate.total_invoiced > 0 ? (
+                          <span className="font-medium text-blue-600 dark:text-blue-400">
+                            ${estimate.total_invoiced.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">$0.00</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {estimate.total_paid > 0 ? (
+                          <span className="font-medium text-green-600 dark:text-green-400">
+                            ${estimate.total_paid.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">$0.00</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="relative dropdown-container">
@@ -635,6 +659,8 @@ const Estimates: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
                       <td className="px-6 py-4 whitespace-nowrap text-transparent">.</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-transparent">.</td>
                     </tr>
