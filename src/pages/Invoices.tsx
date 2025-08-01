@@ -86,6 +86,8 @@ const Invoices: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('');
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
 
   // Load invoices and data
   useEffect(() => {
@@ -94,6 +96,18 @@ const Invoices: React.FC = () => {
     loadEstimates();
     loadProjects();
   }, [currentPage, searchTerm, statusFilter]);
+
+  // Client-side filtering for customer
+  useEffect(() => {
+    if (!customerFilter) {
+      setFilteredInvoices(invoices);
+    } else {
+      const filtered = invoices.filter(invoice => 
+        invoice.customer_name && invoice.customer_name.toLowerCase().includes(customerFilter.toLowerCase())
+      );
+      setFilteredInvoices(filtered);
+    }
+  }, [invoices, customerFilter]);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -527,6 +541,20 @@ const Invoices: React.FC = () => {
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
+          <div>
+            <select
+              value={customerFilter}
+              onChange={(e) => setCustomerFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">All Customers</option>
+              {customers.map(customer => (
+                <option key={customer.id} value={customer.name}>
+                  {customer.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -568,7 +596,14 @@ const Invoices: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {invoices.map((invoice) => (
+                {filteredInvoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                      {customerFilter ? `No invoices found for customer "${customerFilter}".` : 'No invoices found.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredInvoices.map((invoice) => (
                   <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.invoice_number}</div>
@@ -701,7 +736,8 @@ const Invoices: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
