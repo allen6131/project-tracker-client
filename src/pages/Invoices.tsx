@@ -797,8 +797,16 @@ const Invoices: React.FC = () => {
           <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Select Estimate to Convert to Invoice
+                Select Estimate to Create Invoice From
               </h3>
+              <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  You can create multiple invoices from the same estimate. Each invoice can be for a different percentage or amount of the total estimate.
+                </p>
+              </div>
               
               <div className="max-h-96 overflow-y-auto">
                 {estimates.length === 0 ? (
@@ -808,13 +816,42 @@ const Invoices: React.FC = () => {
                     {estimates.map((estimate) => (
                       <div key={estimate.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <div className="flex justify-between items-center">
-                          <div>
+                          <div className="flex-1">
                             <h4 className="font-medium text-gray-900 dark:text-white">{estimate.title}</h4>
                             <p className="text-sm text-gray-500 dark:text-gray-400">Project: {estimate.project_name}</p>
                             <p className="text-sm text-gray-500 dark:text-gray-400">Customer: {estimate.customer_name || 'No customer'}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">${estimate.total_amount.toFixed(2)}</p>
+                            <div className="flex items-center space-x-4 mt-2">
+                              <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                                Total: ${estimate.total_amount.toFixed(2)}
+                              </p>
+                              {estimate.total_invoiced > 0 && (
+                                <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                                  Invoiced: ${estimate.total_invoiced.toFixed(2)} ({((estimate.total_invoiced / estimate.total_amount) * 100).toFixed(0)}%)
+                                </p>
+                              )}
+                              {estimate.total_paid > 0 && (
+                                <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                                  Paid: ${estimate.total_paid.toFixed(2)} ({((estimate.total_paid / estimate.total_amount) * 100).toFixed(0)}%)
+                                </p>
+                              )}
+                            </div>
+                            {estimate.total_invoiced > 0 && (
+                              <div className="mt-2">
+                                <div className="flex items-center space-x-2">
+                                  <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 max-w-32">
+                                    <div 
+                                      className="bg-blue-500 dark:bg-blue-400 h-1.5 rounded-full"
+                                      style={{ width: `${Math.min((estimate.total_invoiced / estimate.total_amount) * 100, 100)}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    ${(estimate.total_amount - estimate.total_invoiced).toFixed(2)} remaining
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                             {estimate.document_path && (
-                              <p className="text-sm text-gray-500 dark:text-gray-400">📄 Document attached</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📄 Document attached</p>
                             )}
                           </div>
                           <button
@@ -1371,23 +1408,71 @@ const Invoices: React.FC = () => {
             <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
               <div className="mt-3">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  Create Partial Invoice from Estimate
+                  Create Invoice from Estimate
                 </h3>
+                
+                <div className="mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">{selectedEstimate.title}</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Total Estimate:</strong> ${selectedEstimate.total_amount.toFixed(2)}
+                      </p>
+                      <p className="text-blue-600 dark:text-blue-400">
+                        <strong>Already Invoiced:</strong> ${selectedEstimate.total_invoiced.toFixed(2)} 
+                        ({((selectedEstimate.total_invoiced / selectedEstimate.total_amount) * 100).toFixed(1)}%)
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-green-600 dark:text-green-400">
+                        <strong>Already Paid:</strong> ${selectedEstimate.total_paid.toFixed(2)}
+                        ({((selectedEstimate.total_paid / selectedEstimate.total_amount) * 100).toFixed(1)}%)
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Remaining:</strong> ${(selectedEstimate.total_amount - selectedEstimate.total_invoiced).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  {selectedEstimate.total_invoiced > 0 && (
+                    <div className="mt-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                          <div 
+                            className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full"
+                            style={{ width: `${Math.min((selectedEstimate.total_invoiced / selectedEstimate.total_amount) * 100, 100)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {((selectedEstimate.total_invoiced / selectedEstimate.total_amount) * 100).toFixed(0)}% invoiced
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 
                 <form onSubmit={handlePercentageSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Percentage of Estimate Amount to Invoice
+                      Percentage of Total Estimate to Invoice
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="1"
-                      max="100"
-                      value={percentageData.percentage}
-                      onChange={(e) => setPercentageData({ ...percentageData, percentage: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
+                    <div className="mt-1 relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        max="100"
+                        value={percentageData.percentage}
+                        onChange={(e) => setPercentageData({ ...percentageData, percentage: e.target.value })}
+                        className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder={`Remaining: ${(((selectedEstimate.total_amount - selectedEstimate.total_invoiced) / selectedEstimate.total_amount) * 100).toFixed(1)}%`}
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">%</span>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      Amount will be: ${percentageData.percentage ? ((parseFloat(percentageData.percentage) / 100) * selectedEstimate.total_amount).toFixed(2) : '0.00'}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">

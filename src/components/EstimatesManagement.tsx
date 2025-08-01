@@ -511,6 +511,9 @@ const EstimatesManagement: React.FC = () => {
                     Paid to Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Progress
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -555,6 +558,39 @@ const EstimatesManagement: React.FC = () => {
                       ) : (
                         <span className="text-gray-400 dark:text-gray-500">$0.00</span>
                       )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {(() => {
+                        const invoicedPercent = estimate.total_amount > 0 ? (estimate.total_invoiced / estimate.total_amount * 100) : 0;
+                        const paidPercent = estimate.total_amount > 0 ? (estimate.total_paid / estimate.total_amount * 100) : 0;
+                        
+                        return (
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${Math.min(invoicedPercent, 100)}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                {invoicedPercent.toFixed(0)}% inv
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                <div 
+                                  className="bg-green-500 dark:bg-green-400 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${Math.min(paidPercent, 100)}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                                {paidPercent.toFixed(0)}% paid
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="relative">
