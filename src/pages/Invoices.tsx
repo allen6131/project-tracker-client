@@ -538,7 +538,110 @@ const Invoices: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
+        {/* Summary Cards */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg transition-colors">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Invoices</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900 dark:text-white">
+                        ${filteredInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0).toFixed(2)}
+                      </div>
+                      <div className="ml-2 flex items-baseline text-sm text-gray-600 dark:text-gray-400">
+                        ({filteredInvoices.length} invoices)
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg transition-colors">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Paid Invoices</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-green-600 dark:text-green-400">
+                        ${filteredInvoices.filter(inv => inv.status === 'paid').reduce((sum, invoice) => sum + invoice.total_amount, 0).toFixed(2)}
+                      </div>
+                      <div className="ml-2 flex items-baseline text-sm text-gray-600 dark:text-gray-400">
+                        ({filteredInvoices.filter(inv => inv.status === 'paid').length})
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg transition-colors">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Pending Payment</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">
+                        ${filteredInvoices.filter(inv => inv.status === 'sent' || inv.status === 'overdue').reduce((sum, invoice) => sum + invoice.total_amount, 0).toFixed(2)}
+                      </div>
+                      <div className="ml-2 flex items-baseline text-sm text-gray-600 dark:text-gray-400">
+                        ({filteredInvoices.filter(inv => inv.status === 'sent' || inv.status === 'overdue').length})
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg transition-colors">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Overdue</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-red-600 dark:text-red-400">
+                        ${filteredInvoices.filter(inv => inv.status === 'overdue').reduce((sum, invoice) => sum + invoice.total_amount, 0).toFixed(2)}
+                      </div>
+                      <div className="ml-2 flex items-baseline text-sm text-gray-600 dark:text-gray-400">
+                        ({filteredInvoices.filter(inv => inv.status === 'overdue').length})
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
       <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-4 transition-colors">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
