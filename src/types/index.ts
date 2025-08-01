@@ -444,6 +444,8 @@ export interface Estimate {
   customer_name?: string;
   status: 'draft' | 'sent' | 'approved' | 'rejected';
   total_amount: number;
+  total_invoiced: number;
+  total_paid: number;
   document_path?: string;
   notes?: string;
   created_by: number;
