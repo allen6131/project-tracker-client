@@ -54,6 +54,12 @@ const Estimates: React.FC = () => {
   const [downloadingEstimate, setDownloadingEstimate] = useState<number | null>(null);
   const [showPageLoading, setShowPageLoading] = useState(false);
   const [pageLoadingMessage, setPageLoadingMessage] = useState('');
+
+  // View state
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingEstimate, setViewingEstimate] = useState<Estimate | null>(null);
+  const [viewPdfUrl, setViewPdfUrl] = useState<string | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
   
   const [projects, setProjects] = useState<Project[]>([]);
   
@@ -170,6 +176,23 @@ const Estimates: React.FC = () => {
       loadEstimates();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update status');
+    }
+  };
+
+  const handleViewEstimate = async (estimate: Estimate) => {
+    clearMessages();
+    setViewingEstimate(estimate);
+    setShowViewModal(true);
+    setViewLoading(true);
+    
+    try {
+      const url = await estimatesAPI.viewEstimatePDF(estimate.id);
+      setViewPdfUrl(url);
+    } catch (err: any) {
+      console.error('Failed to load estimate PDF:', err);
+      setError('Failed to load estimate preview');
+    } finally {
+      setViewLoading(false);
     }
   };
 
@@ -495,6 +518,16 @@ const Estimates: React.FC = () => {
                           {openDropdownId === estimate.id && (
                             <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-50">
                               <div className="py-1">
+                                <button
+                                  onClick={() => {
+                                    handleViewEstimate(estimate);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                >
+                                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                  View
+                                </button>
                                 <button
                                   onClick={() => {
                                     handleEditEstimate(estimate);
@@ -1064,6 +1097,129 @@ const Estimates: React.FC = () => {
                 {/* Progress Bar */}
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Estimate Modal */}
+        {showViewModal && viewingEstimate && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
+              <div className="mt-3">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Estimate Preview - #{viewingEstimate.id}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setViewingEstimate(null);
+                      setViewPdfUrl(null);
+                      setViewLoading(false);
+                    }}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Title:</strong> {viewingEstimate.title}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Project:</strong> {viewingEstimate.project_name || 'No project'}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Customer:</strong> {viewingEstimate.customer_name || 'No customer'}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Total Amount:</strong> ${viewingEstimate.total_amount.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Status:</strong> 
+                        <span className={`ml-2 ${getStatusBadge(viewingEstimate.status)}`}>
+                          {viewingEstimate.status}
+                        </span>
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Created:</strong> {new Date(viewingEstimate.created_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Created By:</strong> {viewingEstimate.created_by_username || 'Unknown'}
+                      </p>
+                      {viewingEstimate.document_path && (
+                        <p className="text-gray-600 dark:text-gray-300">
+                          <strong>Document:</strong> 📄 Attached
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {viewingEstimate.description && (
+                    <div className="mt-3">
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Description:</strong> {viewingEstimate.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden">
+                  <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      📄 Estimate Document Preview
+                    </p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 h-96 flex items-center justify-center">
+                    {viewLoading ? (
+                      <div className="text-center text-gray-600 dark:text-gray-400">
+                        <svg className="animate-spin mx-auto h-12 w-12 mb-4 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="text-lg font-medium">Loading Estimate Preview...</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Please wait while we load the document</p>
+                      </div>
+                    ) : viewPdfUrl ? (
+                      <iframe
+                        src={viewPdfUrl}
+                        className="w-full h-full border-0"
+                        title="Estimate PDF Preview"
+                      />
+                    ) : (
+                      <div className="text-gray-400 dark:text-gray-500 text-center">
+                        <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>Estimate preview not available</p>
+                        <p className="text-sm mt-1">
+                          {viewingEstimate.document_path ? 'Unable to load document' : 'No document uploaded'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setViewingEstimate(null);
+                      setViewPdfUrl(null);
+                      setViewLoading(false);
+                    }}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
             </div>

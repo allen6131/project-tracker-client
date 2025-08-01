@@ -48,6 +48,12 @@ const Invoices: React.FC = () => {
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailPreviewTab, setEmailPreviewTab] = useState<'email' | 'pdf'>('email');
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  // View state
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [viewPdfUrl, setViewPdfUrl] = useState<string | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
   
   // Percentage form state
   const [percentageData, setPercentageData] = useState({
@@ -339,6 +345,23 @@ const Invoices: React.FC = () => {
   const handleClosePaymentForm = () => {
     setShowPaymentForm(false);
     setPaymentInvoice(null);
+  };
+
+  const handleViewInvoice = async (invoice: Invoice) => {
+    clearMessages();
+    setViewingInvoice(invoice);
+    setShowViewModal(true);
+    setViewLoading(true);
+    
+    try {
+      const url = await invoicesAPI.viewInvoicePDF(invoice.id);
+      setViewPdfUrl(url);
+    } catch (err: any) {
+      console.error('Failed to load invoice PDF:', err);
+      setError('Failed to load invoice preview');
+    } finally {
+      setViewLoading(false);
+    }
   };
 
   const handleSendEmail = (invoice: Invoice) => {
@@ -649,6 +672,16 @@ const Invoices: React.FC = () => {
                         {openDropdownId === invoice.id && (
                           <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
                             <div className="py-1">
+                              <button
+                                onClick={() => {
+                                  handleViewInvoice(invoice);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                              >
+                                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                View
+                              </button>
                               <button
                                 onClick={() => {
                                   handleEditInvoice(invoice);
@@ -1513,6 +1546,113 @@ const Invoices: React.FC = () => {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Invoice Modal */}
+        {showViewModal && viewingInvoice && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
+              <div className="mt-3">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Invoice Preview - {viewingInvoice.invoice_number}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setViewingInvoice(null);
+                      setViewPdfUrl(null);
+                      setViewLoading(false);
+                    }}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="mb-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Title:</strong> {viewingInvoice.title}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Customer:</strong> {viewingInvoice.customer_name || 'No customer'}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Total Amount:</strong> ${viewingInvoice.total_amount.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Status:</strong> 
+                        <span className={`ml-2 ${getStatusBadge(viewingInvoice.status)}`}>
+                          {viewingInvoice.status}
+                        </span>
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        <strong>Created:</strong> {new Date(viewingInvoice.created_at).toLocaleDateString()}
+                      </p>
+                      {viewingInvoice.due_date && (
+                        <p className="text-gray-600 dark:text-gray-300">
+                          <strong>Due Date:</strong> {new Date(viewingInvoice.due_date).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden">
+                  <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      📄 Invoice Document Preview
+                    </p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 h-96 flex items-center justify-center">
+                    {viewLoading ? (
+                      <div className="text-center text-gray-600 dark:text-gray-400">
+                        <svg className="animate-spin mx-auto h-12 w-12 mb-4 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="text-lg font-medium">Loading Invoice Preview...</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Please wait while we load the document</p>
+                      </div>
+                    ) : viewPdfUrl ? (
+                      <iframe
+                        src={viewPdfUrl}
+                        className="w-full h-full border-0"
+                        title="Invoice PDF Preview"
+                      />
+                    ) : (
+                      <div className="text-gray-400 dark:text-gray-500 text-center">
+                        <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>Invoice preview not available</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setViewingInvoice(null);
+                      setViewPdfUrl(null);
+                      setViewLoading(false);
+                    }}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           </div>
