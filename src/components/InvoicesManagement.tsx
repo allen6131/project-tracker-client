@@ -49,6 +49,7 @@ const InvoicesManagement: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfTitle, setPdfTitle] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [currentPDFInvoice, setCurrentPDFInvoice] = useState<Invoice | null>(null);
   
   // Dropdown state
@@ -331,6 +332,7 @@ const InvoicesManagement: React.FC = () => {
     if (!currentPDFInvoice) return;
     
     try {
+      setDownloadingPDF(true);
       const blob = await invoicesAPI.downloadInvoicePDF(currentPDFInvoice.id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -342,6 +344,8 @@ const InvoicesManagement: React.FC = () => {
       document.body.removeChild(a);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to download PDF');
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -1499,7 +1503,7 @@ const InvoicesManagement: React.FC = () => {
         title={pdfTitle}
         onDownload={handleDownloadPDF}
         onRegenerate={handleRegeneratePDF}
-        loading={pdfLoading}
+        loading={pdfLoading || downloadingPDF}
       />
     </div>
   );

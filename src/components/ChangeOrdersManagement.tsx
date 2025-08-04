@@ -49,6 +49,7 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfTitle, setPdfTitle] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [currentPDFChangeOrder, setCurrentPDFChangeOrder] = useState<ChangeOrder | null>(null);
   
   // Dropdown state
@@ -231,6 +232,7 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
     if (!currentPDFChangeOrder) return;
     
     try {
+      setDownloadingPDF(true);
       const blob = await changeOrdersAPI.downloadChangeOrderPDF(currentPDFChangeOrder.id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -242,6 +244,8 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
       document.body.removeChild(a);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to download PDF');
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -1053,7 +1057,7 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
         title={pdfTitle}
         onDownload={handleDownloadPDF}
         onRegenerate={handleRegeneratePDF}
-        loading={pdfLoading}
+        loading={pdfLoading || downloadingPDF}
       />
     </div>
   );
