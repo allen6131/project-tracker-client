@@ -28,6 +28,10 @@ const CompanyProfile: React.FC = () => {
     footer_text: ''
   });
 
+  // Custom statuses state
+  const [customStatuses, setCustomStatuses] = useState<string[]>(['bidding', 'started', 'active', 'done']);
+  const [newStatus, setNewStatus] = useState('');
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -58,6 +62,11 @@ const CompanyProfile: React.FC = () => {
       if (profileData.logo_url) {
         setLogoPreview(`${window.location.origin}${profileData.logo_url}`);
       }
+      
+      // Set custom statuses if they exist
+      if (profileData.custom_statuses && profileData.custom_statuses.length > 0) {
+        setCustomStatuses(profileData.custom_statuses);
+      }
     } catch (err: any) {
       // If profile doesn't exist, use default values
       if (err.response?.status === 404) {
@@ -73,6 +82,47 @@ const CompanyProfile: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddStatus = () => {
+    const trimmedStatus = newStatus.trim();
+    
+    if (!trimmedStatus) {
+      setError('Status name cannot be empty');
+      return;
+    }
+    
+    if (trimmedStatus.length > 50) {
+      setError('Status name must be 50 characters or less');
+      return;
+    }
+    
+    // Check for duplicates (case-insensitive)
+    if (customStatuses.some(status => status.toLowerCase() === trimmedStatus.toLowerCase())) {
+      setError('This status already exists');
+      return;
+    }
+    
+    setCustomStatuses(prev => [...prev, trimmedStatus]);
+    setNewStatus('');
+    setError(null);
+  };
+
+  const handleRemoveStatus = (indexToRemove: number) => {
+    if (customStatuses.length <= 1) {
+      setError('At least one status is required');
+      return;
+    }
+    
+    setCustomStatuses(prev => prev.filter((_, index) => index !== indexToRemove));
+    setError(null);
+  };
+
+  const handleStatusKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddStatus();
+    }
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,6 +180,9 @@ const CompanyProfile: React.FC = () => {
       if (logoFile) {
         data.append('logo', logoFile);
       }
+      
+      // Append custom statuses
+      data.append('custom_statuses', JSON.stringify(customStatuses));
       
       const response = await companyProfileAPI.updateProfile(data);
       setProfile(response.profile);
@@ -406,6 +459,81 @@ const CompanyProfile: React.FC = () => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
             />
             <p className="mt-1 text-sm text-gray-500">This text will appear at the bottom of all PDFs (invoices, estimates, etc.)</p>
+          </div>
+          
+          {/* Custom Project Statuses */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Custom Project Statuses
+            </label>
+            
+            <div className="space-y-4">
+              {/* Current Statuses */}
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Current statuses (used in project creation and management):
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {customStatuses.map((status, index) => (
+                    <div
+                      key={index}
+                      className="inline-flex items-center bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm"
+                    >
+                      <span>{status}</span>
+                      {isAdmin && customStatuses.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveStatus(index)}
+                          className="ml-2 text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100 focus:outline-none"
+                          title="Remove status"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Add New Status */}
+              {isAdmin && (
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={newStatus}
+                      onChange={(e) => setNewStatus(e.target.value)}
+                      onKeyPress={handleStatusKeyPress}
+                      placeholder="Enter new status name"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      maxLength={50}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddStatus}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Status
+                  </button>
+                </div>
+              )}
+              
+              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  These custom statuses will be available when creating or editing projects. 
+                  You can add, remove, or modify them to match your company's workflow.
+                </p>
+              </div>
+            </div>
           </div>
           
           {/* Submit Button */}

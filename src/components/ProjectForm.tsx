@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project, CreateProjectRequest, UpdateProjectRequest } from '../types';
-import { customersAPI, usersAPI } from '../services/api';
+import { customersAPI, usersAPI, companyProfileAPI } from '../services/api';
 
 interface ProjectFormProps {
   isOpen: boolean;
@@ -32,12 +32,15 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [users, setUsers] = useState<{ id: number; username: string; email: string }[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [availableStatuses, setAvailableStatuses] = useState<string[]>(['bidding', 'started', 'active', 'done']);
+  const [loadingStatuses, setLoadingStatuses] = useState(false);
 
-  // Load customers and users when form opens
+  // Load customers, users, and statuses when form opens
   useEffect(() => {
     if (isOpen) {
       loadCustomers();
       loadUsers();
+      loadStatuses();
     }
   }, [isOpen]);
 
@@ -64,6 +67,20 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       setUsers([]);
     } finally {
       setLoadingUsers(false);
+    }
+  };
+
+  const loadStatuses = async () => {
+    try {
+      setLoadingStatuses(true);
+      const response = await companyProfileAPI.getStatuses();
+      setAvailableStatuses(response.statuses);
+    } catch (error) {
+      console.error('Failed to load statuses:', error);
+      // Keep default statuses if loading fails
+      setAvailableStatuses(['bidding', 'started', 'active', 'done']);
+    } finally {
+      setLoadingStatuses(false);
     }
   };
 
@@ -371,12 +388,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors.status ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
               }`}
-              disabled={loading}
+              disabled={loading || loadingStatuses}
             >
-              <option value="bidding">Bidding</option>
-              <option value="started">Started</option>
-              <option value="active">Active</option>
-              <option value="done">Done</option>
+              {loadingStatuses ? (
+                <option value="">Loading statuses...</option>
+              ) : (
+                availableStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </option>
+                ))
+              )}
             </select>
             {errors.status && (
               <p className="mt-1 text-sm text-red-600">{errors.status}</p>

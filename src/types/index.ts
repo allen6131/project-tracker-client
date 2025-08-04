@@ -58,7 +58,7 @@ export interface Project {
   id: number;
   name: string;
   description: string;
-  status: 'bidding' | 'started' | 'active' | 'done';
+  status: string; // Dynamic status from company profile
   address?: string;
   master_permit_number?: string;
   electrical_sub_permit?: string;
@@ -76,7 +76,7 @@ export interface Project {
 export interface CreateProjectRequest {
   name: string;
   description?: string;
-  status?: 'bidding' | 'started' | 'active' | 'done';
+  status?: string; // Dynamic status from company profile
   address?: string;
   master_permit_number?: string;
   electrical_sub_permit?: string;
@@ -87,7 +87,7 @@ export interface CreateProjectRequest {
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
-  status?: 'bidding' | 'started' | 'active' | 'done';
+  status?: string; // Dynamic status from company profile
   address?: string;
   master_permit_number?: string;
   electrical_sub_permit?: string;
@@ -841,6 +841,7 @@ export interface CompanyProfile {
   website?: string | null;
   tax_id?: string | null;
   footer_text?: string | null;
+  custom_statuses?: string[] | null; // Array of custom project statuses
   created_by?: number | null;
   created_at: string;
   updated_at: string;

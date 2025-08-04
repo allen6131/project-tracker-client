@@ -919,6 +919,11 @@ export const companyProfileAPI = {
     const response = await api.delete('/company-profile/logo');
     return response.data;
   },
+
+  getStatuses: async (): Promise<{ statuses: string[] }> => {
+    const response = await api.get('/company-profile/statuses');
+    return response.data;
+  },
 };
 
 // Combined export for compatibility
