@@ -85,7 +85,7 @@ const Invoices: React.FC = () => {
   
   const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
   const [estimates, setEstimates] = useState<Estimate[]>([]);
-  const [projects, setProjects] = useState<{ id: number; name: string; status: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: number; name: string; status: string; customer_id?: number | null }[]>([]);
   
   // Pagination and filtering
   const [currentPage, setCurrentPage] = useState(1);
@@ -94,6 +94,11 @@ const Invoices: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
+
+  // Filter projects based on selected customer
+  const filteredProjects = formData.customer_id 
+    ? projects.filter(project => project.customer_id === formData.customer_id)
+    : projects;
 
   // Load invoices and data
   useEffect(() => {
@@ -168,8 +173,13 @@ const Invoices: React.FC = () => {
 
   const loadProjects = async () => {
     try {
-      const response = await projectsAPI.getProjects(1, 100, '', 'active');
-      setProjects(response.projects.map((p: Project) => ({ id: p.id, name: p.name, status: p.status })));
+      const response = await projectsAPI.getProjects(1, 100, '');
+      setProjects(response.projects.map((p: Project) => ({ 
+        id: p.id, 
+        name: p.name, 
+        status: p.status, 
+        customer_id: p.customer_id 
+      })));
     } catch (err) {
       console.error('Failed to load projects:', err);
     }
@@ -1067,7 +1077,9 @@ const Invoices: React.FC = () => {
                         setFormData({ 
                           ...formData, 
                           customer_id: customerId,
-                          customer_name: customer?.name || ''
+                          customer_name: customer?.name || '',
+                          // Clear project selection when customer changes
+                          project_id: null
                         });
                       }}
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -1086,15 +1098,28 @@ const Invoices: React.FC = () => {
                     <select
                       value={formData.project_id || ''}
                       onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      disabled={!formData.customer_id}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <option value="">Select Project (Optional)</option>
-                      {projects.map(project => (
+                      <option value="">
+                        {!formData.customer_id 
+                          ? 'Select a customer first...' 
+                          : filteredProjects.length === 0 
+                            ? 'No projects available for this customer'
+                            : 'Select Project (Optional)'
+                        }
+                      </option>
+                      {filteredProjects.map(project => (
                         <option key={project.id} value={project.id}>
                           {project.name} ({project.status})
                         </option>
                       ))}
                     </select>
+                    {formData.customer_id && filteredProjects.length === 0 && (
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        This customer has no projects. You can still create an invoice without selecting a project.
+                      </p>
+                    )}
                   </div>
 
                   {editingInvoice && (
