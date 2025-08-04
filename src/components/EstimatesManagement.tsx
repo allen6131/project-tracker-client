@@ -45,7 +45,6 @@ const EstimatesManagement: React.FC = () => {
   
   // Form data
   const [formData, setFormData] = useState({
-    title: '',
     description: '',
     project_id: null as number | null,
     total_amount: 0,
@@ -69,6 +68,11 @@ const EstimatesManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
+
+  // Helper function to generate auto-title for estimates
+  const getEstimateTitle = (estimate: Estimate) => {
+    return `Estimate #${estimate.id}`;
+  };
 
   // Load estimates and projects
   useEffect(() => {
@@ -122,7 +126,6 @@ const EstimatesManagement: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      title: '',
       description: '',
       project_id: null,
       total_amount: 0,
@@ -143,7 +146,6 @@ const EstimatesManagement: React.FC = () => {
     clearMessages();
     setEditingEstimate(estimate);
     setFormData({
-      title: estimate.title,
       description: estimate.description || '',
       project_id: estimate.project_id,
       total_amount: estimate.total_amount,
@@ -228,7 +230,6 @@ const EstimatesManagement: React.FC = () => {
       if (editingEstimate) {
         // Update existing estimate
         const updateData: UpdateEstimateRequest = {
-          title: formData.title,
           description: formData.description,
           status: formData.status,
           total_amount: formData.total_amount,
@@ -249,7 +250,6 @@ const EstimatesManagement: React.FC = () => {
         }
 
         const createData: CreateEstimateRequest = {
-          title: formData.title,
           description: formData.description,
           project_id: formData.project_id,
           total_amount: formData.total_amount,
@@ -835,16 +835,14 @@ const EstimatesManagement: React.FC = () => {
               <form onSubmit={handleFormSubmit} className="space-y-6">
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Title *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                  {editingEstimate && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Estimate Number</label>
+                      <div className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                        {getEstimateTitle(editingEstimate)}
+                      </div>
+                    </div>
+                  )}
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Project *</label>

@@ -63,9 +63,8 @@ const Invoices: React.FC = () => {
   });
   
   // Form data
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
+    const [formData, setFormData] = useState({
+    description: '', 
     customer_id: null as number | null,
     customer_name: '',
     customer_email: '',
@@ -99,6 +98,11 @@ const Invoices: React.FC = () => {
   const filteredProjects = formData.customer_id 
     ? projects.filter(project => project.customer_id === formData.customer_id)
     : projects;
+
+  // Helper function to generate auto-title for invoices
+  const getInvoiceTitle = (invoice: Invoice) => {
+    return `Invoice ${invoice.invoice_number}`;
+  };
 
   // Load invoices and data
   useEffect(() => {
@@ -192,7 +196,6 @@ const Invoices: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      title: '',
       description: '',
       customer_id: null,
       customer_name: '',
@@ -287,7 +290,6 @@ const Invoices: React.FC = () => {
     clearMessages();
     setEditingInvoice(invoice);
     setFormData({
-      title: invoice.title,
       description: invoice.description || '',
       customer_id: invoice.customer_id ?? null,
       customer_name: invoice.customer_name || '',
@@ -745,7 +747,7 @@ const Invoices: React.FC = () => {
                       <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.invoice_number}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">{invoice.title}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">{getInvoiceTitle(invoice)}</div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">{invoice.description}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -1056,16 +1058,14 @@ const Invoices: React.FC = () => {
               <form onSubmit={handleFormSubmit} className="space-y-6">
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
+                  {editingInvoice && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice Number</label>
+                      <div className="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
+                        {editingInvoice.invoice_number}
+                      </div>
+                    </div>
+                  )}
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer</label>
@@ -1355,7 +1355,7 @@ const Invoices: React.FC = () => {
                         Invoice Details
                       </label>
                       <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md space-y-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{emailingInvoice.title}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{getInvoiceTitle(emailingInvoice)}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           Invoice #: {emailingInvoice.invoice_number}
                         </p>
@@ -1456,7 +1456,7 @@ const Invoices: React.FC = () => {
                             {/* Email Content */}
                             <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-b-lg">
                               <div className="bg-white dark:bg-gray-800 p-4 rounded-md mb-4">
-                                <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">{emailingInvoice.title}</h3>
+                                <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">{getInvoiceTitle(emailingInvoice)}</h3>
                                 {emailingInvoice.description && (
                                   <p className="text-gray-600 dark:text-gray-300 mb-3">{emailingInvoice.description}</p>
                                 )}
@@ -1725,7 +1725,7 @@ const Invoices: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-gray-600 dark:text-gray-300">
-                        <strong>Title:</strong> {viewingInvoice.title}
+                        <strong>Title:</strong> {getInvoiceTitle(viewingInvoice)}
                       </p>
                       <p className="text-gray-600 dark:text-gray-300">
                         <strong>Customer:</strong> {viewingInvoice.customer_name || 'No customer'}

@@ -455,7 +455,7 @@ export interface Estimate {
 }
 
 export interface CreateEstimateRequest {
-  title: string;
+  title?: string; // Optional - auto-generated if not provided
   description?: string;
   project_id: number;
   total_amount: number;
@@ -526,7 +526,7 @@ export interface Invoice {
 }
 
 export interface CreateInvoiceRequest {
-  title: string;
+  title?: string; // Optional - auto-generated if not provided
   description?: string;
   customer_id?: number | null;
   customer_name?: string;

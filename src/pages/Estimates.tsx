@@ -30,7 +30,6 @@ const Estimates: React.FC = () => {
   
   // Form data
   const [formData, setFormData] = useState({
-    title: '',
     description: '',
     project_id: null as number | null,
     total_amount: 0,
@@ -69,6 +68,11 @@ const Estimates: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
+
+  // Helper function to generate auto-title for estimates
+  const getEstimateTitle = (estimate: Estimate) => {
+    return `Estimate #${estimate.id}`;
+  };
 
   // Load estimates and projects
   useEffect(() => {
@@ -125,7 +129,6 @@ const Estimates: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      title: '',
       description: '',
       project_id: null,
       total_amount: 0,
@@ -146,7 +149,6 @@ const Estimates: React.FC = () => {
     clearMessages();
     setEditingEstimate(estimate);
     setFormData({
-      title: estimate.title,
       description: estimate.description || '',
       project_id: estimate.project_id,
       total_amount: estimate.total_amount,
@@ -252,7 +254,6 @@ const Estimates: React.FC = () => {
       if (editingEstimate) {
         // Update existing estimate
         const updateData: UpdateEstimateRequest = {
-          title: formData.title,
           description: formData.description,
           status: formData.status,
           total_amount: formData.total_amount,
@@ -273,7 +274,6 @@ const Estimates: React.FC = () => {
         }
 
         const createData: CreateEstimateRequest = {
-          title: formData.title,
           description: formData.description,
           project_id: formData.project_id,
           total_amount: formData.total_amount,
@@ -596,7 +596,7 @@ const Estimates: React.FC = () => {
                   {estimates.map((estimate) => (
                     <tr key={estimate.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{estimate.title}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{getEstimateTitle(estimate)}</div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">{estimate.description}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -833,16 +833,14 @@ const Estimates: React.FC = () => {
                 <form onSubmit={handleFormSubmit} className="space-y-6">
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title *</label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
+                    {editingEstimate && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Estimate Number</label>
+                        <div className="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
+                          {getEstimateTitle(editingEstimate)}
+                        </div>
+                      </div>
+                    )}
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project *</label>
@@ -973,7 +971,7 @@ const Estimates: React.FC = () => {
                           Estimate Details
                         </label>
                         <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md space-y-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{emailingEstimate.title}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{getEstimateTitle(emailingEstimate)}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             Project: {emailingEstimate.project_name}
                           </p>
@@ -1071,7 +1069,7 @@ const Estimates: React.FC = () => {
                               {/* Email Content */}
                               <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-b-lg">
                                 <div className="bg-white dark:bg-gray-800 p-4 rounded-md mb-4">
-                                  <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">{emailingEstimate.title}</h3>
+                                  <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">{getEstimateTitle(emailingEstimate)}</h3>
                                   {emailingEstimate.description && (
                                     <p className="text-gray-600 dark:text-gray-300 mb-3">{emailingEstimate.description}</p>
                                   )}
@@ -1260,7 +1258,7 @@ const Estimates: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-gray-600 dark:text-gray-300">
-                        <strong>Title:</strong> {viewingEstimate.title}
+                        <strong>Title:</strong> {getEstimateTitle(viewingEstimate)}
                       </p>
                       <p className="text-gray-600 dark:text-gray-300">
                         <strong>Project:</strong> {viewingEstimate.project_name || 'No project'}
