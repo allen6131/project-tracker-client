@@ -427,7 +427,7 @@ export const estimatesAPI = {
 
   createEstimate: async (estimateData: CreateEstimateRequest, document: File): Promise<{ estimate: Estimate; message: string }> => {
     const formData = new FormData();
-    formData.append('title', estimateData.title);
+    if (estimateData.title) formData.append('title', estimateData.title);
     formData.append('project_id', estimateData.project_id.toString());
     formData.append('total_amount', estimateData.total_amount.toString());
     if (estimateData.description) formData.append('description', estimateData.description);
