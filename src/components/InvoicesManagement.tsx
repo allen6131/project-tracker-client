@@ -705,6 +705,25 @@ const InvoicesManagement: React.FC = () => {
                     </td>
                   </tr>
                 ))}
+                {/* Add empty rows when there are fewer than 5 invoices to ensure dropdown has space */}
+                {invoices.length > 0 && invoices.length < 5 && Array.from({ length: 5 - invoices.length }).map((_, index) => (
+                  <tr key={`empty-invoice-${index}`} className="pointer-events-none">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-transparent">.</div>
+                      <div className="text-sm text-transparent">.</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-transparent">.</div>
+                      <div className="text-sm text-transparent">.</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full text-transparent">.</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-transparent">.</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

@@ -357,6 +357,32 @@ const ServicesCatalog: React.FC = () => {
                     )}
                   </tr>
                 ))}
+                {/* Add empty rows when there are fewer than 5 services to ensure dropdown has space */}
+                {services.length > 0 && services.length < 5 && Array.from({ length: 5 - services.length }).map((_, index) => (
+                  <tr key={`empty-service-${index}`} className="pointer-events-none">
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="text-sm font-medium text-transparent">.</div>
+                        <div className="text-sm text-transparent">.</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-transparent">.</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-transparent">.</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-transparent">.</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-transparent">.</span>
+                    </td>
+                    {isAdmin && (
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-transparent">.</td>
+                    )}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

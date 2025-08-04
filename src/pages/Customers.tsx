@@ -612,6 +612,21 @@ const Customers: React.FC = () => {
                       )}
                     </React.Fragment>
                   ))}
+                  {/* Add empty rows when there are fewer than 5 customers to ensure dropdown has space */}
+                  {customers.length > 0 && customers.length < 5 && Array.from({ length: 5 - customers.length }).map((_, index) => (
+                    <tr key={`empty-customer-${index}`} className="pointer-events-none">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-transparent">.</div>
+                        <div className="text-sm text-transparent">.</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-transparent">.</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-transparent">.</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

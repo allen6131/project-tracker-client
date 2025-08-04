@@ -123,20 +123,14 @@ const ProjectDetail: React.FC = () => {
             if (!id) return;
             setLoading(true);
             try {
-                console.log('Fetching project details for ID:', id);
                 const projectResponse = await projectsAPI.getProject(parseInt(id));
                 setProject(projectResponse.project);
-                console.log('Project loaded:', projectResponse.project);
 
                 const todoResponse = await todoAPI.getTodoLists(parseInt(id));
                 setTodoLists(todoResponse);
-                console.log('Todo lists loaded:', todoResponse.length, 'lists');
 
-                console.log('Fetching invoices for project ID:', id);
                 const invoicesResponse = await invoicesAPI.getProjectInvoices(parseInt(id));
-                console.log('Invoices API response:', invoicesResponse);
                 setInvoices(invoicesResponse.invoices);
-                console.log('Invoices set in state:', invoicesResponse.invoices.length, 'invoices');
 
                 if (projectResponse.project.customer_id) {
                     try {
@@ -148,14 +142,10 @@ const ProjectDetail: React.FC = () => {
                 }
 
                 try {
-                    console.log('Fetching estimates for project ID:', id);
                     const estimatesResponse = await estimatesAPI.getProjectEstimates(parseInt(id!));
-                    console.log('Estimates API response:', estimatesResponse);
                     setEstimates(estimatesResponse.estimates);
-                    console.log('Estimates set in state:', estimatesResponse.estimates.length, 'estimates');
                 } catch (estimatesErr) {
                     console.warn('Failed to fetch project estimates:', estimatesErr);
-                    console.error('Estimates error details:', estimatesErr);
                 }
 
             } catch (err: any) {
@@ -924,9 +914,6 @@ const ProjectDetail: React.FC = () => {
                                 />
                             </div>
                         ) : activeTab === 'invoices' ? (
-                            (() => {
-                                console.log('Rendering invoices tab, current invoices:', invoices);
-                                return (
                             <div>
                                 <div className="flex justify-between items-center mb-6">
                                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Project Invoices</h2>
@@ -1096,17 +1083,30 @@ const ProjectDetail: React.FC = () => {
                                                         </td>
                                                     </tr>
                                                 ))}
+                                                {/* Add empty rows when there are fewer than 5 invoices to ensure dropdown has space */}
+                                                {invoices.length < 5 && Array.from({ length: 5 - invoices.length }).map((_, index) => (
+                                                    <tr key={`empty-invoice-${index}`} className="pointer-events-none">
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-medium text-transparent">.</div>
+                                                            <div className="text-sm text-transparent">.</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm text-transparent">.</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-medium text-transparent">.</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-transparent">.</td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-transparent">.</td>
+                                                    </tr>
+                                                ))}
                                             </tbody>
                                         </table>
                                     </div>
                                 )}
                             </div>
-                                );
-                            })()
                         ) : activeTab === 'estimates' ? (
-                            (() => {
-                                console.log('Rendering estimates tab, current estimates:', estimates);
-                                return (
                             <div>
                                 <div className="flex justify-between items-center mb-6">
                                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Project Estimates</h2>
@@ -1346,8 +1346,6 @@ const ProjectDetail: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-                                );
-                            })()
                         ) : activeTab === 'change-orders' ? (
                             <div>
                                 <ChangeOrdersManagement 

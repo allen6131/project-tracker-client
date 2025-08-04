@@ -681,6 +681,40 @@ const EstimatesManagement: React.FC = () => {
                     </td>
                   </tr>
                 ))}
+                {/* Add empty rows when there are fewer than 5 estimates to ensure dropdown has space */}
+                {estimates.length > 0 && estimates.length < 5 && Array.from({ length: 5 - estimates.length }).map((_, index) => (
+                  <tr key={`empty-estimate-${index}`} className="pointer-events-none">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-transparent">.</div>
+                      <div className="text-sm text-transparent">.</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-transparent">.</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-transparent">.</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full text-transparent">.</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">.</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-transparent">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <div className="flex-1 bg-transparent rounded-full h-2"></div>
+                          <span className="text-xs text-transparent">.</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="flex-1 bg-transparent rounded-full h-2"></div>
+                          <span className="text-xs text-transparent">.</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-transparent">.</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
