@@ -23,7 +23,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     address: '',
     master_permit_number: '',
     electrical_sub_permit: '',
-    status: 'bidding' as 'bidding' | 'started' | 'active' | 'done',
+    status: 'bidding' as string,
     customer_id: '' as string,
     main_technician_id: '' as string
   });
