@@ -4,10 +4,17 @@ import { todoAPI, usersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TechnicianCalendar from './TechnicianCalendar';
 
+interface EnhancedTodoItem extends TodoItem {
+  listTitle: string;
+  projectName: string;
+  projectId: number;
+  projectStatus: string;
+}
+
 interface CalendarDay {
   date: Date;
   isCurrentMonth: boolean;
-  todos: TodoItem[];
+  todos: EnhancedTodoItem[];
 }
 
 interface CalendarProps {}
@@ -94,7 +101,7 @@ const Calendar: React.FC<CalendarProps> = () => {
   };
 
   // Get all todos with due dates
-  const getTodosWithDueDates = () => {
+  const getTodosWithDueDates = (): EnhancedTodoItem[] => {
     return todoLists.flatMap(list => 
       list.items
         .filter(item => item.due_date)
@@ -320,17 +327,19 @@ const Calendar: React.FC<CalendarProps> = () => {
               return (
                 <div
                   key={index}
-                  onClick={() => day.isCurrentMonth && handleDayClick(day)}
                   className={`
-                    relative p-2 h-20 border border-gray-200 cursor-pointer transition-colors
+                    relative p-2 h-32 border border-gray-200 transition-colors overflow-hidden
                     ${day.isCurrentMonth 
-                      ? 'bg-white hover:bg-gray-50' 
+                      ? 'bg-white' 
                       : 'bg-gray-50 text-gray-400'
                     }
                     ${isToday(day.date) ? 'ring-2 ring-blue-500' : ''}
                   `}
                 >
-                  <div className="flex justify-between items-start">
+                  <div 
+                    className="flex justify-between items-start cursor-pointer hover:bg-gray-50 rounded p-1 -m-1"
+                    onClick={() => day.isCurrentMonth && handleDayClick(day)}
+                  >
                     <span className={`text-sm font-medium ${
                       isToday(day.date) ? 'text-blue-600' : 
                       day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
@@ -342,7 +351,53 @@ const Calendar: React.FC<CalendarProps> = () => {
                     )}
                   </div>
                   
-                  {todosCount > 0 && (
+                  {/* Individual Tasks */}
+                  {day.isCurrentMonth && day.todos.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {day.todos.slice(0, 3).map((todo) => (
+                        <div
+                          key={todo.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleItem(todo);
+                          }}
+                          className={`
+                            text-xs p-1 rounded cursor-pointer transition-colors
+                            ${todo.is_completed 
+                              ? 'bg-green-100 text-green-800 line-through' 
+                              : isOverdue(todo.due_date!, todo.is_completed)
+                                ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                                : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                            }
+                          `}
+                          title={`${todo.content} - ${todo.projectName}`}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <input
+                              type="checkbox"
+                              checked={todo.is_completed}
+                              onChange={() => {}} // Handled by parent onClick
+                              className="w-3 h-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
+                            />
+                            <span className="truncate flex-1">
+                              {todo.content.length > 15 ? `${todo.content.slice(0, 15)}...` : todo.content}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      {day.todos.length > 3 && (
+                        <div 
+                          className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 text-center py-1"
+                          onClick={() => day.isCurrentMonth && handleDayClick(day)}
+                        >
+                          +{day.todos.length - 3} more
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Summary for non-current month or when no space */}
+                  {(!day.isCurrentMonth || day.todos.length === 0) && todosCount > 0 && (
                     <div className="mt-1">
                       <div className="text-xs text-gray-600">
                         {completedCount}/{todosCount} done
@@ -386,22 +441,46 @@ const Calendar: React.FC<CalendarProps> = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                    💡 <strong>Tip:</strong> Click on any task to mark it as complete/incomplete. Use the "Assign" button to reassign tasks.
+                  </div>
                   {selectedDayTodos.map((todo) => (
-                    <div key={todo.id} className="border rounded-lg p-4">
+                    <div 
+                      key={todo.id} 
+                      className={`
+                        border rounded-lg p-4 transition-colors cursor-pointer
+                        ${todo.is_completed 
+                          ? 'bg-green-50 border-green-200' 
+                          : isOverdue(todo.due_date!, todo.is_completed)
+                            ? 'bg-red-50 border-red-200 hover:bg-red-100'
+                            : 'hover:bg-gray-50'
+                        }
+                      `}
+                      onClick={() => handleToggleItem(todo)}
+                    >
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{todo.content}</h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {todo.projectName} - {todo.listTitle}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex-1 flex items-start space-x-3">
                           <input
                             type="checkbox"
                             checked={todo.is_completed}
-                            onChange={() => handleToggleItem(todo)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            onChange={() => {}} // Handled by parent onClick
+                            className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
                           />
+                          <div className="flex-1">
+                            <h4 className={`font-medium ${todo.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                              {todo.content}
+                            </h4>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {todo.projectName} - {todo.listTitle}
+                            </p>
+                            {isOverdue(todo.due_date!, todo.is_completed) && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-2">
+                                Overdue
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
                           {editingItemId === todo.id ? (
                             <select
                               value={editingAssignment}
@@ -438,12 +517,6 @@ const Calendar: React.FC<CalendarProps> = () => {
                             >
                               Assign
                             </button>
-                          )}
-                          
-                          {isOverdue(todo.due_date!, todo.is_completed) && (
-                            <span className="text-xs text-red-600 font-medium">
-                              Overdue
-                            </span>
                           )}
                         </div>
                       </div>
