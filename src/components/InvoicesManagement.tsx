@@ -337,7 +337,7 @@ const InvoicesManagement: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `invoice-${currentPDFInvoice.id}.pdf`;
+      a.download = `invoice-${currentPDFInvoice.invoice_number || currentPDFInvoice.id}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -346,6 +346,23 @@ const InvoicesManagement: React.FC = () => {
       setError(err.response?.data?.message || 'Failed to download PDF');
     } finally {
       setDownloadingPDF(false);
+    }
+  };
+
+  const handleDownloadInvoicePDF = async (invoice: Invoice) => {
+    try {
+      const blob = await invoicesAPI.downloadInvoicePDF(invoice.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${invoice.invoice_number || invoice.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setSuccess('Invoice PDF downloaded successfully');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to download PDF');
     }
   };
 
@@ -642,6 +659,19 @@ const InvoicesManagement: React.FC = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                               </svg>
                               View PDF
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                handleDownloadInvoicePDF(invoice);
+                                setOpenDropdown(null);
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                            >
+                              <svg className="w-4 h-4 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Download PDF
                             </button>
                             
                             <button
