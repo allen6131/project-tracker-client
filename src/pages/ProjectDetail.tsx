@@ -994,7 +994,7 @@ const ProjectDetail: React.FC = () => {
                                                             <div className="text-sm text-gray-500 dark:text-gray-400">{invoice.title}</div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm text-gray-900 dark:text-white">{invoice.customer_name || 'N/A'}</div>
+                                                            <div className="text-sm text-gray-900 dark:text-white">{invoice.customer_name || 'No customer'}</div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="text-sm font-medium text-gray-900 dark:text-white">
