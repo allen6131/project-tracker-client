@@ -64,6 +64,7 @@ const Invoices: React.FC = () => {
   
   // Form data
     const [formData, setFormData] = useState({
+    title: '',
     description: '', 
     customer_id: null as number | null,
     customer_name: '',
@@ -196,6 +197,7 @@ const Invoices: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
+      title: '',
       description: '',
       customer_id: null,
       customer_name: '',
@@ -290,6 +292,7 @@ const Invoices: React.FC = () => {
     clearMessages();
     setEditingInvoice(invoice);
     setFormData({
+      title: invoice.title || '',
       description: invoice.description || '',
       customer_id: invoice.customer_id ?? null,
       customer_name: invoice.customer_name || '',
@@ -1093,6 +1096,18 @@ const Invoices: React.FC = () => {
                       </div>
                     </div>
                   )}
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Leave empty to auto-generate"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">If left empty, title will be auto-generated</p>
+                  </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer</label>

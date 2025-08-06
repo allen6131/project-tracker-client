@@ -1030,14 +1030,15 @@ const InvoicesManagement: React.FC = () => {
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Title *</label>
+                    <label className="block text-sm font-medium text-gray-700">Title</label>
                     <input
                       type="text"
-                      required
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Leave empty to auto-generate"
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     />
+                    <p className="mt-1 text-sm text-gray-500">If left empty, title will be auto-generated</p>
                   </div>
                   
                   <div>
