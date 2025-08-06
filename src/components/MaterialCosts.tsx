@@ -291,11 +291,12 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) || 0 : amount || 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
-    }).format(amount);
+    }).format(numericAmount);
   };
 
   const formatDate = (dateString: string) => {
@@ -303,7 +304,10 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
   };
 
   const getTotalCost = () => {
-    return materials.reduce((total, material) => total + material.total_cost, 0);
+    return materials.reduce((total, material) => {
+      const cost = typeof material.total_cost === 'string' ? parseFloat(material.total_cost) || 0 : material.total_cost || 0;
+      return total + cost;
+    }, 0);
   };
 
   return (
