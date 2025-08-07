@@ -39,7 +39,8 @@ const TechnicianCalendar: React.FC<TechnicianCalendarProps> = ({ currentDate, na
 
   const loadProjects = async () => {
     try {
-      const response = await projectsAPI.getProjects(1, 100, '', 'active');
+      // Load a large set of projects across all statuses so all jobs are selectable
+      const response = await projectsAPI.getProjects(1, 1000, '', '');
       setProjects(response.projects);
     } catch (err) {
       console.error('Failed to load projects:', err);
