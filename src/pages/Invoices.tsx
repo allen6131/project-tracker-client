@@ -105,6 +105,21 @@ const Invoices: React.FC = () => {
     return `Invoice ${invoice.invoice_number}`;
   };
 
+  // Safely parse a date-only string (YYYY-MM-DD) without timezone shifting
+  const parseDateOnly = (dateString: string): Date => {
+    try {
+      const ymd = dateString.split('T')[0];
+      const [yearStr, monthStr, dayStr] = ymd.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10);
+      const day = parseInt(dayStr, 10);
+      if (!year || !month || !day) return new Date(dateString);
+      return new Date(year, month - 1, day);
+    } catch {
+      return new Date(dateString);
+    }
+  };
+
   // Load invoices and data
   useEffect(() => {
     loadInvoices();
@@ -791,7 +806,7 @@ const Invoices: React.FC = () => {
                       ${invoice.total_amount.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'No due date'}
+                      {invoice.due_date ? parseDateOnly(invoice.due_date).toLocaleDateString() : 'No due date'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="relative dropdown-container">
@@ -1508,7 +1523,7 @@ const Invoices: React.FC = () => {
                                     <p><strong>Invoice #:</strong> {emailingInvoice.invoice_number}</p>
                                     <p><strong>Date:</strong> {new Date(emailingInvoice.created_at).toLocaleDateString()}</p>
                                     {emailingInvoice.due_date && (
-                                      <p><strong>Due Date:</strong> {new Date(emailingInvoice.due_date).toLocaleDateString()}</p>
+                                      <p><strong>Due Date:</strong> {parseDateOnly(emailingInvoice.due_date).toLocaleDateString()}</p>
                                     )}
                                     <p>
                                       <strong>Status:</strong> 
@@ -1554,7 +1569,7 @@ const Invoices: React.FC = () => {
                               <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                                 <p>Thank you for your business. This invoice details the services provided and the amount due.</p>
                                 {emailingInvoice.due_date && (
-                                  <p>Please ensure payment is made by the due date: {new Date(emailingInvoice.due_date).toLocaleDateString()}</p>
+                                  <p>Please ensure payment is made by the due date: {parseDateOnly(emailingInvoice.due_date).toLocaleDateString()}</p>
                                                                   )}
                                   <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
                                 </div>
@@ -1788,7 +1803,7 @@ const Invoices: React.FC = () => {
                       </p>
                       {viewingInvoice.due_date && (
                         <p className="text-gray-600 dark:text-gray-300">
-                          <strong>Due Date:</strong> {new Date(viewingInvoice.due_date).toLocaleDateString()}
+                          <strong>Due Date:</strong> {parseDateOnly(viewingInvoice.due_date).toLocaleDateString()}
                         </p>
                       )}
                     </div>

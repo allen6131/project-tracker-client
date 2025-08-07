@@ -290,7 +290,10 @@ const InvoicesManagement: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    // Parse as local date to avoid timezone shifting a YYYY-MM-DD string
+    const [y, m, d] = dateString.split('T')[0].split('-').map(Number);
+    const date = y && m && d ? new Date(y, m - 1, d) : new Date(dateString);
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
