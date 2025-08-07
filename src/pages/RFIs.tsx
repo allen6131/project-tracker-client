@@ -12,6 +12,7 @@ const RFIs: React.FC = () => {
   const [status, setStatus] = useState('');
   const [viewUrl, setViewUrl] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
 
   // Create/Edit state
   const [showForm, setShowForm] = useState(false);
@@ -51,6 +52,23 @@ const RFIs: React.FC = () => {
     };
     load();
   }, [page, search, status]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleDropdown = (rfiId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenDropdownId(openDropdownId === rfiId ? null : rfiId);
+  };
 
   useEffect(() => {
     const loadAux = async () => {
@@ -304,15 +322,51 @@ const RFIs: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">{rfi.status}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
-                      <button onClick={() => handleViewPDF(rfi.id)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">View PDF</button>
-                      <button onClick={() => handleDownloadPDF(rfi.id)} className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100">Download</button>
-                      {rfi.status === 'draft' && (
-                        <>
-                          <button onClick={() => openEdit(rfi)} className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">Edit</button>
-                          <button onClick={() => handleOpenEmail(rfi)} className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">Send</button>
-                        </>
-                      )}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="relative dropdown-container">
+                        <button
+                          onClick={(e) => toggleDropdown(rfi.id, e)}
+                          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                          </svg>
+                        </button>
+                        {openDropdownId === rfi.id && (
+                          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                            <div className="py-1">
+                              <button
+                                onClick={() => { handleViewPDF(rfi.id); setOpenDropdownId(null); }}
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                              >
+                                View PDF
+                              </button>
+                              <button
+                                onClick={() => { handleDownloadPDF(rfi.id); setOpenDropdownId(null); }}
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                              >
+                                Download PDF
+                              </button>
+                              {rfi.status === 'draft' && (
+                                <>
+                                  <button
+                                    onClick={() => { openEdit(rfi); setOpenDropdownId(null); }}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => { handleOpenEmail(rfi); setOpenDropdownId(null); }}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                  >
+                                    Send Email
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
