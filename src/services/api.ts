@@ -421,6 +421,10 @@ export const rfiAPI = {
     const response: AxiosResponse<Blob> = await api.get(`/rfi/${id}/pdf`, { responseType: 'blob' });
     return URL.createObjectURL(response.data);
   },
+  downloadRFIPDF: async (id: number): Promise<Blob> => {
+    const response: AxiosResponse<Blob> = await api.get(`/rfi/${id}/download`, { responseType: 'blob' });
+    return response.data;
+  },
 };
 
 // Estimates API
