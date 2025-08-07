@@ -13,6 +13,7 @@ import Files from './pages/Files';
 import Customers from './pages/Customers';
 import Estimates from './pages/Estimates';
 import Invoices from './pages/Invoices';
+import RFIs from './pages/RFIs';
 import Todos from './pages/Todos';
 import CalendarPage from './pages/Calendar';
 import Materials from './pages/Materials';
@@ -95,6 +96,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Invoices />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/rfis"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <RFIs />
                   </Layout>
                 </ProtectedRoute>
               }

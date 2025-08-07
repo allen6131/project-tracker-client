@@ -409,6 +409,18 @@ export const rfiAPI = {
     const response: AxiosResponse<RFIResponse> = await api.get(`/rfi/project/${projectId}`);
     return response.data;
   },
+  // Global list
+  getRFIs: async (page = 1, limit = 10, search = '', status = ''): Promise<{ rfis: RFI[]; pagination: any }> => {
+    const response: AxiosResponse<{ rfis: RFI[]; pagination: any }> = await api.get('/rfi', {
+      params: { page, limit, search, status },
+    });
+    return response.data;
+  },
+  // View/Download PDF
+  viewRFIPDF: async (id: number): Promise<string> => {
+    const response: AxiosResponse<Blob> = await api.get(`/rfi/${id}/pdf`, { responseType: 'blob' });
+    return URL.createObjectURL(response.data);
+  },
 };
 
 // Estimates API
