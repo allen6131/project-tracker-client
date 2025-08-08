@@ -1,6 +1,7 @@
 export function getDesktopDownloadUrl(): string {
-  const repo = 'allen6131/project-tracker-client';
-  const base = `https://github.com/${repo}/releases/latest/download`;
+  const repo = process.env.REACT_APP_GITHUB_REPO || 'allen6131/project-tracker-client';
+  const base = `https://github.com/${repo}/releases/latest`;
+  const directBase = `${base}/download`;
 
   const ua = navigator.userAgent || '';
   const platform = navigator.platform || '';
@@ -9,18 +10,19 @@ export function getDesktopDownloadUrl(): string {
   const isMac = /Mac/i.test(platform) || /Macintosh|Mac OS X/i.test(ua);
   const isLinux = /Linux/i.test(platform) || (/X11/i.test(ua) && !isMac && !isWindows);
 
+  // Electron-builder artifactName: "${productName}-${os}.${ext}" where os in {win, mac, linux}
   if (isWindows) {
-    return `${base}/Project%20Tracker-windows.exe`;
+    return `${directBase}/Project%20Tracker-win.exe`;
   }
   if (isMac) {
-    return `${base}/Project%20Tracker-mac.dmg`;
+    return `${directBase}/Project%20Tracker-mac.dmg`;
   }
   if (isLinux) {
-    return `${base}/Project%20Tracker-linux.AppImage`;
+    return `${directBase}/Project%20Tracker-linux.AppImage`;
   }
 
   // Fallback to releases page if unknown
-  return `https://github.com/${repo}/releases/latest`;
+  return base;
 }
 
 export function getPlatformLabel(): string {
