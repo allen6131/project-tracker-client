@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
+import DownloadDesktopLink from './DownloadDesktopLink';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -207,6 +208,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               <span className="text-sm text-gray-600 dark:text-gray-400">Theme</span>
               <ThemeToggle size="sm" />
             </div>
+
+            <DownloadDesktopLink className="w-full mb-3" />
 
             <button
               onClick={logout}

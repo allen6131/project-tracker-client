@@ -26,7 +26,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "electron:dev": "concurrently -k \"BROWSER=none react-scripts start\" \"wait-on http://localhost:3000 && cross-env ELECTRON_START_URL=http://localhost:3000 electron .\"",
+    "electron:build": "react-scripts build && electron-builder --publish never"
   },
   "eslintConfig": {
     "extends": [
@@ -46,9 +48,37 @@
       "last 1 safari version"
     ]
   },
+  "build": {
+    "appId": "com.allen6131.projecttracker",
+    "productName": "Project Tracker",
+    "files": [
+      "build/**/*",
+      "electron/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "artifactName": "${productName}-${os}.${ext}",
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Utility"
+    }
+  },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.4",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3",
+    "wait-on": "^7.2.0"
   }
 }

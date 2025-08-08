@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import DownloadDesktopLink from './DownloadDesktopLink';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -47,7 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
               {getPageTitle()}
             </h1>
-            <div className="w-10"></div> {/* Spacer for centering */}
+            <DownloadDesktopLink variant="link" />
           </div>
         </div>
 
