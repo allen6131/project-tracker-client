@@ -887,30 +887,30 @@ export const schedulesAPI = {
 export const commentsAPI = {
   // Get project comments
   getProjectComments: async (projectId: number): Promise<CommentsResponse> => {
-    const response = await api.get(`/projects/${projectId}/comments`);
+    const response = await api.get(`/project-comments/${projectId}/comments`);
     return response.data;
   },
 
   // Create comment
   createComment: async (projectId: number, data: CreateCommentRequest): Promise<ProjectComment> => {
-    const response = await api.post(`/projects/${projectId}/comments`, data);
+    const response = await api.post(`/project-comments/${projectId}/comments`, data);
     return response.data.comment;
   },
 
   // Update comment
   updateComment: async (commentId: number, data: UpdateCommentRequest): Promise<ProjectComment> => {
-    const response = await api.put(`/projects/comments/${commentId}`, data);
+    const response = await api.put(`/project-comments/comments/${commentId}`, data);
     return response.data.comment;
   },
 
   // Delete comment
   deleteComment: async (commentId: number): Promise<void> => {
-    await api.delete(`/projects/comments/${commentId}`);
+    await api.delete(`/project-comments/comments/${commentId}`);
   },
 
   // Get mentionable users for a project
   getMentionableUsers: async (projectId: number): Promise<MentionableUsersResponse> => {
-    const response = await api.get(`/projects/${projectId}/users`);
+    const response = await api.get(`/project-comments/${projectId}/users`);
     return response.data;
   }
 };
