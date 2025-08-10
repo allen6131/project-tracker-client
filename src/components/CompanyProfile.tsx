@@ -274,7 +274,53 @@ const CompanyProfile: React.FC = () => {
                   >
                     {logoPreview ? 'Change Logo' : 'Upload Logo'}
                   </label>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB. You can crop after selecting.</p>
+                  {/* Simple cropping tool */}
+                  {logoFile && (
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Quick Crop</label>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Center-crop to square via canvas
+                            const img = new Image();
+                            img.onload = () => {
+                              const size = Math.min(img.width, img.height);
+                              const sx = (img.width - size) / 2;
+                              const sy = (img.height - size) / 2;
+                              const canvas = document.createElement('canvas');
+                              canvas.width = 512; canvas.height = 512;
+                              const ctx = canvas.getContext('2d');
+                              if (!ctx) return;
+                              ctx.drawImage(img, sx, sy, size, size, 0, 0, 512, 512);
+                              canvas.toBlob((blob) => {
+                                if (blob) {
+                                  const cropped = new File([blob], logoFile.name.replace(/\.[^.]+$/, '') + '-cropped.png', { type: 'image/png' });
+                                  setLogoFile(cropped);
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => setLogoPreview(reader.result as string);
+                                  reader.readAsDataURL(cropped);
+                                }
+                              }, 'image/png');
+                            };
+                            img.src = URL.createObjectURL(logoFile);
+                          }}
+                          className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Center Crop to Square
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                          className="px-3 py-1 text-sm bg-gray-100 border rounded hover:bg-gray-200"
+                        >
+                          Reset Selection
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Crop helps ensure the logo fits nicely in the UI and PDFs.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
