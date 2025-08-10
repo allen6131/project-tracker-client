@@ -13,6 +13,8 @@ import Files from './pages/Files';
 import Customers from './pages/Customers';
 import Estimates from './pages/Estimates';
 import Invoices from './pages/Invoices';
+import InvoiceEdit from './pages/InvoiceEdit';
+import EstimateEdit from './pages/EstimateEdit';
 import RFIs from './pages/RFIs';
 import Todos from './pages/Todos';
 import CalendarPage from './pages/Calendar';
@@ -101,11 +103,31 @@ function App() {
               }
             />
             <Route 
+              path="/invoices/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <InvoiceEdit />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
               path="/rfis"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <RFIs />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/estimates/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <EstimateEdit />
                   </Layout>
                 </ProtectedRoute>
               }

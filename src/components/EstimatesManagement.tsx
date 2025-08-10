@@ -143,17 +143,7 @@ const EstimatesManagement: React.FC = () => {
   };
 
   const handleEditEstimate = (estimate: Estimate) => {
-    clearMessages();
-    setEditingEstimate(estimate);
-    setFormData({
-      description: estimate.description || '',
-      project_id: estimate.project_id,
-      total_amount: estimate.total_amount,
-      notes: estimate.notes || '',
-      status: estimate.status
-    });
-    setSelectedDocument(null);
-    setShowForm(true);
+    window.location.assign(`/estimates/${estimate.id}/edit`);
   };
 
   const handleDeleteEstimate = async (estimateId: number) => {

@@ -592,23 +592,7 @@ const ProjectDetail: React.FC = () => {
     };
 
     const handleEditInvoice = (invoice: Invoice) => {
-        clearMessages();
-        setEditingInvoice(invoice);
-        setInvoiceFormData({
-            title: invoice.title,
-            description: invoice.description || '',
-            customer_name: invoice.customer_name || '',
-            customer_email: invoice.customer_email || '',
-            customer_phone: invoice.customer_phone || '',
-            customer_address: invoice.customer_address || '',
-            tax_rate: invoice.tax_rate,
-            due_date: invoice.due_date || '',
-            notes: invoice.notes || ''
-        });
-        setInvoiceItems(invoice.items && invoice.items.length > 0 
-            ? invoice.items 
-            : [{ description: '', quantity: 1, unit_price: 0 }]);
-        setShowInvoiceForm(true);
+        navigate(`/invoices/${invoice.id}/edit`);
     };
 
     const handleDeleteInvoice = async (invoiceId: number) => {
