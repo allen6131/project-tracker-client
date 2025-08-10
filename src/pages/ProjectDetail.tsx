@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Project, TodoList as TodoListType, Invoice, Estimate, Customer, CreateEstimateRequest, CreateInvoiceRequest, UpdateInvoiceRequest, InvoiceItem } from '../types';
 import { projectsAPI, todoAPI, invoicesAPI, estimatesAPI, customersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +14,7 @@ import PDFViewer from '../components/PDFViewer';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
     const { user, isAdmin } = useAuth();
     const { isDarkMode } = useTheme();
@@ -27,6 +28,17 @@ const ProjectDetail: React.FC = () => {
     const [success, setSuccess] = useState<string | null>(null);
     const [newListName, setNewListName] = useState('');
     const [activeTab, setActiveTab] = useState<'todos' | 'materials' | 'customer' | 'rfi' | 'invoices' | 'estimates' | 'change-orders' | 'comments'>('todos');
+    // Handle deep-linking from calendar to a specific todo list/item
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        const listParam = searchParams.get('list');
+        const itemParam = searchParams.get('item');
+        if (tabParam === 'todos') {
+            setActiveTab('todos');
+            // Optionally scroll to the list/item after todoLists load
+            // This requires refs; minimal: just focus the todos tab.
+        }
+    }, [searchParams]);
 
     // Estimate form state
     const [showEstimateForm, setShowEstimateForm] = useState(false);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TodoListWithProject, TodoItem, User } from '../types';
 import { todoAPI, usersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +22,7 @@ interface CalendarProps {}
 
 const Calendar: React.FC<CalendarProps> = () => {
   const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'todos' | 'technicians'>('todos');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [todoLists, setTodoLists] = useState<TodoListWithProject[]>([]);
@@ -207,6 +209,10 @@ const Calendar: React.FC<CalendarProps> = () => {
     return due < today;
   };
 
+  const openTodoInProject = (todo: EnhancedTodoItem) => {
+    navigate(`/projects/${todo.projectId}?tab=todos&list=${todo.todo_list_id}&item=${todo.id}`);
+  };
+
   const calendarDays = getCalendarDays();
   const selectedDayTodos = getSelectedDayTodos();
 
@@ -359,7 +365,7 @@ const Calendar: React.FC<CalendarProps> = () => {
                           key={todo.id}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleToggleItem(todo);
+                            openTodoInProject(todo);
                           }}
                           className={`
                             text-xs p-1 rounded cursor-pointer transition-colors
@@ -376,8 +382,11 @@ const Calendar: React.FC<CalendarProps> = () => {
                             <input
                               type="checkbox"
                               checked={todo.is_completed}
-                              onChange={() => {}} // Handled by parent onClick
-                              className="w-3 h-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleToggleItem(todo);
+                              }}
+                              className="w-3 h-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
                             <span className="truncate flex-1">
                               {todo.content.length > 15 ? `${todo.content.slice(0, 15)}...` : todo.content}
@@ -456,15 +465,18 @@ const Calendar: React.FC<CalendarProps> = () => {
                             : 'hover:bg-gray-50'
                         }
                       `}
-                      onClick={() => handleToggleItem(todo)}
+                      onClick={() => openTodoInProject(todo)}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1 flex items-start space-x-3">
                           <input
                             type="checkbox"
                             checked={todo.is_completed}
-                            onChange={() => {}} // Handled by parent onClick
-                            className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleToggleItem(todo);
+                            }}
+                            className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
                           <div className="flex-1">
                             <h4 className={`font-medium ${todo.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
