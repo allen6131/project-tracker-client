@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ProjectComment, CreateCommentRequest, User } from '../types';
 import api from '../services/api';
+import { commentsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 interface ProjectCommentsProps {
@@ -33,7 +34,7 @@ const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
   const loadComments = async () => {
     try {
       setLoading(true);
-      const response = await api.getProjectComments(projectId);
+      const response = await commentsAPI.getProjectComments(projectId);
       setComments(response.comments);
       setError(null);
     } catch (error: any) {
@@ -46,7 +47,7 @@ const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
 
   const loadMentionableUsers = async () => {
     try {
-      const response = await api.getMentionableUsers(projectId);
+      const response = await commentsAPI.getMentionableUsers(projectId);
       setMentionableUsers(response.users);
     } catch (error) {
       console.error('Error loading mentionable users:', error);
@@ -138,7 +139,7 @@ const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
         mentions
       };
 
-      await api.createComment(projectId, commentData);
+      await commentsAPI.createComment(projectId, commentData);
       setNewComment('');
       setSelectedMentions([]);
       await loadComments();
@@ -166,7 +167,7 @@ const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
       clearMessages();
       const mentions = extractMentionsFromText(editingContent);
       
-      await api.updateComment(commentId, {
+      await commentsAPI.updateComment(commentId, {
         content: editingContent.trim(),
         mentions
       });
@@ -190,7 +191,7 @@ const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
 
     try {
       clearMessages();
-      await api.deleteComment(commentId);
+      await commentsAPI.deleteComment(commentId);
       await loadComments();
       setSuccess('Comment deleted successfully');
       
