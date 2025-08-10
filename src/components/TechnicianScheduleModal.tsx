@@ -4,7 +4,7 @@ import { TechnicianSchedule, Project, User, CreateTechnicianScheduleRequest } fr
 interface TechnicianScheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateTechnicianScheduleRequest) => void;
+  onSubmit: (data: CreateTechnicianScheduleRequest & { technician_ids?: number[] }) => void;
   onDelete?: () => void;
   schedule?: TechnicianSchedule | null;
   selectedDate?: string | null;
@@ -33,6 +33,8 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [multiAssign, setMultiAssign] = useState(false);
+  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<number[]>([]);
 
   useEffect(() => {
     if (schedule) {
@@ -45,6 +47,8 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
         notes: schedule.notes || '',
         status: schedule.status,
       });
+      setMultiAssign(false);
+      setSelectedTechnicianIds([schedule.technician_id]);
     } else {
       setFormData({
         project_id: '',
@@ -55,6 +59,8 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
         notes: '',
         status: 'scheduled',
       });
+      setMultiAssign(false);
+      setSelectedTechnicianIds([]);
     }
     setErrors({});
   }, [schedule, selectedDate]);
@@ -66,8 +72,14 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
       newErrors.project_id = 'Project is required';
     }
 
-    if (!formData.technician_id) {
-      newErrors.technician_id = 'Technician is required';
+    if (!multiAssign) {
+      if (!formData.technician_id) {
+        newErrors.technician_id = 'Technician is required';
+      }
+    } else {
+      if (selectedTechnicianIds.length === 0) {
+        newErrors.technician_id = 'Select at least one technician';
+      }
     }
 
     if (!formData.scheduled_date) {
@@ -95,15 +107,18 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
     setLoading(true);
     
     try {
-      const submitData: CreateTechnicianScheduleRequest = {
+      const submitData: CreateTechnicianScheduleRequest & { technician_ids?: number[] } = {
         project_id: parseInt(formData.project_id),
-        technician_id: parseInt(formData.technician_id),
+        technician_id: formData.technician_id ? parseInt(formData.technician_id) : (selectedTechnicianIds[0] ?? 0),
         scheduled_date: formData.scheduled_date,
         start_time: formData.start_time || undefined,
         end_time: formData.end_time || undefined,
         notes: formData.notes || undefined,
         status: formData.status,
       };
+      if (multiAssign && selectedTechnicianIds.length > 0) {
+        submitData.technician_ids = selectedTechnicianIds;
+      }
 
       await onSubmit(submitData);
     } catch (error) {
@@ -166,23 +181,61 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
 
             {/* Technician Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Technician *
-              </label>
-              <select
-                value={formData.technician_id}
-                onChange={(e) => setFormData({ ...formData, technician_id: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.technician_id ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select a technician</option>
-                {technicians.map((technician) => (
-                  <option key={technician.id} value={technician.id}>
-                    {technician.username} ({technician.email})
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {multiAssign ? 'Technicians *' : 'Technician *'}
+                </label>
+                {!schedule && (
+                  <button
+                    type="button"
+                    onClick={() => setMultiAssign((v) => !v)}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    {multiAssign ? 'Use single select' : 'Assign multiple'}
+                  </button>
+                )}
+              </div>
+
+              {!multiAssign && (
+                <select
+                  value={formData.technician_id}
+                  onChange={(e) => setFormData({ ...formData, technician_id: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.technician_id ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select a technician</option>
+                  {technicians.map((technician) => (
+                    <option key={technician.id} value={technician.id}>
+                      {technician.username} ({technician.email})
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {multiAssign && (
+                <div className={`max-h-48 overflow-auto border rounded-md p-2 ${errors.technician_id ? 'border-red-500' : 'border-gray-300'}`}>
+                  {technicians.map((technician) => {
+                    const checked = selectedTechnicianIds.includes(technician.id);
+                    return (
+                      <label key={technician.id} className="flex items-center space-x-2 py-1">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setSelectedTechnicianIds((prev) =>
+                              e.target.checked ? [...prev, technician.id] : prev.filter((id) => id !== technician.id)
+                            );
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{technician.username} ({technician.email})</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+
               {errors.technician_id && (
                 <p className="mt-1 text-sm text-red-600">{errors.technician_id}</p>
               )}

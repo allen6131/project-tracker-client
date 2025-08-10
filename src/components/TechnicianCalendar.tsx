@@ -99,7 +99,17 @@ const TechnicianCalendar: React.FC<TechnicianCalendarProps> = ({ currentDate, na
         await schedulesAPI.updateSchedule(editingSchedule.id, scheduleData);
         setSuccess('Schedule updated successfully');
       } else {
-        await schedulesAPI.createSchedule(scheduleData);
+        // If multiple technician ids provided, create multiple schedules
+        if (Array.isArray(scheduleData.technician_ids) && scheduleData.technician_ids.length > 0) {
+          const { technician_ids, ...base } = scheduleData;
+          await Promise.all(
+            technician_ids.map((techId: number) =>
+              schedulesAPI.createSchedule({ ...base, technician_id: techId })
+            )
+          );
+        } else {
+          await schedulesAPI.createSchedule(scheduleData);
+        }
         setSuccess('Schedule created successfully');
       }
       setShowScheduleModal(false);
