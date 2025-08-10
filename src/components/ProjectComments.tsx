@@ -9,7 +9,7 @@ interface ProjectCommentsProps {
 }
 
 const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
-  const { user } = useAuth();
+  const { user: currentUser } = useAuth();
   const [comments, setComments] = useState<ProjectComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [mentionableUsers, setMentionableUsers] = useState<User[]>([]);
@@ -71,7 +71,9 @@ const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
     const mentionMatch = beforeCursor.match(/@(\w*)$/);
     
     if (mentionMatch) {
-      setMentionQuery(mentionMatch[1]);
+      const query = mentionMatch[1];
+      setMentionQuery(query);
+      // Show the dropdown even if the query is empty to allow listing all users
       setShowMentions(true);
     } else {
       setShowMentions(false);
@@ -203,11 +205,11 @@ const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
   };
 
   const canEditComment = (comment: ProjectComment) => {
-    return comment.user_id === user?.id;
+    return comment.user_id === currentUser?.id;
   };
 
   const canDeleteComment = (comment: ProjectComment) => {
-    return comment.user_id === user?.id || user?.role === 'admin';
+    return comment.user_id === currentUser?.id || currentUser?.role === 'admin';
   };
 
   const formatDate = (dateString: string) => {
@@ -233,9 +235,9 @@ const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
     return content.replace(/@(\w+)/g, '<span class="bg-blue-100 text-blue-800 px-1 rounded">@$1</span>');
   };
 
-  const filteredMentionUsers = mentionableUsers.filter(user =>
-    user.username.toLowerCase().includes(mentionQuery.toLowerCase()) &&
-    user.id !== user?.id // Don't suggest mentioning yourself
+  const filteredMentionUsers = mentionableUsers.filter(u =>
+    u.username.toLowerCase().includes(mentionQuery.toLowerCase()) &&
+    u.id !== currentUser?.id // Don't suggest mentioning yourself
   );
 
   if (loading) {
@@ -279,9 +281,11 @@ const ProjectComments: React.FC<ProjectCommentsProps> = ({ projectId }) => {
           />
           
           {/* Mention Dropdown */}
-          {showMentions && filteredMentionUsers.length > 0 && (
+          {showMentions && (
             <div className="absolute z-10 w-64 bg-white border border-gray-300 rounded-md shadow-lg mt-1">
-              {filteredMentionUsers.slice(0, 5).map(user => (
+              {(filteredMentionUsers.length > 0 ? filteredMentionUsers : mentionableUsers)
+                .slice(0, 8)
+                .map(user => (
                 <button
                   key={user.id}
                   type="button"
