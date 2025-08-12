@@ -28,7 +28,8 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "electron:dev": "concurrently -k \"BROWSER=none react-scripts start\" \"wait-on http://localhost:3000 && cross-env ELECTRON_START_URL=http://localhost:3000 electron .\"",
-    "electron:build": "react-scripts build && electron-builder --publish never"
+    "electron:build": "react-scripts build && electron-builder --publish never",
+    "electron:publish": "react-scripts build && electron-builder --publish always"
   },
   "eslintConfig": {
     "extends": [
