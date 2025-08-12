@@ -13,9 +13,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
-    defaults:
-      run:
-        working-directory: client
+    # Run commands from repo root (this repo IS the client app)
 
     steps:
       - name: Checkout
@@ -26,7 +24,7 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies
+      - name: Install dependencies (root)
         run: npm install --no-audit --no-fund
 
       - name: Build and publish Electron app
