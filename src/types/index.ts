@@ -452,6 +452,7 @@ export interface Estimate {
   created_by_username?: string;
   created_at: string;
   updated_at: string;
+  items?: EstimateItem[];
 }
 
 export interface CreateEstimateRequest {
@@ -468,6 +469,7 @@ export interface UpdateEstimateRequest {
   status?: 'draft' | 'sent' | 'approved' | 'rejected';
   total_amount?: number;
   notes?: string;
+  items?: EstimateItem[];
 }
 
 export interface EstimatesResponse {
@@ -485,6 +487,16 @@ export interface EstimatesResponse {
 export interface InvoiceItem {
   id?: number;
   invoice_id?: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price?: number;
+  created_at?: string;
+}
+
+export interface EstimateItem {
+  id?: number;
+  estimate_id?: number;
   description: string;
   quantity: number;
   unit_price: number;

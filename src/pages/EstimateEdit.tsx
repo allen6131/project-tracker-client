@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { estimatesAPI, projectsAPI } from '../services/api';
-import { Estimate, Project, UpdateEstimateRequest } from '../types';
+import { Estimate, Project, UpdateEstimateRequest, EstimateItem } from '../types';
 
 const EstimateEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +24,7 @@ const EstimateEdit: React.FC = () => {
     status: 'draft' as 'draft' | 'sent' | 'approved' | 'rejected',
   });
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [items, setItems] = useState<EstimateItem[]>([{ description: '', quantity: 1, unit_price: 0 }]);
 
   useEffect(() => {
     let mounted = true;
@@ -49,6 +50,12 @@ const EstimateEdit: React.FC = () => {
           notes: est.notes || '',
           status: est.status,
         });
+        // Prefer server-provided items if available, otherwise fall back to single total amount-only mode
+        if (Array.isArray(est.items) && est.items.length > 0) {
+          setItems(est.items);
+        } else {
+          setItems([{ description: '', quantity: 1, unit_price: est.total_amount || 0 }]);
+        }
       } catch (e: any) {
         setError(e?.response?.data?.message || e?.message || 'Failed to load estimate');
       } finally {
@@ -76,6 +83,15 @@ const EstimateEdit: React.FC = () => {
         notes: formData.notes,
       };
 
+      const nonEmptyItems = items.filter((it) => it.description.trim() !== '');
+      if (nonEmptyItems.length > 0) {
+        payload.items = nonEmptyItems.map((it) => ({
+          description: it.description,
+          quantity: Number(it.quantity) || 0,
+          unit_price: Number(it.unit_price) || 0,
+        }));
+      }
+
       await estimatesAPI.updateEstimate(estimate.id, payload, documentFile ?? undefined);
       setSuccess('Estimate updated successfully');
     } catch (e: any) {
@@ -84,6 +100,17 @@ const EstimateEdit: React.FC = () => {
       setSaving(false);
     }
   };
+
+  const handleItemChange = (index: number, field: keyof EstimateItem, value: string | number) => {
+    const updated = [...items];
+    updated[index] = { ...updated[index], [field]: value } as EstimateItem;
+    setItems(updated);
+  };
+
+  const addItem = () => setItems((prev) => [...prev, { description: '', quantity: 1, unit_price: 0 }]);
+  const removeItem = (index: number) => setItems((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+
+  const calculateItemsTotal = () => items.reduce((sum, it) => sum + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0);
 
   if (loading) {
     return (
@@ -179,6 +206,69 @@ const EstimateEdit: React.FC = () => {
               onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
+          </div>
+        </div>
+
+        {/* Optional line items editor (if present, shows and lets you edit items; otherwise you can just use total amount) */}
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="text-md font-medium text-gray-900 dark:text-white">Line Items (optional)</h4>
+            <button type="button" onClick={addItem} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">Add Item</button>
+          </div>
+          <div className="space-y-3">
+            {items.map((item, index) => (
+              <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={item.quantity}
+                    onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit Price</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={item.unit_price}
+                    onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Total</label>
+                  <div className="mt-1 px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-white">
+                    ${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
+                  </div>
+                </div>
+                <div className="col-span-1">
+                  {items.length > 1 && (
+                    <button type="button" onClick={() => removeItem(index)} className="bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded text-sm">×</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mt-4">
+            <div className="flex justify-between text-sm text-gray-900 dark:text-white">
+              <span>Items Subtotal:</span>
+              <span>${calculateItemsTotal().toFixed(2)}</span>
+            </div>
           </div>
         </div>
 
