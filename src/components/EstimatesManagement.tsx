@@ -1186,6 +1186,8 @@ const EstimatesManagement: React.FC = () => {
         onDownload={handleDownloadPDF}
         onRegenerate={handleRegeneratePDF}
         loading={pdfLoading}
+        attachmentUrl={currentPDFEstimate?.document_path ? `${process.env.REACT_APP_API_URL?.replace(/\/$/, '') || ''}${currentPDFEstimate.document_path}` : null}
+        attachmentLabel={currentPDFEstimate?.document_path ? 'View Attached Document' : undefined}
       />
 
       {/* Send Estimate Prompt */}

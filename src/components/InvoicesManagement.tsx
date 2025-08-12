@@ -1520,6 +1520,7 @@ const InvoicesManagement: React.FC = () => {
         onDownload={handleDownloadPDF}
         onRegenerate={handleRegeneratePDF}
         loading={pdfLoading || downloadingPDF}
+        attachmentUrl={currentPDFInvoice?.customer_address === undefined && currentPDFInvoice?.customer_email === undefined ? null : null}
       />
     </div>
   );
