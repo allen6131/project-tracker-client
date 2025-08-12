@@ -25,11 +25,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
-          cache-dependency-path: client/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Build and publish Electron app
         env:
@@ -37,7 +35,9 @@ jobs:
           # Ensure the app builds links to the correct repo for downloads
           REACT_APP_GITHUB_REPO: ${{ github.repository }}
           CI: true
-        run: npm run electron:publish
+        run: |
+          npm run build
+          npx electron-builder --publish always
 
       - name: Upload build logs on failure
         if: failure()
