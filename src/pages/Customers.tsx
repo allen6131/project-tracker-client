@@ -203,6 +203,7 @@ const Customers: React.FC = () => {
     
     try {
       clearMessages();
+      console.log('Creating contact for customer', selectedCustomer.id, contactFormData);
       await customersAPI.createContact(selectedCustomer.id, contactFormData);
       setSuccess('Contact created successfully');
       setShowContactForm(false);
@@ -220,6 +221,7 @@ const Customers: React.FC = () => {
     
     try {
       clearMessages();
+      console.log('Updating contact', editingContact.id, 'for customer', selectedCustomer.id, contactFormData);
       await customersAPI.updateContact(selectedCustomer.id, editingContact.id, contactFormData);
       setSuccess('Contact updated successfully');
       setShowContactForm(false);
@@ -540,7 +542,7 @@ const Customers: React.FC = () => {
                             <div className="flex justify-between items-center mb-4">
                               <h3 className="text-lg font-medium text-gray-900 dark:text-white">Contacts</h3>
                               <button
-                                onClick={openCreateContactForm}
+                                onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); openCreateContactForm(); }}
                                 className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
                               >
                                 Add Contact
@@ -569,13 +571,13 @@ const Customers: React.FC = () => {
                                       </div>
                                       <div className="flex space-x-2">
                                         <button
-                                          onClick={() => openEditContactForm(contact)}
+                                          onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); openEditContactForm(contact); }}
                                           className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm"
                                         >
                                           Edit
                                         </button>
                                         <button
-                                          onClick={() => handleDeleteContact(contact.id)}
+                                          onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); handleDeleteContact(contact.id); }}
                                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm"
                                         >
                                           Delete
@@ -1141,7 +1143,10 @@ const Customers: React.FC = () => {
                 </h2>
               </div>
               
-              <form onSubmit={editingContact ? handleUpdateContact : handleCreateContact} className="p-6 space-y-4">
+              <form onSubmit={(e) => {
+                console.log('Contact form submit clicked');
+                return (editingContact ? handleUpdateContact : handleCreateContact)(e);
+              }} className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
