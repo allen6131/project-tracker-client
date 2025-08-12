@@ -1,0 +1,52 @@
+name: Build and Release Desktop Apps
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-release:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and publish Electron app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Ensure the app builds links to the correct repo for downloads
+          REACT_APP_GITHUB_REPO: ${{ github.repository }}
+          CI: true
+        run: npm run electron:publish
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-builder-logs-${{ matrix.os }}
+          path: |
+            client/*.log
+            client/*-unpacked/**/*
+          if-no-files-found: ignore
+
+
