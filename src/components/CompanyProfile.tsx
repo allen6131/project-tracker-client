@@ -60,7 +60,10 @@ const CompanyProfile: React.FC = () => {
       
       // Set logo preview if exists
       if (profileData.logo_url) {
-        setLogoPreview(`${window.location.origin}${profileData.logo_url}`);
+        const apiBase = (process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api');
+        const serverOrigin = apiBase.replace(/\/api$/, '');
+        const url = profileData.logo_url.startsWith('http') ? profileData.logo_url : `${serverOrigin}${profileData.logo_url}`;
+        setLogoPreview(url);
       }
       
       // Set custom statuses if they exist
