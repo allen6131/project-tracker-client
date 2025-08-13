@@ -13,7 +13,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, Windows Server 2025 image, macos-15]
 
     # Run commands from repo root (this repo IS the client app)
 
