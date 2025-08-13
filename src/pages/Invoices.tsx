@@ -238,10 +238,7 @@ const Invoices: React.FC = () => {
   };
 
   const handleCreateInvoice = () => {
-    clearMessages();
-    resetForm();
-    setEditingInvoice(null);
-    setShowForm(true);
+    window.location.assign('/invoices/new');
   };
 
   const handleCreateFromEstimate = () => {

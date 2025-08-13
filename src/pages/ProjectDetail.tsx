@@ -206,61 +206,18 @@ const ProjectDetail: React.FC = () => {
 
     const handleCreateInvoice = async () => {
         if (!project || !id) return;
-        
-        const projectName = prompt(`Enter invoice title for project "${project.name}":`, `Invoice for ${project.name}`);
-        if (!projectName) return;
-
-        try {
-            const invoiceData = {
-                title: projectName,
-                description: `Invoice for project: ${project.name}`,
-                project_id: parseInt(id),
-                customer_name: '',
-                customer_email: '',
-                customer_phone: '',
-                customer_address: '',
-                items: [{
-                    description: `Work on project: ${project.name}`,
-                    quantity: 1,
-                    unit_price: 0
-                }],
-                tax_rate: 0,
-                notes: ''
-            };
-
-            await invoicesAPI.createInvoice(invoiceData);
-            setSuccess('Invoice created successfully! You can now edit it in the Invoices section.');
-            setTimeout(() => setSuccess(null), 5000);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to create invoice');
-            setTimeout(() => setError(null), 5000);
-        }
+        navigate(`/invoices/new?project=${id}`);
     };
 
     // Estimate form handlers
     const handleCreateEstimate = () => {
-        if (!project) return;
-        
-        setError(null);
-        setSuccess(null);
-        setEstimateFormData({
-            title: `Estimate for ${project.name}`,
-            description: '',
-            total_amount: 0,
-            notes: ''
-        });
-        setSelectedDocument(null);
-        setShowEstimateForm(true);
+        if (!project || !id) return;
+        navigate(`/estimates/new?project=${id}`);
     };
 
     const handleEstimateFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!project || !id) return;
-
-        if (!selectedDocument) {
-            setError('Please select a document to upload');
-            return;
-        }
 
         if (estimateFormData.total_amount <= 0) {
             setError('Please enter a valid amount');
@@ -277,7 +234,7 @@ const ProjectDetail: React.FC = () => {
                 notes: estimateFormData.notes
             };
 
-            await estimatesAPI.createEstimate(createData, selectedDocument);
+            await estimatesAPI.createEstimate(createData);
             setSuccess('Estimate created successfully!');
             
             // Refresh estimates list

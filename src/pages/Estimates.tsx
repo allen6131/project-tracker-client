@@ -139,10 +139,7 @@ const Estimates: React.FC = () => {
   };
 
   const handleCreateEstimate = () => {
-    clearMessages();
-    resetForm();
-    setEditingEstimate(null);
-    setShowForm(true);
+    window.location.assign('/estimates/new');
   };
 
   const handleEditEstimate = (estimate: Estimate) => {
@@ -250,16 +247,12 @@ const Estimates: React.FC = () => {
           notes: formData.notes
         };
 
-        await estimatesAPI.updateEstimate(editingEstimate.id, updateData, selectedDocument || undefined);
+        await estimatesAPI.updateEstimate(editingEstimate.id, updateData);
         setSuccess('Estimate updated successfully');
       } else {
         // Create new estimate
         if (!formData.project_id) {
           setError('Please select a project');
-          return;
-        }
-        if (!selectedDocument) {
-          setError('Please upload a document');
           return;
         }
 
@@ -270,7 +263,7 @@ const Estimates: React.FC = () => {
           notes: formData.notes
         };
 
-        await estimatesAPI.createEstimate(createData, selectedDocument);
+        await estimatesAPI.createEstimate(createData);
         setSuccess('Estimate created successfully');
       }
       
@@ -288,13 +281,8 @@ const Estimates: React.FC = () => {
     try {
       setDownloadingEstimate(estimateId);
       
-      // Find the estimate to determine if it has a document
-      const estimate = estimates.find(e => e.id === estimateId);
-      const hasDocument = estimate?.document_path;
-      
-      // Show page loading with appropriate message
       setShowPageLoading(true);
-      setPageLoadingMessage(hasDocument ? 'Downloading PDF...' : 'Generating PDF...');
+      setPageLoadingMessage('Downloading PDF...');
       
       const blob = await estimatesAPI.downloadEstimate(estimateId);
       const url = window.URL.createObjectURL(blob);

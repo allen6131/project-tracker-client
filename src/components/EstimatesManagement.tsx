@@ -136,10 +136,7 @@ const EstimatesManagement: React.FC = () => {
   };
 
   const handleCreateEstimate = () => {
-    clearMessages();
-    resetForm();
-    setEditingEstimate(null);
-    setShowForm(true);
+    window.location.assign('/estimates/new');
   };
 
   const handleEditEstimate = (estimate: Estimate) => {

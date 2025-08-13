@@ -15,6 +15,8 @@ import Estimates from './pages/Estimates';
 import Invoices from './pages/Invoices';
 import InvoiceEdit from './pages/InvoiceEdit';
 import EstimateEdit from './pages/EstimateEdit';
+import InvoiceCreate from './pages/InvoiceCreate';
+import EstimateCreate from './pages/EstimateCreate';
 import RFIs from './pages/RFIs';
 import Todos from './pages/Todos';
 import CalendarPage from './pages/Calendar';
@@ -103,6 +105,16 @@ function App() {
               }
             />
             <Route 
+              path="/invoices/new"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <InvoiceCreate />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
               path="/invoices/:id/edit"
               element={
                 <ProtectedRoute>
@@ -128,6 +140,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <EstimateEdit />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/estimates/new"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <EstimateCreate />
                   </Layout>
                 </ProtectedRoute>
               }
