@@ -23,7 +23,7 @@ const EstimateEdit: React.FC = () => {
     notes: '',
     status: 'draft' as 'draft' | 'sent' | 'approved' | 'rejected',
   });
-  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  // Document attachments removed
   const [items, setItems] = useState<EstimateItem[]>([{ description: '', quantity: 1, unit_price: 0 }]);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ const EstimateEdit: React.FC = () => {
         }));
       }
 
-      await estimatesAPI.updateEstimate(estimate.id, payload, documentFile ?? undefined);
+      await estimatesAPI.updateEstimate(estimate.id, payload);
       setSuccess('Estimate updated successfully');
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Failed to save estimate');
@@ -198,15 +198,7 @@ const EstimateEdit: React.FC = () => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Replace Document (optional)</label>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-              onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
+          {/* Document upload removed */}
         </div>
 
         {/* Optional line items editor (if present, shows and lets you edit items; otherwise you can just use total amount) */}

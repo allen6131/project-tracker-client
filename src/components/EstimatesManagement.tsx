@@ -225,17 +225,12 @@ const EstimatesManagement: React.FC = () => {
           total_amount: formData.total_amount,
           notes: formData.notes
         };
-
-        await estimatesAPI.updateEstimate(editingEstimate.id, updateData, selectedDocument || undefined);
+        await estimatesAPI.updateEstimate(editingEstimate.id, updateData);
         setSuccess('Estimate updated successfully');
       } else {
         // Create new estimate
         if (!formData.project_id) {
           setError('Please select a project');
-          return;
-        }
-        if (!selectedDocument) {
-          setError('Please upload a document');
           return;
         }
 
@@ -246,7 +241,7 @@ const EstimatesManagement: React.FC = () => {
           notes: formData.notes
         };
 
-        const response = await estimatesAPI.createEstimate(createData, selectedDocument);
+        const response = await estimatesAPI.createEstimate(createData);
         setSuccess('Estimate created successfully');
         setNewlyCreatedEstimate(response.estimate);
         setShowSendPrompt(true);
@@ -266,13 +261,8 @@ const EstimatesManagement: React.FC = () => {
     try {
       setDownloadingEstimate(estimateId);
       
-      // Find the estimate to determine if it has a document
-      const estimate = estimates.find(e => e.id === estimateId);
-      const hasDocument = estimate?.document_path;
-      
-      // Show page loading with appropriate message
       setShowPageLoading(true);
-      setPageLoadingMessage(hasDocument ? 'Downloading PDF...' : 'Generating PDF...');
+      setPageLoadingMessage('Downloading PDF...');
       
       const blob = await estimatesAPI.downloadEstimate(estimateId);
       const url = window.URL.createObjectURL(blob);
@@ -1186,8 +1176,6 @@ const EstimatesManagement: React.FC = () => {
         onDownload={handleDownloadPDF}
         onRegenerate={handleRegeneratePDF}
         loading={pdfLoading}
-        attachmentUrl={currentPDFEstimate?.document_path ? `${process.env.REACT_APP_API_URL?.replace(/\/$/, '') || ''}${currentPDFEstimate.document_path}` : null}
-        attachmentLabel={currentPDFEstimate?.document_path ? 'View Attached Document' : undefined}
       />
 
       {/* Send Estimate Prompt */}

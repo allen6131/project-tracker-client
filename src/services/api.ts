@@ -441,20 +441,8 @@ export const estimatesAPI = {
     return response.data;
   },
 
-  createEstimate: async (estimateData: CreateEstimateRequest, document: File): Promise<{ estimate: Estimate; message: string }> => {
-    const formData = new FormData();
-    if (estimateData.title) formData.append('title', estimateData.title);
-    formData.append('project_id', estimateData.project_id.toString());
-    formData.append('total_amount', estimateData.total_amount.toString());
-    if (estimateData.description) formData.append('description', estimateData.description);
-    if (estimateData.notes) formData.append('notes', estimateData.notes);
-    formData.append('document', document);
-
-    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.post('/estimates', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  createEstimate: async (estimateData: CreateEstimateRequest): Promise<{ estimate: Estimate; message: string }> => {
+    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.post('/estimates', estimateData);
     return response.data;
   },
 
@@ -463,20 +451,8 @@ export const estimatesAPI = {
     return response.data;
   },
 
-  updateEstimate: async (id: number, estimateData: UpdateEstimateRequest, document?: File): Promise<{ estimate: Estimate; message: string }> => {
-    const formData = new FormData();
-    if (estimateData.title) formData.append('title', estimateData.title);
-    if (estimateData.description) formData.append('description', estimateData.description);
-    if (estimateData.total_amount !== undefined) formData.append('total_amount', estimateData.total_amount.toString());
-    if (estimateData.status) formData.append('status', estimateData.status);
-    if (estimateData.notes) formData.append('notes', estimateData.notes);
-    if (document) formData.append('document', document);
-
-    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.put(`/estimates/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  updateEstimate: async (id: number, estimateData: UpdateEstimateRequest): Promise<{ estimate: Estimate; message: string }> => {
+    const response: AxiosResponse<{ estimate: Estimate; message: string }> = await api.put(`/estimates/${id}`, estimateData);
     return response.data;
   },
 

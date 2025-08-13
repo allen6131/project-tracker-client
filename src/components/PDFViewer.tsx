@@ -8,8 +8,6 @@ interface PDFViewerProps {
   onDownload: () => void;
   onRegenerate?: () => void;
   loading?: boolean;
-  attachmentUrl?: string | null;
-  attachmentLabel?: string;
 }
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
@@ -19,9 +17,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   title,
   onDownload,
   onRegenerate,
-  loading = false,
-  attachmentUrl = null,
-  attachmentLabel = 'View Attached File'
+  loading = false
 }) => {
   const [error, setError] = useState<string | null>(null);
 
@@ -78,19 +74,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 </svg>
                 Regenerate
               </button>
-            )}
-            {attachmentUrl && (
-              <a
-                href={attachmentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-white bg-gray-700 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-4.553a1 1 0 10-1.414-1.414L13.586 8.586A2 2 0 0013 10v6a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2h3" />
-                </svg>
-                {attachmentLabel}
-              </a>
             )}
             <button
               onClick={onClose}
