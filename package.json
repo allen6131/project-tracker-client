@@ -52,6 +52,11 @@
   "build": {
     "appId": "com.allen6131.projecttracker",
     "productName": "Project Tracker",
+    "extraMetadata": {
+      "main": "build/electron.js",
+      "description": "Project Tracker Desktop App",
+      "author": "AmpTrack"
+    },
     "files": [
       "build/**/*",
       "electron/**/*"
