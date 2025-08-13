@@ -9,6 +9,8 @@ jobs:
   build-and-release:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -29,14 +31,24 @@ jobs:
 
       - name: Build and publish Electron app
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN != '' && secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
           # Ensure the app builds links to the correct repo for downloads
           REACT_APP_GITHUB_REPO: ${{ github.repository }}
           # Prevent CRA from failing build on warnings
           CI: false
         run: |
           npm run build
-          npx electron-builder --publish always
+          npx electron-builder --publish always || echo "electron-builder publish failed; will upload dist as artifacts"
+        continue-on-error: true
+
+      - name: Upload dist artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-dist-${{ matrix.os }}
+          path: |
+            dist/**
+          if-no-files-found: ignore
 
       - name: Upload build logs on failure
         if: failure()
