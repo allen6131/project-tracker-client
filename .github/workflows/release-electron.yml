@@ -32,6 +32,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Ensure the app builds links to the correct repo for downloads
           REACT_APP_GITHUB_REPO: ${{ github.repository }}
+          # Prevent CRA from failing build on warnings
+          CI: false
         run: |
           npm run build
           npx electron-builder --publish always
