@@ -21,12 +21,13 @@ const EstimateCreate: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
 
   const [formData, setFormData] = useState({
-    title: '',
     description: '',
     project_id: null as number | null,
     total_amount: 0,
     notes: '',
   });
+  
+  const [createdEstimate, setCreatedEstimate] = useState<{ id: number; title: string } | null>(null);
 
   const [items, setItems] = useState<EstimateItem[]>([{ 
     item_type: 'custom' as const, 
@@ -129,7 +130,6 @@ const EstimateCreate: React.FC = () => {
       const calculatedTotal = calculateItemsTotal();
       
       const payload: CreateEstimateRequest = {
-        title: formData.title || undefined,
         description: formData.description,
         project_id: formData.project_id,
         total_amount: calculatedTotal > 0 ? calculatedTotal : formData.total_amount,
@@ -146,10 +146,11 @@ const EstimateCreate: React.FC = () => {
           notes: it.notes
         })) : undefined
       };
-      await estimatesAPI.createEstimate(payload);
-      setSuccess('Estimate created successfully');
-      // Navigate back after a short delay to show success message
-      setTimeout(() => navigate(-1), 2000);
+      const response = await estimatesAPI.createEstimate(payload);
+      setCreatedEstimate({ id: response.estimate.id, title: response.estimate.title });
+      setSuccess(`Estimate #${response.estimate.id} created successfully: ${response.estimate.title}`);
+      // Navigate back after a longer delay to show success message with ID
+      setTimeout(() => navigate(-1), 3000);
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Failed to create estimate');
     } finally {
@@ -177,29 +178,22 @@ const EstimateCreate: React.FC = () => {
       {success && <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg">{success}</div>}
 
       <form id="estimate-create-form" onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title (Optional)</label>
-            <input 
-              type="text" 
-              value={formData.title} 
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
-              placeholder="Auto-generated if empty"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project *</label>
-            <select 
-              value={formData.project_id || ''} 
-              onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })} 
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              required
-            >
-              <option value="">Select Project</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project *</label>
+          <select 
+            value={formData.project_id || ''} 
+            onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? parseInt(e.target.value) : null })} 
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            required
+          >
+            <option value="">Select Project</option>
+            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          {createdEstimate && (
+            <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+              Estimate ID: #{createdEstimate.id} - {createdEstimate.title}
+            </p>
+          )}
         </div>
 
         <div>
