@@ -461,6 +461,7 @@ export interface CreateEstimateRequest {
   project_id: number;
   total_amount: number;
   notes?: string;
+  items?: EstimateItem[];
 }
 
 export interface UpdateEstimateRequest {
@@ -497,11 +498,20 @@ export interface InvoiceItem {
 export interface EstimateItem {
   id?: number;
   estimate_id?: number;
+  item_type: 'material' | 'service' | 'custom';
+  material_id?: number;
+  service_id?: number;
   description: string;
   quantity: number;
+  unit: string;
   unit_price: number;
+  markup_percentage?: number;
   total_price?: number;
+  notes?: string;
   created_at?: string;
+  // For display purposes when linked to catalog items
+  material?: CatalogMaterial;
+  service?: Service;
 }
 
 export interface Invoice {
