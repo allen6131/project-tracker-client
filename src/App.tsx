@@ -11,6 +11,7 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Files from './pages/Files';
 import Customers from './pages/Customers';
+import CustomerContacts from './pages/CustomerContacts';
 import Estimates from './pages/Estimates';
 import Invoices from './pages/Invoices';
 import InvoiceEdit from './pages/InvoiceEdit';
@@ -80,6 +81,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Customers />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/customers/:customerId/contacts"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CustomerContacts />
                   </Layout>
                 </ProtectedRoute>
               }

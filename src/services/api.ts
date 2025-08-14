@@ -368,6 +368,11 @@ export const customersAPI = {
     return response.data;
   },
 
+  getCustomerContacts: async (customerId: number): Promise<{ contacts: Contact[] }> => {
+    const response: AxiosResponse<{ contacts: Contact[] }> = await api.get(`/customers/${customerId}/contacts`);
+    return response.data;
+  },
+
   // Contact methods
   createContact: async (customerId: number, contactData: CreateContactRequest): Promise<{ contact: Contact; message: string }> => {
     const response: AxiosResponse<{ contact: Contact; message: string }> = await api.post(`/customers/${customerId}/contacts`, contactData);

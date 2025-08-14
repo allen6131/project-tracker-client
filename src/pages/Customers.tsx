@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Customer, Contact, Project, CreateCustomerRequest, UpdateCustomerRequest, CreateContactRequest, UpdateContactRequest } from '../types';
 import { customersAPI, projectsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,7 @@ import Logo from '../components/Logo';
 
 const Customers: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -507,6 +508,18 @@ const Customers: React.FC = () => {
                                   </button>
                                   <button
                                     onClick={() => {
+                                      navigate(`/customers/${customer.id}/contacts`);
+                                      setOpenDropdownId(null);
+                                    }}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                  >
+                                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                    Manage Contacts
+                                  </button>
+                                  <button
+                                    onClick={() => {
                                       openEditCustomerForm(customer);
                                       setOpenDropdownId(null);
                                     }}
@@ -515,7 +528,7 @@ const Customers: React.FC = () => {
                                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                    Edit
+                                    Edit Customer
                                   </button>
                                   <hr className="border-gray-200 dark:border-gray-600 my-1" />
                                   <button
