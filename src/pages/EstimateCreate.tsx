@@ -85,7 +85,7 @@ const EstimateCreate: React.FC = () => {
       description: material.name,
       quantity: 1,
       unit: material.unit,
-      unit_price: material.standard_cost || 0,
+      unit_price: material.standard_cost,
       markup_percentage: 0,
       material: material
     }]);
@@ -99,7 +99,7 @@ const EstimateCreate: React.FC = () => {
       description: service.name,
       quantity: 1,
       unit: service.unit,
-      unit_price: service.standard_rate || 0,
+      unit_price: service.standard_rate,
       markup_percentage: 0,
       service: service
     }]);
@@ -418,7 +418,7 @@ const EstimateCreate: React.FC = () => {
                     <div className="font-medium text-gray-900 dark:text-white">{material.name}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                       {material.category && `${material.category} • `}
-                      {material.unit} • ${(material.standard_cost || 0).toFixed(2)}
+                      {material.unit} • ${material.standard_cost.toFixed(2)}
                       {material.supplier && ` • ${material.supplier}`}
                     </div>
                     {material.description && (
@@ -459,7 +459,7 @@ const EstimateCreate: React.FC = () => {
                     <div className="font-medium text-gray-900 dark:text-white">{service.name}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                       {service.category && `${service.category} • `}
-                      {service.unit} • ${(service.standard_rate || 0).toFixed(2)}
+                      {service.unit} • ${service.standard_rate.toFixed(2)}
                     </div>
                     {service.description && (
                       <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">{service.description}</div>
