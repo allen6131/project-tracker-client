@@ -21,6 +21,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [projectTypeFilter, setProjectTypeFilter] = useState('');
   const [totalProjects, setTotalProjects] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [customerFilter, setCustomerFilter] = useState('');
@@ -61,17 +62,22 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
     loadProjects(1, searchTerm, statusFilter);
   }, [loadProjects, searchTerm, statusFilter, refreshTrigger]);
 
-  // Client-side filtering for customer
+  // Client-side filtering for customer and project type
   useEffect(() => {
-    if (!customerFilter) {
-      setFilteredProjects(projects);
-    } else {
-      const filtered = projects.filter(project => 
+    let filtered = projects;
+    
+    if (customerFilter) {
+      filtered = filtered.filter(project => 
         project.customer_name && project.customer_name.toLowerCase().includes(customerFilter.toLowerCase())
       );
-      setFilteredProjects(filtered);
     }
-  }, [projects, customerFilter]);
+    
+    if (projectTypeFilter) {
+      filtered = filtered.filter(project => project.project_type === projectTypeFilter);
+    }
+    
+    setFilteredProjects(filtered);
+  }, [projects, customerFilter, projectTypeFilter]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -199,6 +205,17 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
               ))}
             </select>
           </div>
+          <div className="md:w-48">
+            <select
+              value={projectTypeFilter}
+              onChange={(e) => setProjectTypeFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Types</option>
+              <option value="custom-work">Custom Work</option>
+              <option value="service-call">Service Call</option>
+            </select>
+          </div>
           <button
             type="submit"
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
@@ -238,6 +255,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Project
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Type
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Customer
@@ -318,6 +338,15 @@ const ProjectList: React.FC<ProjectListProps> = ({ onEdit, onDelete, refreshTrig
                           </div>
                         )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        project.project_type === 'service-call' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                      }`}>
+                        {project.project_type === 'service-call' ? 'Service Call' : 'Custom Work'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {project.customer_name || (

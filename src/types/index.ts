@@ -59,6 +59,7 @@ export interface Project {
   name: string;
   description: string;
   status: string; // Dynamic status from company profile
+  project_type: 'custom-work' | 'service-call';
   address?: string;
   master_permit_number?: string;
   electrical_sub_permit?: string;
@@ -77,6 +78,7 @@ export interface CreateProjectRequest {
   name: string;
   description?: string;
   status?: string; // Dynamic status from company profile
+  project_type?: 'custom-work' | 'service-call';
   address?: string;
   master_permit_number?: string;
   electrical_sub_permit?: string;
@@ -88,10 +90,12 @@ export interface UpdateProjectRequest {
   name?: string;
   description?: string;
   status?: string; // Dynamic status from company profile
+  project_type?: 'custom-work' | 'service-call';
   address?: string;
   master_permit_number?: string;
   electrical_sub_permit?: string;
   customer_id?: number | null;
+  main_technician_id?: number | null;
 }
 
 export interface ProjectPaginationInfo {

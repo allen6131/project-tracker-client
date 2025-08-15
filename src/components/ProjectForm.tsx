@@ -24,6 +24,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     master_permit_number: '',
     electrical_sub_permit: '',
     status: 'bidding' as string,
+    project_type: 'custom-work' as 'custom-work' | 'service-call',
     customer_id: '' as string,
     main_technician_id: '' as string
   });
@@ -159,6 +160,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         master_permit_number: formData.master_permit_number.trim(),
         electrical_sub_permit: formData.electrical_sub_permit.trim(),
         status: formData.status,
+        project_type: formData.project_type,
         customer_id: formData.customer_id ? parseInt(formData.customer_id) : null,
         main_technician_id: formData.main_technician_id ? parseInt(formData.main_technician_id) : null
       };
@@ -178,6 +180,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       master_permit_number: '',
       electrical_sub_permit: '',
       status: 'bidding',
+      project_type: 'custom-work',
       customer_id: '',
       main_technician_id: ''
     });
@@ -372,6 +375,29 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
             />
             {errors.electrical_sub_permit && (
               <p className="mt-1 text-sm text-red-600">{errors.electrical_sub_permit}</p>
+            )}
+          </div>
+
+          {/* Project Type */}
+          <div>
+            <label htmlFor="project_type" className="block text-sm font-medium text-gray-700 mb-1">
+              Project Type *
+            </label>
+            <select
+              id="project_type"
+              name="project_type"
+              value={formData.project_type}
+              onChange={handleInputChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.project_type ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+              }`}
+              disabled={loading}
+            >
+              <option value="custom-work">Custom Work</option>
+              <option value="service-call">Service Call</option>
+            </select>
+            {errors.project_type && (
+              <p className="mt-1 text-sm text-red-600">{errors.project_type}</p>
             )}
           </div>
 
