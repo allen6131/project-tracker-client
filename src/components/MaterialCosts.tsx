@@ -116,6 +116,7 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
   };
 
   const handleEdit = (material: ProjectMaterial) => {
+    console.log('Edit clicked for material:', material);
     setFormData({
       description: material.description,
       quantity: material.quantity.toString(),
@@ -126,6 +127,7 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
     });
     setEditingMaterial(material);
     setShowAddForm(true);
+    console.log('Form should now be visible. showAddForm:', true, 'editingMaterial:', material);
   };
 
   const handleDelete = async (materialId: number) => {
@@ -369,6 +371,10 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <h4 className="text-lg font-medium text-gray-900 mb-4">
             {editingMaterial ? 'Edit Material' : 'Add New Material'}
+            {/* Debug info */}
+            <span className="text-xs text-gray-500 ml-2">
+              (Debug: showAddForm={showAddForm.toString()}, editingMaterial={editingMaterial?.id || 'null'})
+            </span>
           </h4>
           
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -573,14 +579,27 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
                           <button
-                            onClick={() => handleEdit(material)}
-                            className="text-blue-600 hover:text-blue-900"
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Edit button clicked!');
+                              handleEdit(material);
+                            }}
+                            className="text-blue-600 hover:text-blue-900 px-2 py-1 border border-blue-600 rounded hover:bg-blue-50"
+                            disabled={loading}
                           >
                             Edit
                           </button>
                           <button
-                            onClick={() => handleDelete(material.id)}
-                            className="text-red-600 hover:text-red-900"
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDelete(material.id);
+                            }}
+                            className="text-red-600 hover:text-red-900 px-2 py-1 border border-red-600 rounded hover:bg-red-50"
+                            disabled={loading}
                           >
                             Delete
                           </button>
