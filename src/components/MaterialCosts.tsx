@@ -121,7 +121,7 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
       quantity: material.quantity.toString(),
       unit_cost: material.unit_cost.toString(),
       supplier: material.supplier || '',
-      purchase_date: material.purchase_date || '',
+      purchase_date: formatDateForInput(material.purchase_date || ''),
       notes: material.notes || ''
     });
     setEditingMaterial(material);
@@ -301,6 +301,17 @@ const MaterialCosts: React.FC<MaterialCostsProps> = ({ projectId }) => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  // Format date for form input (extracts YYYY-MM-DD without timezone conversion)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    // Extract just the date part to avoid timezone shifts
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const getTotalCost = () => {

@@ -28,6 +28,17 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
 }) => {
   const { user } = useAuth();
   
+  // Format date for form input (extracts YYYY-MM-DD without timezone conversion)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    // Extract just the date part to avoid timezone shifts
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
   // State management
   const [changeOrders, setChangeOrders] = useState<ChangeOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,7 +188,7 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
       customer_phone: changeOrder.customer_phone || '',
       customer_address: changeOrder.customer_address || '',
       tax_rate: changeOrder.tax_rate,
-      requested_date: changeOrder.requested_date || '',
+      requested_date: formatDateForInput(changeOrder.requested_date || ''),
       notes: changeOrder.notes || '',
       status: changeOrder.status
     });

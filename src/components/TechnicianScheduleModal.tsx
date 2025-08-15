@@ -22,6 +22,16 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
   technicians,
   projects,
 }) => {
+  // Format date for form input (extracts YYYY-MM-DD without timezone conversion)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    // Extract just the date part to avoid timezone shifts
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   const [formData, setFormData] = useState({
     project_id: '',
     technician_id: '',
@@ -41,7 +51,7 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
       setFormData({
         project_id: schedule.project_id.toString(),
         technician_id: schedule.technician_id.toString(),
-        scheduled_date: schedule.scheduled_date,
+        scheduled_date: formatDateForInput(schedule.scheduled_date),
         start_time: schedule.start_time || '',
         end_time: schedule.end_time || '',
         notes: schedule.notes || '',
@@ -53,7 +63,7 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
       setFormData({
         project_id: '',
         technician_id: '',
-        scheduled_date: selectedDate || '',
+        scheduled_date: formatDateForInput(selectedDate || ''),
         start_time: '',
         end_time: '',
         notes: '',

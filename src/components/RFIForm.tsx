@@ -11,6 +11,17 @@ interface RFIFormProps {
 
 const RFIForm: React.FC<RFIFormProps> = ({ projectId, project, onSuccess, onError }) => {
   const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
+  
+  // Format date for form input (extracts YYYY-MM-DD without timezone conversion)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    // Extract just the date part to avoid timezone shifts
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [rfis, setRfis] = useState<RFI[]>([]);
@@ -231,7 +242,7 @@ const RFIForm: React.FC<RFIFormProps> = ({ projectId, project, onSuccess, onErro
       subject: rfi.subject,
       message: rfi.message,
       priority: rfi.priority,
-      response_needed_by: rfi.response_needed_by || ''
+      response_needed_by: formatDateForInput(rfi.response_needed_by || '')
     });
     
     // Find and select the customer and contact
