@@ -16,6 +16,12 @@ const ServicesCatalog: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [minRate, setMinRate] = useState('');
+  const [maxRate, setMaxRate] = useState('');
+  const [minCost, setMinCost] = useState('');
+  const [maxCost, setMaxCost] = useState('');
+  const [unitFilter, setUnitFilter] = useState('');
+  const [units, setUnits] = useState<string[]>([]);
   
   // Dropdown state
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
@@ -36,7 +42,8 @@ const ServicesCatalog: React.FC = () => {
   useEffect(() => {
     loadServices();
     loadCategories();
-  }, [currentPage, searchTerm, selectedCategory]);
+    loadUnits();
+  }, [currentPage, searchTerm, selectedCategory, minRate, maxRate, minCost, maxCost, unitFilter]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -59,7 +66,27 @@ const ServicesCatalog: React.FC = () => {
     try {
       setLoading(true);
       const response = await servicesAPI.getServices(currentPage, 20, searchTerm, selectedCategory, true);
-      setServices(response.services);
+      
+      // Apply client-side filters for additional filtering
+      let filteredServices = response.services;
+      
+      if (minRate) {
+        filteredServices = filteredServices.filter(s => s.standard_rate >= parseFloat(minRate));
+      }
+      if (maxRate) {
+        filteredServices = filteredServices.filter(s => s.standard_rate <= parseFloat(maxRate));
+      }
+      if (minCost) {
+        filteredServices = filteredServices.filter(s => s.cost && s.cost >= parseFloat(minCost));
+      }
+      if (maxCost) {
+        filteredServices = filteredServices.filter(s => s.cost && s.cost <= parseFloat(maxCost));
+      }
+      if (unitFilter) {
+        filteredServices = filteredServices.filter(s => s.unit === unitFilter);
+      }
+      
+      setServices(filteredServices);
       setTotalPages(response.pagination.totalPages);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load services');
@@ -77,8 +104,34 @@ const ServicesCatalog: React.FC = () => {
     }
   };
 
+  const loadUnits = async () => {
+    try {
+      // Extract unique units from all services
+      const response = await servicesAPI.getServices(1, 1000, '', '');
+      const uniqueUnits = [...new Set(response.services
+        .map(s => s.unit)
+        .filter(u => u && u.trim())
+      )].sort();
+      setUnits(uniqueUnits);
+    } catch (err: any) {
+      console.error('Load units error:', err);
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setCurrentPage(1);
+    loadServices();
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('');
+    setMinRate('');
+    setMaxRate('');
+    setMinCost('');
+    setMaxCost('');
+    setUnitFilter('');
     setCurrentPage(1);
     loadServices();
   };
@@ -215,38 +268,127 @@ const ServicesCatalog: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
+      {/* Enhanced Filters */}
       <div className="bg-white shadow rounded-lg p-4">
-        <form onSubmit={handleSearch} className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-64">
-            <input
-              type="text"
-              placeholder="Search services..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+        <form onSubmit={handleSearch} className="space-y-4">
+          {/* Primary filters row */}
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-64">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+              <input
+                type="text"
+                placeholder="Search services..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="min-w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="min-w-40">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+              <select
+                value={unitFilter}
+                onChange={(e) => setUnitFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Units</option>
+                {units.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="min-w-48">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+
+          {/* Secondary filters row */}
+          <div className="flex flex-wrap gap-4">
+            <div className="min-w-32">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Min Rate</label>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={minRate}
+                onChange={(e) => setMinRate(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="min-w-32">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Max Rate</label>
+              <input
+                type="number"
+                placeholder="999.99"
+                value={maxRate}
+                onChange={(e) => setMaxRate(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="min-w-32">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Min Cost</label>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={minCost}
+                onChange={(e) => setMinCost(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="min-w-32">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Max Cost</label>
+              <input
+                type="number"
+                placeholder="999.99"
+                value={maxCost}
+                onChange={(e) => setMaxCost(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
             >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span>Search</span>
+            </button>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center space-x-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Clear</span>
+            </button>
           </div>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Search
-          </button>
         </form>
       </div>
 

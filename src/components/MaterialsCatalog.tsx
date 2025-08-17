@@ -16,6 +16,13 @@ const MaterialsCatalog: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [minCost, setMinCost] = useState('');
+  const [maxCost, setMaxCost] = useState('');
+  const [supplierFilter, setSupplierFilter] = useState('');
+  const [unitFilter, setUnitFilter] = useState('');
+  const [partNumberFilter, setPartNumberFilter] = useState('');
+  const [suppliers, setSuppliers] = useState<string[]>([]);
+  const [units, setUnits] = useState<string[]>([]);
   
   // Dropdown state
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
@@ -37,7 +44,9 @@ const MaterialsCatalog: React.FC = () => {
   useEffect(() => {
     loadMaterials();
     loadCategories();
-  }, [currentPage, searchTerm, selectedCategory]);
+    loadSuppliers();
+    loadUnits();
+  }, [currentPage, searchTerm, selectedCategory, minCost, maxCost, supplierFilter, unitFilter, partNumberFilter]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -60,7 +69,31 @@ const MaterialsCatalog: React.FC = () => {
     try {
       setLoading(true);
       const response = await catalogMaterialsAPI.getCatalogMaterials(currentPage, 20, searchTerm, selectedCategory);
-      setMaterials(response.materials);
+      
+      // Apply client-side filters for additional filtering
+      let filteredMaterials = response.materials;
+      
+      if (minCost) {
+        filteredMaterials = filteredMaterials.filter(m => m.standard_cost >= parseFloat(minCost));
+      }
+      if (maxCost) {
+        filteredMaterials = filteredMaterials.filter(m => m.standard_cost <= parseFloat(maxCost));
+      }
+      if (supplierFilter) {
+        filteredMaterials = filteredMaterials.filter(m => 
+          m.supplier && m.supplier.toLowerCase().includes(supplierFilter.toLowerCase())
+        );
+      }
+      if (unitFilter) {
+        filteredMaterials = filteredMaterials.filter(m => m.unit === unitFilter);
+      }
+      if (partNumberFilter) {
+        filteredMaterials = filteredMaterials.filter(m => 
+          m.part_number && m.part_number.toLowerCase().includes(partNumberFilter.toLowerCase())
+        );
+      }
+      
+      setMaterials(filteredMaterials);
       setTotalPages(response.pagination.totalPages);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load materials');
@@ -78,8 +111,48 @@ const MaterialsCatalog: React.FC = () => {
     }
   };
 
+  const loadSuppliers = async () => {
+    try {
+      // Extract unique suppliers from all materials
+      const response = await catalogMaterialsAPI.getCatalogMaterials(1, 1000, '', '');
+      const uniqueSuppliers = [...new Set(response.materials
+        .map(m => m.supplier)
+        .filter(s => s && s.trim())
+      )].sort();
+      setSuppliers(uniqueSuppliers);
+    } catch (err: any) {
+      console.error('Load suppliers error:', err);
+    }
+  };
+
+  const loadUnits = async () => {
+    try {
+      // Extract unique units from all materials
+      const response = await catalogMaterialsAPI.getCatalogMaterials(1, 1000, '', '');
+      const uniqueUnits = [...new Set(response.materials
+        .map(m => m.unit)
+        .filter(u => u && u.trim())
+      )].sort();
+      setUnits(uniqueUnits);
+    } catch (err: any) {
+      console.error('Load units error:', err);
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setCurrentPage(1);
+    loadMaterials();
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('');
+    setMinCost('');
+    setMaxCost('');
+    setSupplierFilter('');
+    setUnitFilter('');
+    setPartNumberFilter('');
     setCurrentPage(1);
     loadMaterials();
   };
@@ -218,38 +291,128 @@ const MaterialsCatalog: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
+      {/* Enhanced Filters */}
       <div className="bg-white shadow rounded-lg p-4">
-        <form onSubmit={handleSearch} className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-64">
-            <input
-              type="text"
-              placeholder="Search materials..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+        <form onSubmit={handleSearch} className="space-y-4">
+          {/* Primary filters row */}
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-64">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+              <input
+                type="text"
+                placeholder="Search materials..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="min-w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="min-w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+              <select
+                value={supplierFilter}
+                onChange={(e) => setSupplierFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Suppliers</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier} value={supplier}>
+                    {supplier}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="min-w-48">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+
+          {/* Secondary filters row */}
+          <div className="flex flex-wrap gap-4">
+            <div className="min-w-32">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Min Cost</label>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={minCost}
+                onChange={(e) => setMinCost(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="min-w-32">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Max Cost</label>
+              <input
+                type="number"
+                placeholder="999.99"
+                value={maxCost}
+                onChange={(e) => setMaxCost(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="min-w-40">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+              <select
+                value={unitFilter}
+                onChange={(e) => setUnitFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Units</option>
+                {units.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="min-w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Part Number</label>
+              <input
+                type="text"
+                placeholder="Search part numbers..."
+                value={partNumberFilter}
+                onChange={(e) => setPartNumberFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
             >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span>Search</span>
+            </button>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center space-x-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Clear</span>
+            </button>
           </div>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Search
-          </button>
         </form>
       </div>
 
