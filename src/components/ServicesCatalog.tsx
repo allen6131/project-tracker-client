@@ -108,10 +108,10 @@ const ServicesCatalog: React.FC = () => {
     try {
       // Extract unique units from all services
       const response = await servicesAPI.getServices(1, 1000, '', '');
-      const uniqueUnits = [...new Set(response.services
+      const units = response.services
         .map(s => s.unit)
-        .filter(u => u && u.trim())
-      )].sort();
+        .filter((u): u is string => Boolean(u && u.trim()));
+      const uniqueUnits = [...new Set(units)].sort();
       setUnits(uniqueUnits);
     } catch (err: any) {
       console.error('Load units error:', err);

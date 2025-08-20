@@ -115,10 +115,10 @@ const MaterialsCatalog: React.FC = () => {
     try {
       // Extract unique suppliers from all materials
       const response = await catalogMaterialsAPI.getCatalogMaterials(1, 1000, '', '');
-      const uniqueSuppliers = [...new Set(response.materials
+      const suppliers = response.materials
         .map(m => m.supplier)
-        .filter(s => s && s.trim())
-      )].sort();
+        .filter((s): s is string => Boolean(s && s.trim()));
+      const uniqueSuppliers = [...new Set(suppliers)].sort();
       setSuppliers(uniqueSuppliers);
     } catch (err: any) {
       console.error('Load suppliers error:', err);
@@ -129,10 +129,10 @@ const MaterialsCatalog: React.FC = () => {
     try {
       // Extract unique units from all materials
       const response = await catalogMaterialsAPI.getCatalogMaterials(1, 1000, '', '');
-      const uniqueUnits = [...new Set(response.materials
+      const units = response.materials
         .map(m => m.unit)
-        .filter(u => u && u.trim())
-      )].sort();
+        .filter((u): u is string => Boolean(u && u.trim()));
+      const uniqueUnits = [...new Set(units)].sort();
       setUnits(uniqueUnits);
     } catch (err: any) {
       console.error('Load units error:', err);
