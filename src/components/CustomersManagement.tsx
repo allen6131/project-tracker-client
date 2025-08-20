@@ -338,22 +338,6 @@ const CustomersManagement: React.FC = () => {
                           <div className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                             <button
                               onClick={() => {
-                                navigate(`/customers/${customer.id}`);
-                                setOpenDropdown(null);
-                              }}
-                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                            >
-                              <svg className="w-4 h-4 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              View & Edit Customer
-                            </button>
-
-                            <div className="border-t border-gray-100 my-1"></div>
-                            
-                            <button
-                              onClick={() => {
                                 handleDeleteCustomer(customer.id);
                                 setOpenDropdown(null);
                               }}
