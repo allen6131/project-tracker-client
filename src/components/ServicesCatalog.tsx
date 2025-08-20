@@ -111,7 +111,7 @@ const ServicesCatalog: React.FC = () => {
       const units = response.services
         .map(s => s.unit)
         .filter((u): u is string => Boolean(u && u.trim()));
-      const uniqueUnits = [...new Set(units)].sort();
+      const uniqueUnits = Array.from(new Set(units)).sort();
       setUnits(uniqueUnits);
     } catch (err: any) {
       console.error('Load units error:', err);

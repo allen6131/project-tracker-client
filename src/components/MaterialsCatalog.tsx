@@ -118,7 +118,7 @@ const MaterialsCatalog: React.FC = () => {
       const suppliers = response.materials
         .map(m => m.supplier)
         .filter((s): s is string => Boolean(s && s.trim()));
-      const uniqueSuppliers = [...new Set(suppliers)].sort();
+      const uniqueSuppliers = Array.from(new Set(suppliers)).sort();
       setSuppliers(uniqueSuppliers);
     } catch (err: any) {
       console.error('Load suppliers error:', err);
@@ -132,7 +132,7 @@ const MaterialsCatalog: React.FC = () => {
       const units = response.materials
         .map(m => m.unit)
         .filter((u): u is string => Boolean(u && u.trim()));
-      const uniqueUnits = [...new Set(units)].sort();
+      const uniqueUnits = Array.from(new Set(units)).sort();
       setUnits(uniqueUnits);
     } catch (err: any) {
       console.error('Load units error:', err);
