@@ -94,6 +94,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         master_permit_number: project.master_permit_number || '',
         electrical_sub_permit: project.electrical_sub_permit || '',
         status: project.status,
+        project_type: project.project_type,
         customer_id: project.customer_id ? project.customer_id.toString() : '',
         main_technician_id: project.main_technician_id ? project.main_technician_id.toString() : ''
       });
@@ -105,6 +106,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         master_permit_number: '',
         electrical_sub_permit: '',
         status: 'bidding',
+        project_type: 'custom-work',
         customer_id: '',
         main_technician_id: ''
       });
