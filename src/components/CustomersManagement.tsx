@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Customer, Contact, CreateCustomerRequest, UpdateCustomerRequest, CreateContactRequest, UpdateContactRequest } from '../types';
+import { useNavigate } from 'react-router-dom';
+import { Customer, CreateCustomerRequest, UpdateCustomerRequest } from '../types';
 import { customersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const CustomersManagement: React.FC = () => {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,9 +20,6 @@ const CustomersManagement: React.FC = () => {
   // Modal states
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [editingContact, setEditingContact] = useState<Contact | null>(null);
   
   // Dropdown state
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
@@ -38,17 +37,6 @@ const CustomersManagement: React.FC = () => {
     state: '',
     country: '',
     postal_code: ''
-  });
-  
-  const [contactFormData, setContactFormData] = useState<CreateContactRequest>({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    position: '',
-    department: '',
-    is_primary: false,
-    notes: ''
   });
 
   const loadCustomers = useCallback(async (page = 1, search = '') => {
@@ -147,65 +135,7 @@ const CustomersManagement: React.FC = () => {
     }
   };
 
-  // Contact CRUD operations
-  const handleViewCustomer = async (customer: Customer) => {
-    try {
-      const response = await customersAPI.getCustomer(customer.id);
-      setSelectedCustomer(response.customer);
-    } catch (err: any) {
-      setError('Failed to load customer details');
-    }
-  };
 
-  const handleCreateContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCustomer) return;
-    
-    try {
-      clearMessages();
-      await customersAPI.createContact(selectedCustomer.id, contactFormData);
-      setSuccess('Contact created successfully');
-      setShowContactForm(false);
-      resetContactForm();
-      // Refresh customer data
-      handleViewCustomer(selectedCustomer);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create contact');
-    }
-  };
-
-  const handleUpdateContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCustomer || !editingContact) return;
-    
-    try {
-      clearMessages();
-      await customersAPI.updateContact(selectedCustomer.id, editingContact.id, contactFormData);
-      setSuccess('Contact updated successfully');
-      setShowContactForm(false);
-      setEditingContact(null);
-      resetContactForm();
-      // Refresh customer data
-      handleViewCustomer(selectedCustomer);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update contact');
-    }
-  };
-
-  const handleDeleteContact = async (contactId: number) => {
-    if (!selectedCustomer) return;
-    if (!window.confirm('Are you sure you want to delete this contact?')) return;
-    
-    try {
-      clearMessages();
-      await customersAPI.deleteContact(selectedCustomer.id, contactId);
-      setSuccess('Contact deleted successfully');
-      // Refresh customer data
-      handleViewCustomer(selectedCustomer);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete contact');
-    }
-  };
 
   // Form helpers
   const resetCustomerForm = () => {
@@ -224,18 +154,7 @@ const CustomersManagement: React.FC = () => {
     });
   };
 
-  const resetContactForm = () => {
-    setContactFormData({
-      first_name: '',
-      last_name: '',
-      email: '',
-      phone: '',
-      position: '',
-      department: '',
-      is_primary: false,
-      notes: ''
-    });
-  };
+
 
   const openCreateCustomerForm = () => {
     resetCustomerForm();
@@ -259,27 +178,6 @@ const CustomersManagement: React.FC = () => {
     });
     setEditingCustomer(customer);
     setShowCustomerForm(true);
-  };
-
-  const openCreateContactForm = () => {
-    resetContactForm();
-    setEditingContact(null);
-    setShowContactForm(true);
-  };
-
-  const openEditContactForm = (contact: Contact) => {
-    setContactFormData({
-      first_name: contact.first_name,
-      last_name: contact.last_name,
-      email: contact.email || '',
-      phone: contact.phone || '',
-      position: contact.position || '',
-      department: contact.department || '',
-      is_primary: contact.is_primary,
-      notes: contact.notes || ''
-    });
-    setEditingContact(contact);
-    setShowContactForm(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -395,7 +293,11 @@ const CustomersManagement: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {customers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50">
+                  <tr 
+                    key={customer.id} 
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => navigate(`/customers/${customer.id}`)}
+                  >
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">{customer.name}</div>
@@ -417,7 +319,10 @@ const CustomersManagement: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(customer.created_at)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td 
+                      className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="relative flex justify-end">
                         <button
                           onClick={(e) => toggleDropdown(customer.id, e)}
@@ -433,7 +338,7 @@ const CustomersManagement: React.FC = () => {
                           <div className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                             <button
                               onClick={() => {
-                                handleViewCustomer(customer);
+                                navigate(`/customers/${customer.id}`);
                                 setOpenDropdown(null);
                               }}
                               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
@@ -442,20 +347,7 @@ const CustomersManagement: React.FC = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
-                              View Details
-                            </button>
-                            
-                            <button
-                              onClick={() => {
-                                openEditCustomerForm(customer);
-                                setOpenDropdown(null);
-                              }}
-                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                            >
-                              <svg className="w-4 h-4 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              Edit Customer
+                              View & Edit Customer
                             </button>
 
                             <div className="border-t border-gray-100 my-1"></div>
@@ -734,292 +626,7 @@ const CustomersManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Customer Details Modal */}
-      {selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-screen overflow-y-auto transition-colors">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedCustomer.name}</h2>
-              <button
-                onClick={() => setSelectedCustomer(null)}
-                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Company Information</h3>
-                  <dl className="space-y-3">
-                    {selectedCustomer.description && (
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">Description</dt>
-                        <dd className="text-sm text-gray-900">{selectedCustomer.description}</dd>
-                      </div>
-                    )}
-                    {selectedCustomer.industry && (
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">Industry</dt>
-                        <dd className="text-sm text-gray-900">{selectedCustomer.industry}</dd>
-                      </div>
-                    )}
-                    {selectedCustomer.website && (
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">Website</dt>
-                        <dd className="text-sm">
-                          <a href={selectedCustomer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                            {selectedCustomer.website}
-                          </a>
-                        </dd>
-                      </div>
-                    )}
-                  </dl>
-                </div>
 
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
-                  <dl className="space-y-3">
-                    {selectedCustomer.email && (
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">Email</dt>
-                        <dd className="text-sm text-gray-900">{selectedCustomer.email}</dd>
-                      </div>
-                    )}
-                    {selectedCustomer.phone && (
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">Phone</dt>
-                        <dd className="text-sm text-gray-900">{selectedCustomer.phone}</dd>
-                      </div>
-                    )}
-                    {(selectedCustomer.address || selectedCustomer.city || selectedCustomer.state || selectedCustomer.country) && (
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">Address</dt>
-                        <dd className="text-sm text-gray-900">
-                          {selectedCustomer.address && <div>{selectedCustomer.address}</div>}
-                          <div>
-                            {[selectedCustomer.city, selectedCustomer.state, selectedCustomer.postal_code].filter(Boolean).join(', ')}
-                          </div>
-                          {selectedCustomer.country && <div>{selectedCustomer.country}</div>}
-                        </dd>
-                      </div>
-                    )}
-                  </dl>
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Contacts</h3>
-                  <button
-                    onClick={openCreateContactForm}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
-                  >
-                    Add Contact
-                  </button>
-                </div>
-
-                {selectedCustomer.contacts && selectedCustomer.contacts.length > 0 ? (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    {selectedCustomer.contacts.map((contact) => (
-                      <div key={contact.id} className="border-b border-gray-200 last:border-b-0 py-4 last:pb-0 first:pt-0">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-medium text-gray-900">
-                              {contact.first_name} {contact.last_name}
-                              {contact.is_primary && (
-                                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  Primary
-                                </span>
-                              )}
-                            </h4>
-                            {contact.position && (
-                              <p className="text-sm text-gray-600">{contact.position}</p>
-                            )}
-                            {contact.department && (
-                              <p className="text-sm text-gray-600">{contact.department}</p>
-                            )}
-                            <div className="mt-2 text-sm text-gray-600">
-                              {contact.email && <div>Email: {contact.email}</div>}
-                              {contact.phone && <div>Phone: {contact.phone}</div>}
-                            </div>
-                            {contact.notes && (
-                              <p className="mt-2 text-sm text-gray-600">{contact.notes}</p>
-                            )}
-                          </div>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => openEditContactForm(contact)}
-                              className="text-blue-600 hover:text-blue-900 text-sm"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteContact(contact.id)}
-                              className="text-red-600 hover:text-red-900 text-sm"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No contacts found for this customer.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Contact Form Modal */}
-      {showContactForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {editingContact ? 'Edit Contact' : 'Add New Contact'}
-              </h2>
-            </div>
-            
-            <form onSubmit={editingContact ? handleUpdateContact : handleCreateContact} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="first_name"
-                    value={contactFormData.first_name}
-                    onChange={(e) => setContactFormData({ ...contactFormData, first_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="last_name"
-                    value={contactFormData.last_name}
-                    onChange={(e) => setContactFormData({ ...contactFormData, last_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={contactFormData.email}
-                  onChange={(e) => setContactFormData({ ...contactFormData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  value={contactFormData.phone}
-                  onChange={(e) => setContactFormData({ ...contactFormData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-1">
-                  Position
-                </label>
-                <input
-                  type="text"
-                  id="position"
-                  value={contactFormData.position}
-                  onChange={(e) => setContactFormData({ ...contactFormData, position: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <input
-                  type="text"
-                  id="department"
-                  value={contactFormData.department}
-                  onChange={(e) => setContactFormData({ ...contactFormData, department: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={contactFormData.is_primary}
-                    onChange={(e) => setContactFormData({ ...contactFormData, is_primary: e.target.checked })}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Primary contact</span>
-                </label>
-              </div>
-
-              <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
-                </label>
-                <textarea
-                  id="notes"
-                  value={contactFormData.notes}
-                  onChange={(e) => setContactFormData({ ...contactFormData, notes: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowContactForm(false);
-                    setEditingContact(null);
-                    resetContactForm();
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  {editingContact ? 'Update Contact' : 'Add Contact'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
