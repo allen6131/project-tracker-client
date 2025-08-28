@@ -20,6 +20,7 @@ import EstimateEdit from './pages/EstimateEdit';
 import InvoiceCreate from './pages/InvoiceCreate';
 import EstimateCreate from './pages/EstimateCreate';
 import RFIs from './pages/RFIs';
+import ChangeOrders from './pages/ChangeOrders';
 import Todos from './pages/Todos';
 import CalendarPage from './pages/Calendar';
 import Materials from './pages/Materials';
@@ -152,6 +153,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <RFIs />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/change-orders"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ChangeOrders />
                   </Layout>
                 </ProtectedRoute>
               }

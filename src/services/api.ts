@@ -807,6 +807,36 @@ export const changeOrdersAPI = {
   regenerateChangeOrderPDF: async (id: number): Promise<{ message: string; pdf_path: string }> => {
     const response: AxiosResponse<{ message: string; pdf_path: string }> = await api.post(`/change-orders/${id}/regenerate-pdf`);
     return response.data;
+  },
+
+  // Global change orders list
+  getChangeOrders: async (page = 1, limit = 10, search = '', status = ''): Promise<{ changeOrders: ChangeOrder[]; pagination: any }> => {
+    const response: AxiosResponse<{ changeOrders: ChangeOrder[]; pagination: any }> = await api.get('/change-orders', {
+      params: { page, limit, search, status },
+    });
+    return response.data;
+  },
+
+  // View change order PDF
+  viewChangeOrderPDF: async (id: number): Promise<string> => {
+    const response: AxiosResponse<Blob> = await api.get(`/change-orders/${id}/view`, {
+      responseType: 'blob',
+    });
+    return URL.createObjectURL(response.data);
+  },
+
+  // Download change order PDF
+  downloadChangeOrderPDF: async (id: number): Promise<Blob> => {
+    const response: AxiosResponse<Blob> = await api.get(`/change-orders/${id}/download`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  // Send change order email
+  sendChangeOrderEmail: async (id: number, emailData: { recipient_email: string; sender_name?: string }): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.post(`/change-orders/${id}/send-email`, emailData);
+    return response.data;
   }
 };
 
