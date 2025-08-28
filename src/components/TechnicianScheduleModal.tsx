@@ -50,8 +50,8 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
   useEffect(() => {
     if (schedule) {
       setFormData({
-        project_id: schedule.project_id.toString(),
-        custom_project_name: '',
+        project_id: schedule.project_id ? schedule.project_id.toString() : '',
+        custom_project_name: schedule.custom_project_name || '',
         technician_id: schedule.technician_id.toString(),
         scheduled_date: formatDateForInput(schedule.scheduled_date),
         start_time: schedule.start_time || '',
