@@ -25,12 +25,25 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
   // Format date for form input (extracts YYYY-MM-DD without timezone conversion)
   const formatDateForInput = (dateString: string) => {
     if (!dateString) return '';
-    // Extract just the date part to avoid timezone shifts
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    // If it's already in YYYY-MM-DD format, return as-is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+    // For ISO strings or other formats, extract date part safely
+    try {
+      const ymd = dateString.split('T')[0];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+        return ymd;
+      }
+      // Fallback: parse as local date
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
   };
   const [formData, setFormData] = useState({
     project_id: '',
