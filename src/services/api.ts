@@ -815,12 +815,6 @@ export const changeOrdersAPI = {
       params: { page, limit, search, status },
     });
     return response.data;
-  },
-
-  // Send change order email
-  sendChangeOrderEmail: async (id: number, emailData: { recipient_email: string; sender_name?: string }): Promise<{ message: string }> => {
-    const response: AxiosResponse<{ message: string }> = await api.post(`/change-orders/${id}/send-email`, emailData);
-    return response.data;
   }
 };
 
