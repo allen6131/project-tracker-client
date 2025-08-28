@@ -282,13 +282,13 @@ const TechnicianCalendar: React.FC<TechnicianCalendarProps> = ({ currentDate, na
                           e.stopPropagation();
                           handleEditSchedule(schedule);
                         }}
-                        title={`${schedule.technician_name} - ${schedule.project_name}`}
+                        title={`${schedule.technician_name} - ${schedule.project_name || (schedule as any).custom_project_name || 'Custom Job'}`}
                       >
                         <div className="font-medium truncate">
                           {schedule.technician_name}
                         </div>
                         <div className="truncate text-gray-600">
-                          {schedule.project_name}
+                          {schedule.project_name || (schedule as any).custom_project_name || 'Custom Job'}
                         </div>
                         {schedule.start_time && (
                           <div className="text-gray-500">

@@ -758,7 +758,8 @@ export interface ChangeOrdersResponse {
 // Technician Scheduling Types
 export interface TechnicianSchedule {
   id: number;
-  project_id: number;
+  project_id?: number | null;
+  custom_project_name?: string | null;
   technician_id: number;
   scheduled_date: string;
   start_time?: string | null;
@@ -779,7 +780,8 @@ export interface TechnicianSchedule {
 }
 
 export interface CreateTechnicianScheduleRequest {
-  project_id: number;
+  project_id?: number;
+  custom_project_name?: string;
   technician_id: number;
   scheduled_date: string;
   start_time?: string;

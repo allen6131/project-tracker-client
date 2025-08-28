@@ -34,6 +34,7 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
   };
   const [formData, setFormData] = useState({
     project_id: '',
+    custom_project_name: '',
     technician_id: '',
     scheduled_date: '',
     start_time: '',
@@ -50,6 +51,7 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
     if (schedule) {
       setFormData({
         project_id: schedule.project_id.toString(),
+        custom_project_name: '',
         technician_id: schedule.technician_id.toString(),
         scheduled_date: formatDateForInput(schedule.scheduled_date),
         start_time: schedule.start_time || '',
@@ -62,6 +64,7 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
     } else {
       setFormData({
         project_id: '',
+        custom_project_name: '',
         technician_id: '',
         scheduled_date: formatDateForInput(selectedDate || ''),
         start_time: '',
@@ -78,8 +81,8 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.project_id) {
-      newErrors.project_id = 'Project is required';
+    if (!formData.project_id && !formData.custom_project_name.trim()) {
+      newErrors.project_id = 'Either select an existing project or enter a custom project name';
     }
 
     if (!multiAssign) {
@@ -117,8 +120,9 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
     setLoading(true);
     
     try {
-      const submitData: CreateTechnicianScheduleRequest & { technician_ids?: number[] } = {
-        project_id: parseInt(formData.project_id),
+      const submitData: CreateTechnicianScheduleRequest & { technician_ids?: number[]; custom_project_name?: string } = {
+        project_id: formData.project_id ? parseInt(formData.project_id) : undefined,
+        custom_project_name: formData.custom_project_name || undefined,
         technician_id: formData.technician_id ? parseInt(formData.technician_id) : (selectedTechnicianIds[0] ?? 0),
         scheduled_date: formData.scheduled_date,
         start_time: formData.start_time || undefined,
@@ -168,16 +172,16 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
             {/* Project Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Project *
+                Project
               </label>
               <select
                 value={formData.project_id}
-                onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, project_id: e.target.value, custom_project_name: e.target.value ? '' : formData.custom_project_name })}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.project_id ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="">Select a project</option>
+                <option value="">Select existing project (optional)</option>
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.name} - {project.address}
@@ -187,6 +191,21 @@ const TechnicianScheduleModal: React.FC<TechnicianScheduleModalProps> = ({
               {errors.project_id && (
                 <p className="mt-1 text-sm text-red-600">{errors.project_id}</p>
               )}
+            </div>
+
+            {/* Custom Project Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Or Enter Custom Project/Job Name
+              </label>
+              <input
+                type="text"
+                value={formData.custom_project_name}
+                onChange={(e) => setFormData({ ...formData, custom_project_name: e.target.value, project_id: e.target.value ? '' : formData.project_id })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter custom project or job name"
+              />
+              <p className="mt-1 text-xs text-gray-500">Use this for jobs that don't have an existing project</p>
             </div>
 
             {/* Technician Selection */}
