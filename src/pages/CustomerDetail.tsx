@@ -246,7 +246,22 @@ const CustomerDetail: React.FC = () => {
           <div className="flex space-x-3">
             {!editingCustomer ? (
               <button
-                onClick={() => setEditingCustomer(true)}
+                onClick={() => {
+                  setCustomerFormData({
+                    name: customer.name,
+                    description: customer.description || '',
+                    industry: customer.industry || '',
+                    website: customer.website || '',
+                    phone: customer.phone || '',
+                    email: customer.email || '',
+                    address: customer.address || '',
+                    city: customer.city || '',
+                    state: customer.state || '',
+                    country: customer.country || '',
+                    postal_code: customer.postal_code || ''
+                  });
+                  setEditingCustomer(true);
+                }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

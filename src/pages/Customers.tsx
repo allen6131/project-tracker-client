@@ -462,7 +462,7 @@ const Customers: React.FC = () => {
                       <tr 
                         className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                         onClick={() => {
-                          navigate(`/customers/${customer.id}/contacts`);
+                          navigate(`/customers/${customer.id}`);
                           setOpenDropdownId(null);
                         }}
                       >
