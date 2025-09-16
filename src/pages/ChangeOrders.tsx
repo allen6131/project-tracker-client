@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ChangeOrder, ChangeOrderItem, Project } from '../types';
 import { changeOrdersAPI, projectsAPI, customersAPI } from '../services/api';
 
 const ChangeOrders: React.FC = () => {
   const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
   
   // State management
   const [changeOrders, setChangeOrders] = useState<ChangeOrder[]>([]);
@@ -147,26 +149,7 @@ const ChangeOrders: React.FC = () => {
   };
 
   const handleEdit = (changeOrder: ChangeOrder) => {
-    clearMessages();
-    setEditingChangeOrder(changeOrder);
-    setFormData({
-      title: changeOrder.title,
-      description: changeOrder.description || '',
-      project_id: changeOrder.project_id,
-      customer_id: changeOrder.customer_id || 0,
-      customer_name: changeOrder.customer_name || '',
-      customer_email: changeOrder.customer_email || '',
-      customer_phone: changeOrder.customer_phone || '',
-      customer_address: changeOrder.customer_address || '',
-      reason: changeOrder.reason || '',
-      justification: changeOrder.justification || '',
-      tax_rate: changeOrder.tax_rate,
-      requested_date: changeOrder.requested_date || '',
-      notes: changeOrder.notes || '',
-      status: changeOrder.status
-    });
-    setItems(changeOrder.items || [{ description: '', quantity: 1, unit_price: 0 }]);
-    setShowForm(true);
+    navigate(`/change-orders/${changeOrder.id}/edit`);
   };
 
   const handleViewPDF = async (id: number) => {

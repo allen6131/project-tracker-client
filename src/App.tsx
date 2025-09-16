@@ -21,6 +21,7 @@ import InvoiceCreate from './pages/InvoiceCreate';
 import EstimateCreate from './pages/EstimateCreate';
 import RFIs from './pages/RFIs';
 import ChangeOrders from './pages/ChangeOrders';
+import ChangeOrderEdit from './pages/ChangeOrderEdit';
 import Todos from './pages/Todos';
 import CalendarPage from './pages/Calendar';
 import Materials from './pages/Materials';
@@ -163,6 +164,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <ChangeOrders />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/change-orders/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ChangeOrderEdit />
                   </Layout>
                 </ProtectedRoute>
               }

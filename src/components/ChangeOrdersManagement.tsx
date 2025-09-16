@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   ChangeOrder, 
@@ -27,6 +28,7 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
   customerInfo 
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Format date for form input (extracts YYYY-MM-DD without timezone conversion)
   const formatDateForInput = (dateString: string) => {
@@ -176,24 +178,7 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
   };
 
   const handleEditChangeOrder = (changeOrder: ChangeOrder) => {
-    clearMessages();
-    setEditingChangeOrder(changeOrder);
-    setFormData({
-      title: changeOrder.title,
-      description: changeOrder.description || '',
-      reason: changeOrder.reason || '',
-      justification: changeOrder.justification || '',
-      customer_name: changeOrder.customer_name || '',
-      customer_email: changeOrder.customer_email || '',
-      customer_phone: changeOrder.customer_phone || '',
-      customer_address: changeOrder.customer_address || '',
-      tax_rate: changeOrder.tax_rate,
-      requested_date: formatDateForInput(changeOrder.requested_date || ''),
-      notes: changeOrder.notes || '',
-      status: changeOrder.status
-    });
-    setItems(changeOrder.items || [{ description: '', quantity: 1, unit_price: 0 }]);
-    setShowForm(true);
+    navigate(`/change-orders/${changeOrder.id}/edit`);
   };
 
   const handleDeleteChangeOrder = async (changeOrderId: number) => {
