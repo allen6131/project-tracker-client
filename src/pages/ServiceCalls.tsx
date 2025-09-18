@@ -74,10 +74,6 @@ const ServiceCalls: React.FC = () => {
     loadTechnicians();
   }, []);
 
-  const clearMessages = () => {
-    setError(null);
-    setSuccess(null);
-  };
 
   const handleCreate = () => {
     navigate('/service-calls/new');

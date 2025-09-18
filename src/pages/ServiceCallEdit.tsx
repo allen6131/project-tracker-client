@@ -7,7 +7,7 @@ import { ServiceCall, UpdateServiceCallRequest } from '../types';
 const ServiceCallEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { } = useAuth();
 
   const serviceCallId = useMemo(() => (id ? parseInt(id, 10) : NaN), [id]);
 
@@ -548,7 +548,7 @@ const ServiceCallEdit: React.FC = () => {
               </div>
 
               {/* Calculated Total Display */}
-              {(formData.estimated_hours || formData.actual_hours) && formData.hourly_rate || formData.materials_cost ? (
+              {((formData.estimated_hours || formData.actual_hours) && formData.hourly_rate) || formData.materials_cost ? (
                 <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
                     Calculated Total: ${calculateTotalCost().toFixed(2)}

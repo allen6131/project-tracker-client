@@ -6,7 +6,7 @@ import { serviceCallsAPI, customersAPI, projectsAPI } from '../services/api';
 
 const ServiceCallCreate: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
