@@ -71,7 +71,11 @@ import {
   UpdateCommentRequest,
   CommentsResponse,
   MentionableUsersResponse,
-  CompanyProfile
+  CompanyProfile,
+  ServiceCall,
+  CreateServiceCallRequest,
+  UpdateServiceCallRequest,
+  ServiceCallsResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -745,6 +749,55 @@ export const servicesAPI = {
 
   deleteService: async (serviceId: number): Promise<{ message: string }> => {
     const response: AxiosResponse<{ message: string }> = await api.delete(`/services/${serviceId}`);
+    return response.data;
+  },
+};
+
+// Service Calls API
+export const serviceCallsAPI = {
+  // Get service calls with pagination and filtering
+  getServiceCalls: async (
+    page = 1, 
+    limit = 10, 
+    search = '', 
+    status = '', 
+    priority = '', 
+    technician_id?: number
+  ): Promise<ServiceCallsResponse> => {
+    const params: any = { page, limit, search, status, priority };
+    if (technician_id) params.technician_id = technician_id;
+    
+    const response: AxiosResponse<ServiceCallsResponse> = await api.get('/service-calls', { params });
+    return response.data;
+  },
+
+  // Get single service call
+  getServiceCall: async (id: number): Promise<{ serviceCall: ServiceCall }> => {
+    const response: AxiosResponse<{ serviceCall: ServiceCall }> = await api.get(`/service-calls/${id}`);
+    return response.data;
+  },
+
+  // Create service call
+  createServiceCall: async (data: CreateServiceCallRequest): Promise<{ message: string; serviceCall: ServiceCall }> => {
+    const response: AxiosResponse<{ message: string; serviceCall: ServiceCall }> = await api.post('/service-calls', data);
+    return response.data;
+  },
+
+  // Update service call
+  updateServiceCall: async (id: number, data: UpdateServiceCallRequest): Promise<{ message: string; serviceCall: ServiceCall }> => {
+    const response: AxiosResponse<{ message: string; serviceCall: ServiceCall }> = await api.put(`/service-calls/${id}`, data);
+    return response.data;
+  },
+
+  // Delete service call
+  deleteServiceCall: async (id: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/service-calls/${id}`);
+    return response.data;
+  },
+
+  // Get technicians list
+  getTechnicians: async (): Promise<{ technicians: { id: number; username: string; email: string }[] }> => {
+    const response: AxiosResponse<{ technicians: { id: number; username: string; email: string }[] }> = await api.get('/service-calls/technicians/list');
     return response.data;
   },
 };

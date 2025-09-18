@@ -21,6 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path.startsWith('/customers')) return 'Customers';
     if (path.startsWith('/estimates')) return 'Estimates';
     if (path.startsWith('/invoices')) return 'Invoices';
+    if (path.startsWith('/service-calls')) return 'Service Calls';
     if (path.startsWith('/materials')) return 'Materials';
     if (path.startsWith('/services')) return 'Services';
     if (path.startsWith('/users')) return 'Users';

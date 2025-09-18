@@ -26,6 +26,7 @@ import Todos from './pages/Todos';
 import CalendarPage from './pages/Calendar';
 import Materials from './pages/Materials';
 import Services from './pages/Services';
+import ServiceCalls from './pages/ServiceCalls';
 import Users from './pages/Users';
 import Company from './pages/Company';
 import PaymentSuccess from './pages/PaymentSuccess';
@@ -214,6 +215,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Services />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/service-calls"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ServiceCalls />
                   </Layout>
                 </ProtectedRoute>
               }

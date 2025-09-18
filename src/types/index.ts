@@ -892,4 +892,88 @@ export interface CommentsResponse {
 
 export interface MentionableUsersResponse {
   users: User[];
+}
+
+// Service Calls Types
+export interface ServiceCall {
+  id: number;
+  ticket_number: string;
+  title: string;
+  description?: string;
+  customer_id?: number | null;
+  customer_name: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  project_id?: number | null;
+  project_name?: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  service_type?: string; // e.g., 'emergency', 'maintenance', 'installation', 'repair'
+  scheduled_date?: string | null;
+  completed_date?: string | null;
+  technician_id?: number | null;
+  technician_name?: string;
+  estimated_hours?: number | null;
+  actual_hours?: number | null;
+  hourly_rate?: number | null;
+  materials_cost?: number | null;
+  total_cost?: number | null;
+  notes?: string;
+  created_by: number;
+  created_by_name?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateServiceCallRequest {
+  title: string;
+  description?: string;
+  customer_id?: number | null;
+  customer_name: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  project_id?: number | null;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  service_type?: string;
+  scheduled_date?: string | null;
+  technician_id?: number | null;
+  estimated_hours?: number | null;
+  hourly_rate?: number | null;
+  materials_cost?: number | null;
+  notes?: string;
+}
+
+export interface UpdateServiceCallRequest {
+  title?: string;
+  description?: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  project_id?: number | null;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  status?: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  service_type?: string;
+  scheduled_date?: string | null;
+  completed_date?: string | null;
+  technician_id?: number | null;
+  estimated_hours?: number | null;
+  actual_hours?: number | null;
+  hourly_rate?: number | null;
+  materials_cost?: number | null;
+  total_cost?: number | null;
+  notes?: string;
+}
+
+export interface ServiceCallsResponse {
+  serviceCalls: ServiceCall[];
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalServiceCalls: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 } 
