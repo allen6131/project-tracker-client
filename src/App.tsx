@@ -27,6 +27,8 @@ import CalendarPage from './pages/Calendar';
 import Materials from './pages/Materials';
 import Services from './pages/Services';
 import ServiceCalls from './pages/ServiceCalls';
+import ServiceCallCreate from './pages/ServiceCallCreate';
+import ServiceCallEdit from './pages/ServiceCallEdit';
 import Users from './pages/Users';
 import Company from './pages/Company';
 import PaymentSuccess from './pages/PaymentSuccess';
@@ -225,6 +227,26 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <ServiceCalls />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/service-calls/new"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ServiceCallCreate />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/service-calls/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ServiceCallEdit />
                   </Layout>
                 </ProtectedRoute>
               }
