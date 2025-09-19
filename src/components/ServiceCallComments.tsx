@@ -119,7 +119,12 @@ const ServiceCallComments: React.FC<ServiceCallCommentsProps> = ({ serviceCallId
   const startEditing = (comment: ServiceCallComment) => {
     setEditingComment(comment.id);
     setEditContent(comment.content);
-    setEditMentions(comment.mentioned_users);
+    // Convert MentionedUser[] to User[] by adding default role
+    setEditMentions(comment.mentioned_users.map(user => ({
+      ...user,
+      role: user.role || 'user' as 'admin' | 'user',
+      is_active: true // Add required field for User type
+    })));
   };
 
   const cancelEditing = () => {

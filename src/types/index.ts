@@ -838,6 +838,7 @@ export interface MentionedUser {
   id: number;
   username: string;
   email: string;
+  role?: 'admin' | 'user';
 }
 
 export interface Comment {
