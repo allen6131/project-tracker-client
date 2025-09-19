@@ -83,7 +83,19 @@ import {
   ServiceCallComment,
   CreateServiceCallCommentRequest,
   UpdateServiceCallCommentRequest,
-  ServiceCallCommentsResponse
+  ServiceCallCommentsResponse,
+  Takeoff,
+  TakeoffsResponse,
+  CreateTakeoffRequest,
+  UpdateTakeoffRequest,
+  TakeoffItem,
+  TakeoffItemsResponse,
+  CreateTakeoffItemRequest,
+  UpdateTakeoffItemRequest,
+  TakeoffMarkup,
+  TakeoffMarkupsResponse,
+  CreateTakeoffMarkupRequest,
+  TakeoffPDF
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -1051,6 +1063,152 @@ export const companyProfileAPI = {
   },
 };
 
+// Takeoffs API
+export const takeoffsAPI = {
+  // Get all takeoffs with pagination and filtering
+  getTakeoffs: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }): Promise<TakeoffsResponse> => {
+    const response = await api.get('/takeoffs', { params });
+    return response.data;
+  },
+
+  // Get single takeoff with details
+  getTakeoff: async (id: number): Promise<{ takeoff: Takeoff }> => {
+    const response = await api.get(`/takeoffs/${id}`);
+    return response.data;
+  },
+
+  // Create new takeoff
+  createTakeoff: async (data: CreateTakeoffRequest): Promise<{ takeoff: Takeoff }> => {
+    const response = await api.post('/takeoffs', data);
+    return response.data;
+  },
+
+  // Update takeoff
+  updateTakeoff: async (id: number, data: UpdateTakeoffRequest): Promise<{ takeoff: Takeoff }> => {
+    const response = await api.put(`/takeoffs/${id}`, data);
+    return response.data;
+  },
+
+  // Delete takeoff
+  deleteTakeoff: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete(`/takeoffs/${id}`);
+    return response.data;
+  },
+
+  // Upload PDFs to takeoff
+  uploadPDFs: async (takeoffId: number, files: FileList): Promise<{ pdfs: TakeoffPDF[] }> => {
+    const formData = new FormData();
+    Array.from(files).forEach((file) => {
+      formData.append('pdfs', file);
+    });
+
+    const response = await api.post(`/takeoffs/${takeoffId}/pdfs`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Delete PDF from takeoff
+  deletePDF: async (takeoffId: number, pdfId: number): Promise<{ message: string }> => {
+    const response = await api.delete(`/takeoffs/${takeoffId}/pdfs/${pdfId}`);
+    return response.data;
+  },
+
+  // Get PDF URL
+  getPDFUrl: (takeoffId: number, pdfId: number): string => {
+    return `${API_BASE_URL}/takeoffs/${takeoffId}/pdfs/${pdfId}`;
+  },
+};
+
+// Takeoff Items API
+export const takeoffItemsAPI = {
+  // Get all takeoff items
+  getItems: async (): Promise<TakeoffItemsResponse> => {
+    const response = await api.get('/takeoff-items');
+    return response.data;
+  },
+
+  // Create new takeoff item
+  createItem: async (data: CreateTakeoffItemRequest, iconFile?: File): Promise<{ item: TakeoffItem }> => {
+    const formData = new FormData();
+    formData.append('name', data.name);
+    if (data.description) formData.append('description', data.description);
+    formData.append('color', data.color);
+    if (iconFile) formData.append('icon', iconFile);
+
+    const response = await api.post('/takeoff-items', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Update takeoff item
+  updateItem: async (id: number, data: UpdateTakeoffItemRequest, iconFile?: File): Promise<{ item: TakeoffItem }> => {
+    const formData = new FormData();
+    if (data.name) formData.append('name', data.name);
+    if (data.description !== undefined) formData.append('description', data.description || '');
+    if (data.color) formData.append('color', data.color);
+    if (data.is_active !== undefined) formData.append('is_active', data.is_active.toString());
+    if (iconFile) formData.append('icon', iconFile);
+
+    const response = await api.put(`/takeoff-items/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Delete takeoff item
+  deleteItem: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete(`/takeoff-items/${id}`);
+    return response.data;
+  },
+};
+
+// Takeoff Markups API
+export const takeoffMarkupsAPI = {
+  // Get markups for a takeoff
+  getMarkups: async (takeoffId: number, page?: number): Promise<TakeoffMarkupsResponse> => {
+    const params = page !== undefined ? { page } : {};
+    const response = await api.get(`/takeoff-markups/${takeoffId}`, { params });
+    return response.data;
+  },
+
+  // Create new markup
+  createMarkup: async (data: CreateTakeoffMarkupRequest): Promise<{ markup: TakeoffMarkup }> => {
+    const response = await api.post('/takeoff-markups', data);
+    return response.data;
+  },
+
+  // Update markup
+  updateMarkup: async (id: number, data: Partial<CreateTakeoffMarkupRequest>): Promise<{ markup: TakeoffMarkup }> => {
+    const response = await api.put(`/takeoff-markups/${id}`, data);
+    return response.data;
+  },
+
+  // Delete markup
+  deleteMarkup: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete(`/takeoff-markups/${id}`);
+    return response.data;
+  },
+
+  // Create multiple markups
+  createBulkMarkups: async (markups: CreateTakeoffMarkupRequest[]): Promise<{ markups: TakeoffMarkup[] }> => {
+    const response = await api.post('/takeoff-markups/bulk', { markups });
+    return response.data;
+  },
+};
+
 // Combined export for compatibility
 const apiService = {
   ...authAPI,
@@ -1071,7 +1229,10 @@ const apiService = {
   ...changeOrdersAPI,
   ...schedulesAPI,
   ...commentsAPI,
-  ...companyProfileAPI
+  ...companyProfileAPI,
+  ...takeoffsAPI,
+  ...takeoffItemsAPI,
+  ...takeoffMarkupsAPI
 };
 
 export default apiService; 

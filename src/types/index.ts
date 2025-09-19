@@ -1058,4 +1058,128 @@ export interface UpdateServiceCallCommentRequest {
 
 export interface ServiceCallCommentsResponse {
   comments: ServiceCallComment[];
+}
+
+// Takeoffs Types
+export interface TakeoffItem {
+  id: number;
+  name: string;
+  description?: string;
+  icon_path?: string | null;
+  icon_url?: string | null;
+  color: string; // hex color for the markup
+  is_active: boolean;
+  created_by: number;
+  created_by_username?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TakeoffMarkup {
+  id: number;
+  takeoff_id: number;
+  takeoff_item_id: number;
+  pdf_page: number;
+  x_coordinate: number;
+  y_coordinate: number;
+  scale_x?: number; // for scaling when PDF is zoomed
+  scale_y?: number;
+  notes?: string;
+  created_by: number;
+  created_by_username?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  item_name?: string;
+  item_color?: string;
+  item_icon_url?: string;
+}
+
+export interface TakeoffPDF {
+  id: number;
+  takeoff_id: number;
+  original_name: string;
+  stored_name: string;
+  file_path: string;
+  file_size: number;
+  page_count?: number;
+  upload_order: number;
+  uploaded_by: number;
+  uploaded_by_username?: string;
+  created_at: string;
+}
+
+export interface Takeoff {
+  id: number;
+  name: string;
+  description?: string;
+  project_id?: number | null;
+  project_name?: string;
+  customer_id?: number | null;
+  customer_name?: string;
+  status: 'draft' | 'in_progress' | 'completed' | 'archived';
+  created_by: number;
+  created_by_username?: string;
+  created_at: string;
+  updated_at: string;
+  // Related data
+  pdfs?: TakeoffPDF[];
+  markups?: TakeoffMarkup[];
+  markup_counts?: Record<number, number>; // takeoff_item_id -> count
+}
+
+export interface CreateTakeoffRequest {
+  name: string;
+  description?: string;
+  project_id?: number | null;
+  customer_id?: number | null;
+}
+
+export interface UpdateTakeoffRequest {
+  name?: string;
+  description?: string;
+  status?: 'draft' | 'in_progress' | 'completed' | 'archived';
+}
+
+export interface CreateTakeoffItemRequest {
+  name: string;
+  description?: string;
+  color: string;
+}
+
+export interface UpdateTakeoffItemRequest {
+  name?: string;
+  description?: string;
+  color?: string;
+  is_active?: boolean;
+}
+
+export interface CreateTakeoffMarkupRequest {
+  takeoff_item_id: number;
+  pdf_page: number;
+  x_coordinate: number;
+  y_coordinate: number;
+  scale_x?: number;
+  scale_y?: number;
+  notes?: string;
+}
+
+export interface TakeoffsResponse {
+  takeoffs: Takeoff[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalTakeoffs: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface TakeoffItemsResponse {
+  items: TakeoffItem[];
+}
+
+export interface TakeoffMarkupsResponse {
+  markups: TakeoffMarkup[];
+  counts: Record<number, number>;
 } 

@@ -34,6 +34,7 @@ import Users from './pages/Users';
 import Company from './pages/Company';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
+import Takeoffs from './pages/Takeoffs';
 
 function App() {
   return (
@@ -108,6 +109,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <CustomerDetail />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/takeoffs"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Takeoffs />
                   </Layout>
                 </ProtectedRoute>
               }
