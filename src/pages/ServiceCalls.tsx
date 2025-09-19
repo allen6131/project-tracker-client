@@ -16,6 +16,7 @@ const ServiceCalls: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [generatingInvoice, setGeneratingInvoice] = useState<number | null>(null);
   
   // Dropdown state
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
@@ -106,6 +107,26 @@ const ServiceCalls: React.FC = () => {
       loadServiceCalls();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update status');
+    }
+  };
+
+  const handleGenerateInvoice = async (serviceCallId: number) => {
+    try {
+      setGeneratingInvoice(serviceCallId);
+      setError(null);
+
+      await serviceCallsAPI.generateServiceCallInvoice(serviceCallId);
+      setSuccess('Invoice generated successfully!');
+      setOpenDropdownId(null);
+      
+      // Navigate to invoices after a short delay
+      setTimeout(() => {
+        navigate('/invoices');
+      }, 2000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to generate invoice');
+    } finally {
+      setGeneratingInvoice(null);
     }
   };
 
@@ -408,6 +429,22 @@ const ServiceCalls: React.FC = () => {
                                     Mark Completed
                                   </button>
                                 </>
+                              )}
+                              
+                              {/* Generate Invoice Button - only show for completed service calls */}
+                              {serviceCall.status === 'completed' && (
+                                <button
+                                  onClick={() => {
+                                    handleGenerateInvoice(serviceCall.id);
+                                  }}
+                                  disabled={generatingInvoice === serviceCall.id}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50"
+                                >
+                                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  {generatingInvoice === serviceCall.id ? 'Generating...' : 'Generate Invoice'}
+                                </button>
                               )}
                               
                               {isAdmin && (

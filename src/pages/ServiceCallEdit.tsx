@@ -13,6 +13,7 @@ const ServiceCallEdit: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -178,6 +179,27 @@ const ServiceCallEdit: React.FC = () => {
 
   const handleCancel = () => {
     navigate('/service-calls');
+  };
+
+  const handleGenerateInvoice = async () => {
+    if (!serviceCall) return;
+
+    try {
+      setGeneratingInvoice(true);
+      setError(null);
+
+      await serviceCallsAPI.generateServiceCallInvoice(serviceCall.id);
+      setSuccess('Invoice generated successfully! Redirecting to invoices...');
+      
+      // Navigate to invoices after a short delay
+      setTimeout(() => {
+        navigate('/invoices');
+      }, 2000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to generate invoice');
+    } finally {
+      setGeneratingInvoice(false);
+    }
   };
 
   if (loading) {
@@ -583,6 +605,19 @@ const ServiceCallEdit: React.FC = () => {
             >
               Cancel
             </button>
+            
+            {/* Generate Invoice Button - only show for completed service calls */}
+            {formData.status === 'completed' && (
+              <button
+                type="button"
+                onClick={handleGenerateInvoice}
+                disabled={generatingInvoice}
+                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {generatingInvoice ? 'Generating...' : 'Generate Invoice'}
+              </button>
+            )}
+            
             <button
               type="submit"
               disabled={saving}

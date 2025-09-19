@@ -29,6 +29,7 @@ import Services from './pages/Services';
 import ServiceCalls from './pages/ServiceCalls';
 import ServiceCallCreate from './pages/ServiceCallCreate';
 import ServiceCallEdit from './pages/ServiceCallEdit';
+import ServiceCallDetail from './pages/ServiceCallDetail';
 import Users from './pages/Users';
 import Company from './pages/Company';
 import PaymentSuccess from './pages/PaymentSuccess';
@@ -247,6 +248,16 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <ServiceCallEdit />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/service-calls/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ServiceCallDetail />
                   </Layout>
                 </ProtectedRoute>
               }
