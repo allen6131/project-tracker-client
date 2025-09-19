@@ -385,7 +385,7 @@ const ServiceCallComments: React.FC<ServiceCallCommentsProps> = ({ serviceCallId
                 {/* Comment Actions */}
                 {editingComment !== comment.id && (
                   <div className="flex items-center space-x-2 ml-4">
-                    {(user?.userId === comment.user_id) && (
+                    {(user?.id === comment.user_id) && (
                       <button
                         onClick={() => startEditing(comment)}
                         className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -396,7 +396,7 @@ const ServiceCallComments: React.FC<ServiceCallCommentsProps> = ({ serviceCallId
                         </svg>
                       </button>
                     )}
-                    {(user?.userId === comment.user_id || user?.role === 'admin') && (
+                    {(user?.id === comment.user_id || user?.role === 'admin') && (
                       <button
                         onClick={() => handleDeleteComment(comment.id)}
                         className="text-red-400 hover:text-red-600"
