@@ -7,9 +7,11 @@ import {
   ServiceCallLineItem,
   CreateServiceCallMaterialRequest,
   CreateServiceCallLineItemRequest,
+  UpdateServiceCallRequest,
   CatalogMaterial
 } from '../types';
-import { serviceCallsAPI, catalogMaterialsAPI } from '../services/api';
+import { serviceCallsAPI, catalogMaterialsAPI, customersAPI, projectsAPI } from '../services/api';
+import ServiceCallComments from '../components/ServiceCallComments';
 
 const ServiceCallDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +25,13 @@ const ServiceCallDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: number; name: string; customer_id?: number | null }[]>([]);
+  const [technicians, setTechnicians] = useState<{ id: number; username: string; email: string }[]>([]);
   
   // Modal states
   const [showMaterialModal, setShowMaterialModal] = useState(false);
@@ -45,11 +54,35 @@ const ServiceCallDetail: React.FC = () => {
     unit_price: 0,
     total_price: 0
   });
+  
+  // Edit form data
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: '',
+    customer_id: null as number | null,
+    customer_name: '',
+    customer_email: '',
+    customer_phone: '',
+    customer_address: '',
+    project_id: null as number | null,
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
+    status: 'open' as 'open' | 'in_progress' | 'completed' | 'cancelled',
+    service_type: '',
+    scheduled_date: '',
+    completed_date: '',
+    technician_id: null as number | null,
+    estimated_hours: null as number | null,
+    actual_hours: null as number | null,
+    hourly_rate: null as number | null,
+    materials_cost: null as number | null,
+    notes: ''
+  });
 
   useEffect(() => {
     if (id) {
       loadServiceCallDetails();
       loadCatalogMaterials();
+      loadSupportingData();
     }
   }, [id]);
 
@@ -58,6 +91,30 @@ const ServiceCallDetail: React.FC = () => {
       setLoading(true);
       const serviceCallResponse = await serviceCallsAPI.getServiceCall(parseInt(id!));
       setServiceCall(serviceCallResponse.serviceCall);
+      
+      // Populate edit form data
+      const sc = serviceCallResponse.serviceCall;
+      setEditFormData({
+        title: sc.title,
+        description: sc.description || '',
+        customer_id: sc.customer_id,
+        customer_name: sc.customer_name,
+        customer_email: sc.customer_email || '',
+        customer_phone: sc.customer_phone || '',
+        customer_address: sc.customer_address || '',
+        project_id: sc.project_id,
+        priority: sc.priority,
+        status: sc.status,
+        service_type: sc.service_type || '',
+        scheduled_date: sc.scheduled_date ? sc.scheduled_date.split('T')[0] : '',
+        completed_date: sc.completed_date ? sc.completed_date.split('T')[0] : '',
+        technician_id: sc.technician_id,
+        estimated_hours: sc.estimated_hours,
+        actual_hours: sc.actual_hours,
+        hourly_rate: sc.hourly_rate,
+        materials_cost: sc.materials_cost,
+        notes: sc.notes || ''
+      });
       
       if (serviceCallResponse.serviceCall.billing_type === 'time_material') {
         const materialsResponse = await serviceCallsAPI.getServiceCallMaterials(parseInt(id!));
@@ -79,6 +136,22 @@ const ServiceCallDetail: React.FC = () => {
       setCatalogMaterials(response.materials);
     } catch (err) {
       console.error('Failed to load catalog materials:', err);
+    }
+  };
+
+  const loadSupportingData = async () => {
+    try {
+      const [customersRes, projectsRes, techniciansRes] = await Promise.all([
+        customersAPI.getSimpleCustomers(),
+        projectsAPI.getProjects(1, 100, ''),
+        serviceCallsAPI.getTechnicians()
+      ]);
+      
+      setCustomers(customersRes.customers);
+      setProjects(projectsRes.projects);
+      setTechnicians(techniciansRes.technicians);
+    } catch (err) {
+      console.error('Failed to load supporting data:', err);
     }
   };
 
@@ -127,6 +200,73 @@ const ServiceCallDetail: React.FC = () => {
       navigate('/invoices');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to generate invoice');
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!serviceCall) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const updateData: UpdateServiceCallRequest = {
+        title: editFormData.title,
+        description: editFormData.description || undefined,
+        customer_name: editFormData.customer_name,
+        customer_email: editFormData.customer_email || undefined,
+        customer_phone: editFormData.customer_phone || undefined,
+        customer_address: editFormData.customer_address || undefined,
+        project_id: editFormData.project_id,
+        priority: editFormData.priority,
+        status: editFormData.status,
+        service_type: editFormData.service_type || undefined,
+        scheduled_date: editFormData.scheduled_date || undefined,
+        completed_date: editFormData.completed_date || undefined,
+        technician_id: editFormData.technician_id,
+        estimated_hours: editFormData.estimated_hours,
+        actual_hours: editFormData.actual_hours,
+        hourly_rate: editFormData.hourly_rate,
+        materials_cost: editFormData.materials_cost,
+        notes: editFormData.notes || undefined
+      };
+
+      await serviceCallsAPI.updateServiceCall(serviceCall.id, updateData);
+      setSuccess('Service call updated successfully');
+      setIsEditing(false);
+      loadServiceCallDetails();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to update service call');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset form data to original values
+    if (serviceCall) {
+      setEditFormData({
+        title: serviceCall.title,
+        description: serviceCall.description || '',
+        customer_id: serviceCall.customer_id,
+        customer_name: serviceCall.customer_name,
+        customer_email: serviceCall.customer_email || '',
+        customer_phone: serviceCall.customer_phone || '',
+        customer_address: serviceCall.customer_address || '',
+        project_id: serviceCall.project_id,
+        priority: serviceCall.priority,
+        status: serviceCall.status,
+        service_type: serviceCall.service_type || '',
+        scheduled_date: serviceCall.scheduled_date ? serviceCall.scheduled_date.split('T')[0] : '',
+        completed_date: serviceCall.completed_date ? serviceCall.completed_date.split('T')[0] : '',
+        technician_id: serviceCall.technician_id,
+        estimated_hours: serviceCall.estimated_hours,
+        actual_hours: serviceCall.actual_hours,
+        hourly_rate: serviceCall.hourly_rate,
+        materials_cost: serviceCall.materials_cost,
+        notes: serviceCall.notes || ''
+      });
     }
   };
 
@@ -190,19 +330,39 @@ const ServiceCallDetail: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400">{serviceCall.title}</p>
         </div>
         <div className="flex space-x-3">
-          <button
-            onClick={() => navigate(`/service-calls/${serviceCall.id}/edit`)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => setShowInvoiceModal(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            disabled={serviceCall.status !== 'completed'}
-          >
-            Generate Invoice
-          </button>
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setShowInvoiceModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                disabled={serviceCall.status !== 'completed'}
+              >
+                Generate Invoice
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -609,6 +769,16 @@ const ServiceCallDetail: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Comments Section */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Comments</h3>
+        </div>
+        <div className="p-6">
+          <ServiceCallComments serviceCallId={parseInt(id!)} />
+        </div>
+      </div>
 
       {/* Generate Invoice Modal */}
       {showInvoiceModal && (

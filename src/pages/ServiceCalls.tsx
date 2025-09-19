@@ -317,7 +317,11 @@ const ServiceCalls: React.FC = () => {
                   </tr>
                 ) : (
                   serviceCalls.map((serviceCall) => (
-                    <tr key={serviceCall.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr 
+                      key={serviceCall.id} 
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                      onClick={() => navigate(`/service-calls/${serviceCall.id}`)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {serviceCall.ticket_number}
@@ -366,7 +370,10 @@ const ServiceCalls: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="relative">
                           <button
-                            onClick={() => toggleDropdown(serviceCall.id)}
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent row click
+                              toggleDropdown(serviceCall.id);
+                            }}
                             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                           >
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

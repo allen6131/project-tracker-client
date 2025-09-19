@@ -1024,4 +1024,37 @@ export interface CreateServiceCallLineItemRequest {
   quantity: number;
   unit_price: number;
   total_price: number;
+}
+
+// Service Call Comments Types
+export interface ServiceCallComment {
+  id: number;
+  service_call_id: number;
+  user_id: number;
+  content: string;
+  mentions: number[];
+  parent_id?: number | null;
+  is_edited: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined fields from query
+  username: string;
+  email: string;
+  role: 'admin' | 'user';
+  mentioned_users: MentionedUser[];
+}
+
+export interface CreateServiceCallCommentRequest {
+  content: string;
+  mentions?: number[];
+  parent_id?: number;
+}
+
+export interface UpdateServiceCallCommentRequest {
+  content: string;
+  mentions?: number[];
+}
+
+export interface ServiceCallCommentsResponse {
+  comments: ServiceCallComment[];
 } 

@@ -79,7 +79,11 @@ import {
   ServiceCallMaterial,
   CreateServiceCallMaterialRequest,
   ServiceCallLineItem,
-  CreateServiceCallLineItemRequest
+  CreateServiceCallLineItemRequest,
+  ServiceCallComment,
+  CreateServiceCallCommentRequest,
+  UpdateServiceCallCommentRequest,
+  ServiceCallCommentsResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -832,6 +836,35 @@ export const serviceCallsAPI = {
   // Generate invoice from service call
   generateServiceCallInvoice: async (id: number): Promise<{ message: string; invoice: any }> => {
     const response: AxiosResponse<{ message: string; invoice: any }> = await api.post(`/service-calls/${id}/generate-invoice`);
+    return response.data;
+  },
+
+  // Get service call comments
+  getServiceCallComments: async (id: number): Promise<ServiceCallCommentsResponse> => {
+    const response: AxiosResponse<ServiceCallCommentsResponse> = await api.get(`/service-call-comments/${id}/comments`);
+    return response.data;
+  },
+
+  // Create service call comment
+  createServiceCallComment: async (id: number, data: CreateServiceCallCommentRequest): Promise<ServiceCallComment> => {
+    const response: AxiosResponse<{ message: string; comment: ServiceCallComment }> = await api.post(`/service-call-comments/${id}/comments`, data);
+    return response.data.comment;
+  },
+
+  // Update service call comment
+  updateServiceCallComment: async (commentId: number, data: UpdateServiceCallCommentRequest): Promise<ServiceCallComment> => {
+    const response: AxiosResponse<{ message: string; comment: ServiceCallComment }> = await api.put(`/service-call-comments/comments/${commentId}`, data);
+    return response.data.comment;
+  },
+
+  // Delete service call comment
+  deleteServiceCallComment: async (commentId: number): Promise<void> => {
+    await api.delete(`/service-call-comments/comments/${commentId}`);
+  },
+
+  // Get mentionable users for a service call
+  getServiceCallMentionableUsers: async (id: number): Promise<MentionableUsersResponse> => {
+    const response: AxiosResponse<MentionableUsersResponse> = await api.get(`/service-call-comments/${id}/users`);
     return response.data;
   },
 };
