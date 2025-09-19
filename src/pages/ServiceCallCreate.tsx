@@ -22,6 +22,7 @@ const ServiceCallCreate: React.FC = () => {
     project_id: null as number | null,
     priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
     service_type: '',
+    billing_type: 'time_material' as 'time_material' | 'estimate',
     scheduled_date: '',
     technician_id: null as number | null,
     estimated_hours: null as number | null,
@@ -324,6 +325,20 @@ const ServiceCallCreate: React.FC = () => {
                     placeholder="e.g., Emergency, Maintenance, Installation, Repair"
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Billing Type *
+                  </label>
+                  <select
+                    value={formData.billing_type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, billing_type: e.target.value as 'time_material' | 'estimate' }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    required
+                  >
+                    <option value="time_material">Time & Material</option>
+                    <option value="estimate">Estimate</option>
+                  </select>
                 </div>
               </div>
 

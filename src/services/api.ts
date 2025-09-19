@@ -75,7 +75,11 @@ import {
   ServiceCall,
   CreateServiceCallRequest,
   UpdateServiceCallRequest,
-  ServiceCallsResponse
+  ServiceCallsResponse,
+  ServiceCallMaterial,
+  CreateServiceCallMaterialRequest,
+  ServiceCallLineItem,
+  CreateServiceCallLineItemRequest
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -798,6 +802,36 @@ export const serviceCallsAPI = {
   // Get technicians list
   getTechnicians: async (): Promise<{ technicians: { id: number; username: string; email: string }[] }> => {
     const response: AxiosResponse<{ technicians: { id: number; username: string; email: string }[] }> = await api.get('/service-calls/technicians/list');
+    return response.data;
+  },
+
+  // Get service call materials
+  getServiceCallMaterials: async (id: number): Promise<{ materials: ServiceCallMaterial[] }> => {
+    const response: AxiosResponse<{ materials: ServiceCallMaterial[] }> = await api.get(`/service-calls/${id}/materials`);
+    return response.data;
+  },
+
+  // Get service call line items
+  getServiceCallLineItems: async (id: number): Promise<{ lineItems: ServiceCallLineItem[] }> => {
+    const response: AxiosResponse<{ lineItems: ServiceCallLineItem[] }> = await api.get(`/service-calls/${id}/line-items`);
+    return response.data;
+  },
+
+  // Add material to service call
+  addServiceCallMaterial: async (id: number, data: CreateServiceCallMaterialRequest): Promise<{ message: string; material: ServiceCallMaterial }> => {
+    const response: AxiosResponse<{ message: string; material: ServiceCallMaterial }> = await api.post(`/service-calls/${id}/materials`, data);
+    return response.data;
+  },
+
+  // Add line item to service call
+  addServiceCallLineItem: async (id: number, data: CreateServiceCallLineItemRequest): Promise<{ message: string; lineItem: ServiceCallLineItem }> => {
+    const response: AxiosResponse<{ message: string; lineItem: ServiceCallLineItem }> = await api.post(`/service-calls/${id}/line-items`, data);
+    return response.data;
+  },
+
+  // Generate invoice from service call
+  generateServiceCallInvoice: async (id: number): Promise<{ message: string; invoice: any }> => {
+    const response: AxiosResponse<{ message: string; invoice: any }> = await api.post(`/service-calls/${id}/generate-invoice`);
     return response.data;
   },
 };

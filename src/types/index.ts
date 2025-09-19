@@ -910,6 +910,7 @@ export interface ServiceCall {
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'open' | 'in_progress' | 'completed' | 'cancelled';
   service_type?: string; // e.g., 'emergency', 'maintenance', 'installation', 'repair'
+  billing_type: 'time_material' | 'estimate';
   scheduled_date?: string | null;
   completed_date?: string | null;
   technician_id?: number | null;
@@ -937,11 +938,14 @@ export interface CreateServiceCallRequest {
   project_id?: number | null;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   service_type?: string;
+  billing_type?: 'time_material' | 'estimate';
   scheduled_date?: string | null;
   technician_id?: number | null;
   estimated_hours?: number | null;
   hourly_rate?: number | null;
   materials_cost?: number | null;
+  materials?: ServiceCallMaterial[];
+  line_items?: ServiceCallLineItem[];
   notes?: string;
 }
 
@@ -976,4 +980,48 @@ export interface ServiceCallsResponse {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
+}
+
+export interface ServiceCallMaterial {
+  id?: number;
+  service_call_id?: number;
+  material_id?: number | null;
+  material_name?: string;
+  part_number?: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_cost: number;
+  total_cost: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ServiceCallLineItem {
+  id?: number;
+  service_call_id?: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateServiceCallMaterialRequest {
+  material_id?: number | null;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_cost: number;
+  total_cost: number;
+  notes?: string;
+}
+
+export interface CreateServiceCallLineItemRequest {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
 } 
