@@ -839,9 +839,21 @@ export const serviceCallsAPI = {
     return response.data;
   },
 
+  // Delete material from service call
+  deleteServiceCallMaterial: async (id: number, materialId: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/service-calls/${id}/materials/${materialId}`);
+    return response.data;
+  },
+
   // Add line item to service call
   addServiceCallLineItem: async (id: number, data: CreateServiceCallLineItemRequest): Promise<{ message: string; lineItem: ServiceCallLineItem }> => {
     const response: AxiosResponse<{ message: string; lineItem: ServiceCallLineItem }> = await api.post(`/service-calls/${id}/line-items`, data);
+    return response.data;
+  },
+
+  // Delete line item from service call
+  deleteServiceCallLineItem: async (id: number, lineItemId: number): Promise<{ message: string }> => {
+    const response: AxiosResponse<{ message: string }> = await api.delete(`/service-calls/${id}/line-items/${lineItemId}`);
     return response.data;
   },
 

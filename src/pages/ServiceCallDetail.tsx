@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -75,8 +75,16 @@ const ServiceCallDetail: React.FC = () => {
     actual_hours: null as number | null,
     hourly_rate: null as number | null,
     materials_cost: null as number | null,
+    total_cost: null as number | null,
     notes: ''
   });
+
+  const filteredProjects = useMemo(() => {
+    if (!editFormData.customer_id) {
+      return projects;
+    }
+    return projects.filter(project => project.customer_id === editFormData.customer_id);
+  }, [editFormData.customer_id, projects]);
 
   useEffect(() => {
     if (id) {
@@ -113,7 +121,8 @@ const ServiceCallDetail: React.FC = () => {
         actual_hours: sc.actual_hours ?? null,
         hourly_rate: sc.hourly_rate ?? null,
         materials_cost: sc.materials_cost ?? null,
-        notes: sc.notes || ''
+        notes: sc.notes || '',
+        total_cost: sc.total_cost ?? null
       });
       
       if (serviceCallResponse.serviceCall.billing_type === 'time_material') {
@@ -174,6 +183,18 @@ const ServiceCallDetail: React.FC = () => {
     }
   };
 
+  const handleRemoveMaterial = async (materialId: number) => {
+    if (!serviceCall) return;
+
+    try {
+      await serviceCallsAPI.deleteServiceCallMaterial(serviceCall.id, materialId);
+      setSuccess('Material removed successfully');
+      loadServiceCallDetails();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to remove material');
+    }
+  };
+
   const handleAddLineItem = async () => {
     try {
       await serviceCallsAPI.addServiceCallLineItem(parseInt(id!), lineItemForm);
@@ -188,6 +209,18 @@ const ServiceCallDetail: React.FC = () => {
       loadServiceCallDetails();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to add line item');
+    }
+  };
+
+  const handleRemoveLineItem = async (lineItemId: number) => {
+    if (!serviceCall) return;
+
+    try {
+      await serviceCallsAPI.deleteServiceCallLineItem(serviceCall.id, lineItemId);
+      setSuccess('Line item removed successfully');
+      loadServiceCallDetails();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to remove line item');
     }
   };
 
@@ -228,7 +261,8 @@ const ServiceCallDetail: React.FC = () => {
         actual_hours: editFormData.actual_hours,
         hourly_rate: editFormData.hourly_rate,
         materials_cost: editFormData.materials_cost,
-        notes: editFormData.notes || undefined
+        notes: editFormData.notes || undefined,
+        total_cost: editFormData.total_cost
       };
 
       await serviceCallsAPI.updateServiceCall(serviceCall.id, updateData);
@@ -265,7 +299,8 @@ const ServiceCallDetail: React.FC = () => {
         actual_hours: serviceCall.actual_hours ?? null,
         hourly_rate: serviceCall.hourly_rate ?? null,
         materials_cost: serviceCall.materials_cost ?? null,
-        notes: serviceCall.notes || ''
+        notes: serviceCall.notes || '',
+        total_cost: serviceCall.total_cost ?? null
       });
     }
   };
@@ -300,6 +335,23 @@ const ServiceCallDetail: React.FC = () => {
       unit_price: unitPrice,
       total_price: quantity * unitPrice
     }));
+  };
+
+  const handleCustomerChange = (customerId: number | null) => {
+    const selectedCustomer = customers.find(c => c.id === customerId);
+    setEditFormData(prev => ({
+      ...prev,
+      customer_id: customerId,
+      customer_name: selectedCustomer?.name || prev.customer_name,
+      project_id: null
+    }));
+  };
+
+  const calculateTotalCost = () => {
+    const hours = editFormData.actual_hours ?? editFormData.estimated_hours ?? 0;
+    const rate = editFormData.hourly_rate ?? 0;
+    const materials = editFormData.materials_cost ?? 0;
+    return (hours * rate) + materials;
   };
 
   if (loading) {
@@ -383,10 +435,94 @@ const ServiceCallDetail: React.FC = () => {
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Service Call Details</h3>
         </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-6 space-y-6">
             <div>
               <h4 className="font-medium text-gray-900 dark:text-white mb-3">Basic Information</h4>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.title}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={editFormData.status}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, status: e.target.value as typeof editFormData.status }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="open">Open</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Priority
+                    </label>
+                    <select
+                      value={editFormData.priority}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, priority: e.target.value as typeof editFormData.priority }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Service Type
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.service_type}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, service_type: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Technician
+                    </label>
+                    <select
+                      value={editFormData.technician_id || ''}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, technician_id: e.target.value ? parseInt(e.target.value, 10) : null }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">Unassigned</option>
+                      {technicians.map(tech => (
+                        <option key={tech.id} value={tech.id}>
+                          {tech.username}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Billing Type
+                  </label>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {serviceCall.billing_type === 'time_material' ? 'Time & Material' : 'Estimate'}
+                  </p>
+                </div>
+              </div>
+            ) : (
               <div className="space-y-2">
                 <p><span className="font-medium">Status:</span> 
                   <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
@@ -416,24 +552,293 @@ const ServiceCallDetail: React.FC = () => {
                 <p><span className="font-medium">Service Type:</span> {serviceCall.service_type || 'N/A'}</p>
                 <p><span className="font-medium">Technician:</span> {serviceCall.technician_name || 'Unassigned'}</p>
               </div>
+            )}
             </div>
             <div>
               <h4 className="font-medium text-gray-900 dark:text-white mb-3">Customer Information</h4>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Customer
+                    </label>
+                    <select
+                      value={editFormData.customer_id || ''}
+                      onChange={(e) => handleCustomerChange(e.target.value ? parseInt(e.target.value, 10) : null)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">Select Customer</option>
+                      {customers.map(customer => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Customer Name
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.customer_name}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={editFormData.customer_email}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, customer_email: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={editFormData.customer_phone}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Address
+                  </label>
+                  <textarea
+                    value={editFormData.customer_address}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, customer_address: e.target.value }))}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+            ) : (
               <div className="space-y-2">
                 <p><span className="font-medium">Name:</span> {serviceCall.customer_name}</p>
                 <p><span className="font-medium">Email:</span> {serviceCall.customer_email || 'N/A'}</p>
                 <p><span className="font-medium">Phone:</span> {serviceCall.customer_phone || 'N/A'}</p>
                 <p><span className="font-medium">Address:</span> {serviceCall.customer_address || 'N/A'}</p>
               </div>
+            )}
+          </div>
+          <div>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-3">Description</h4>
+            {isEditing ? (
+              <textarea
+                value={editFormData.description}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            ) : (
+              <p className="text-gray-700 dark:text-gray-300">{serviceCall.description || 'No description provided.'}</p>
+            )}
+          </div>
             </div>
           </div>
           
-          {serviceCall.description && (
-            <div className="mt-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description</h4>
-              <p className="text-gray-700 dark:text-gray-300">{serviceCall.description}</p>
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Service Details</h3>
             </div>
-          )}
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Project
+              </label>
+              {isEditing ? (
+                <select
+                  value={editFormData.project_id || ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, project_id: e.target.value ? parseInt(e.target.value, 10) : null }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Select Project</option>
+                  {filteredProjects.map(project => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">{serviceCall.project_name || 'No project assigned'}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Scheduled Date
+              </label>
+              {isEditing ? (
+                <input
+                  type="date"
+                  value={editFormData.scheduled_date}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, scheduled_date: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">
+                  {serviceCall.scheduled_date ? new Date(serviceCall.scheduled_date).toLocaleDateString() : 'Not scheduled'}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Completed Date
+              </label>
+              {isEditing ? (
+                <input
+                  type="date"
+                  value={editFormData.completed_date}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, completed_date: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">
+                  {serviceCall.completed_date ? new Date(serviceCall.completed_date).toLocaleDateString() : 'Not completed'}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Notes
+              </label>
+              {isEditing ? (
+                <textarea
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">{serviceCall.notes || 'No notes available'}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Cost Information</h3>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Estimated Hours
+              </label>
+              {isEditing ? (
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={editFormData.estimated_hours ?? ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, estimated_hours: e.target.value ? parseFloat(e.target.value) : null }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">{serviceCall.estimated_hours ?? 'N/A'}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Actual Hours
+              </label>
+              {isEditing ? (
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={editFormData.actual_hours ?? ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, actual_hours: e.target.value ? parseFloat(e.target.value) : null }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">{serviceCall.actual_hours ?? 'N/A'}</p>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Hourly Rate ($)
+              </label>
+              {isEditing ? (
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editFormData.hourly_rate ?? ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, hourly_rate: e.target.value ? parseFloat(e.target.value) : null }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">{serviceCall.hourly_rate != null ? `$${serviceCall.hourly_rate.toFixed(2)}` : 'N/A'}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Materials Cost ($)
+              </label>
+              {isEditing ? (
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editFormData.materials_cost ?? ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, materials_cost: e.target.value ? parseFloat(e.target.value) : null }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">{serviceCall.materials_cost != null ? `$${serviceCall.materials_cost.toFixed(2)}` : 'N/A'}</p>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Total Cost ($)
+              </label>
+              {isEditing ? (
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editFormData.total_cost ?? calculateTotalCost()}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, total_cost: e.target.value ? parseFloat(e.target.value) : null }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">
+                  {serviceCall.total_cost != null ? `$${serviceCall.total_cost.toFixed(2)}` : `$${calculateTotalCost().toFixed(2)}`}
+                </p>
+              )}
+            </div>
+            {isEditing && (
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
+                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                  Calculated Total: ${calculateTotalCost().toFixed(2)}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">
+                  Override the total cost if needed.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -445,6 +850,7 @@ const ServiceCallDetail: React.FC = () => {
             <button
               onClick={() => setShowMaterialModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              disabled={!isEditing}
             >
               Add Material
             </button>
@@ -469,6 +875,11 @@ const ServiceCallDetail: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Total Cost
                       </th>
+                      {isEditing && (
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -491,6 +902,16 @@ const ServiceCallDetail: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                           ${material.total_cost.toFixed(2)}
                         </td>
+                        {isEditing && (
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <button
+                              onClick={() => material.id && handleRemoveMaterial(material.id)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -509,6 +930,7 @@ const ServiceCallDetail: React.FC = () => {
             <button
               onClick={() => setShowLineItemModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              disabled={!isEditing}
             >
               Add Line Item
             </button>
@@ -533,6 +955,11 @@ const ServiceCallDetail: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Total Price
                       </th>
+                      {isEditing && (
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -550,6 +977,16 @@ const ServiceCallDetail: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                           ${item.total_price.toFixed(2)}
                         </td>
+                        {isEditing && (
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <button
+                              onClick={() => item.id && handleRemoveLineItem(item.id)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
