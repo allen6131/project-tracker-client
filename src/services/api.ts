@@ -95,7 +95,8 @@ import {
   TakeoffMarkup,
   TakeoffMarkupsResponse,
   CreateTakeoffMarkupRequest,
-  TakeoffPDF
+  TakeoffPDF,
+  NotificationItem
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://project-tracker-server-f1d3541c891e.herokuapp.com/api';
@@ -891,6 +892,30 @@ export const serviceCallsAPI = {
     const response: AxiosResponse<MentionableUsersResponse> = await api.get(`/service-call-comments/${id}/users`);
     return response.data;
   },
+};
+
+// Notifications API
+export const notificationsAPI = {
+  getNotifications: async (limit = 20, offset = 0, includeRead = false): Promise<{ notifications: NotificationItem[]; unread_count: number }> => {
+    const response: AxiosResponse<{ notifications: NotificationItem[]; unread_count: number }> = await api.get('/notifications', {
+      params: {
+        limit,
+        offset,
+        include_read: includeRead
+      }
+    });
+    return response.data;
+  },
+
+  markAsRead: async (notificationId: number): Promise<{ message: string; notification: NotificationItem }> => {
+    const response: AxiosResponse<{ message: string; notification: NotificationItem }> = await api.patch(`/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  markAllAsRead: async (): Promise<{ message: string; updated: number }> => {
+    const response: AxiosResponse<{ message: string; updated: number }> = await api.patch('/notifications/mark-all-read');
+    return response.data;
+  }
 };
 
 // Change Orders API

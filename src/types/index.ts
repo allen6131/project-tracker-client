@@ -1060,6 +1060,20 @@ export interface ServiceCallCommentsResponse {
   comments: ServiceCallComment[];
 }
 
+export interface NotificationItem {
+  id: number;
+  user_id: number;
+  service_call_id?: number | null;
+  comment_id?: number | null;
+  type: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  read_at?: string | null;
+  ticket_number?: string | null;
+  service_call_title?: string | null;
+}
+
 // Takeoffs Types
 export interface TakeoffItem {
   id: number;

@@ -1,9 +1,11 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
 import DownloadDesktopLink from './DownloadDesktopLink';
+import { notificationsAPI } from '../services/api';
+import { NotificationItem } from '../types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,6 +15,65 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { user, logout, isAdmin } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = React.useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  const [showNotifications, setShowNotifications] = React.useState(false);
+  const [isLoadingNotifications, setIsLoadingNotifications] = React.useState(false);
+  const loadNotifications = async () => {
+    try {
+      setIsLoadingNotifications(true);
+      const response = await notificationsAPI.getNotifications(10, 0, true);
+      setNotifications(response.notifications);
+      setUnreadCount(response.unread_count);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (user) {
+      loadNotifications();
+    }
+  }, [user]);
+
+  const handleNotificationClick = async (notification: NotificationItem) => {
+    try {
+      if (!notification.is_read) {
+        await notificationsAPI.markAsRead(notification.id);
+        setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
+      if (notification.service_call_id) {
+        navigate(`/service-calls/${notification.service_call_id}`);
+      }
+    } catch (error) {
+      console.error('Failed to handle notification click:', error);
+    } finally {
+      setShowNotifications(false);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationsAPI.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
+  };
+
+  const toggleNotifications = () => {
+    const nextValue = !showNotifications;
+    setShowNotifications(nextValue);
+    if (nextValue) {
+      loadNotifications();
+    }
+  };
 
   const navigation = [
     {
@@ -194,7 +255,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-2">
+          <nav className="flex-1 px-4 py-4 space-y-2 relative">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -209,6 +270,72 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 <span className="ml-3">{item.name}</span>
               </Link>
             ))}
+
+            <div className="mt-4">
+              <button
+                onClick={toggleNotifications}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <span className="flex items-center">
+                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  Notifications
+                </span>
+                {unreadCount > 0 && (
+                  <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold leading-4 rounded-full bg-red-600 text-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 space-y-3 max-h-80 overflow-y-auto">
+                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                    <span>Notifications</span>
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                    >
+                      Mark all read
+                    </button>
+                  </div>
+
+                  {isLoadingNotifications ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+                  ) : notifications.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No notifications yet.</p>
+                  ) : (
+                    notifications.map(notification => (
+                      <button
+                        key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`w-full text-left px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${notification.is_read ? 'bg-white dark:bg-gray-800' : 'bg-blue-50 dark:bg-blue-900/30'}`}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                              {notification.message || 'You have a new notification'}
+                            </p>
+                            {notification.service_call_title && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {notification.service_call_title}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-2">
+                              {new Date(notification.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                          {!notification.is_read && (
+                            <span className="w-2 h-2 mt-1 ml-2 bg-blue-500 rounded-full"></span>
+                          )}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* User section */}
