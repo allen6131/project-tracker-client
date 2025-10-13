@@ -7,7 +7,7 @@ import {
   UpdateChangeOrderRequest,
   ChangeOrderItem
 } from '../types';
-import { changeOrdersAPI } from '../services/api';
+import { changeOrdersAPI, invoicesAPI } from '../services/api';
 import PDFViewer from './PDFViewer';
 
 interface ChangeOrdersManagementProps {
@@ -51,11 +51,14 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showConvertToInvoiceModal, setShowConvertToInvoiceModal] = useState(false);
   const [editingChangeOrder, setEditingChangeOrder] = useState<ChangeOrder | null>(null);
   const [emailingChangeOrder, setEmailingChangeOrder] = useState<ChangeOrder | null>(null);
   const [viewingChangeOrder, setViewingChangeOrder] = useState<ChangeOrder | null>(null);
+  const [convertingChangeOrder, setConvertingChangeOrder] = useState<ChangeOrder | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
+  const [convertLoading, setConvertLoading] = useState(false);
   
   // PDF viewer state
   const [showPDFViewer, setShowPDFViewer] = useState(false);
@@ -92,6 +95,13 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
   const [emailData, setEmailData] = useState({
     recipient_email: customerInfo?.email || '',
     sender_name: user?.username || ''
+  });
+  
+  // Convert to invoice form data
+  const [convertData, setConvertData] = useState({
+    percentage: '',
+    title: '',
+    due_date: ''
   });
 
   // Update email data when customer info changes
@@ -287,6 +297,58 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
       setError(err.response?.data?.message || 'Failed to send change order email');
     } finally {
       setEmailLoading(false);
+    }
+  };
+
+  const handleConvertToInvoice = (changeOrder: ChangeOrder) => {
+    if (changeOrder.status !== 'approved') {
+      setError('Only approved change orders can be converted to invoices');
+      return;
+    }
+    setConvertingChangeOrder(changeOrder);
+    setConvertData({
+      percentage: '',
+      title: '',
+      due_date: ''
+    });
+    setShowConvertToInvoiceModal(true);
+  };
+
+  const handleConvertSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!convertingChangeOrder) return;
+    
+    try {
+      setConvertLoading(true);
+      clearMessages();
+      
+      const invoiceData: any = {
+        title: convertData.title || undefined,
+        due_date: convertData.due_date || undefined
+      };
+      
+      // If percentage is provided, calculate the amount
+      if (convertData.percentage) {
+        const percentage = parseFloat(convertData.percentage);
+        if (percentage > 0 && percentage <= 100) {
+          invoiceData.percentage = percentage;
+          invoiceData.amount = (convertingChangeOrder.total_amount * percentage) / 100;
+        }
+      }
+      
+      const response = await invoicesAPI.createInvoiceFromChangeOrder(convertingChangeOrder.id, invoiceData);
+      setSuccess(`Invoice ${response.invoice.invoice_number} created successfully from change order`);
+      setShowConvertToInvoiceModal(false);
+      setConvertingChangeOrder(null);
+      
+      // Navigate to invoices page after a brief delay
+      setTimeout(() => {
+        navigate('/invoices');
+      }, 1500);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to convert change order to invoice');
+    } finally {
+      setConvertLoading(false);
     }
   };
 
@@ -549,6 +611,21 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
                                 </svg>
                                 Send Email
                               </button>
+                              
+                              {changeOrder.status === 'approved' && (
+                                <button
+                                  onClick={() => {
+                                    handleConvertToInvoice(changeOrder);
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                >
+                                  <svg className="w-4 h-4 mr-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  Convert to Invoice
+                                </button>
+                              )}
 
                               <div className="border-t border-gray-100 my-1"></div>
                               
@@ -850,6 +927,99 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                   >
                     {emailLoading ? 'Sending...' : 'Send Change Order'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Convert to Invoice Modal */}
+      {showConvertToInvoiceModal && convertingChangeOrder && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Convert Change Order to Invoice
+              </h3>
+              
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Change Order:</strong> {convertingChangeOrder.change_order_number}
+                </p>
+                <p className="text-sm text-blue-800">
+                  <strong>Total Amount:</strong> ${convertingChangeOrder.total_amount.toFixed(2)}
+                </p>
+              </div>
+              
+              <form onSubmit={handleConvertSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="convert_percentage" className="block text-sm font-medium text-gray-700">
+                    Percentage (Optional)
+                  </label>
+                  <input
+                    type="number"
+                    id="convert_percentage"
+                    min="0.01"
+                    max="100"
+                    step="0.01"
+                    value={convertData.percentage}
+                    onChange={(e) => setConvertData({ ...convertData, percentage: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    placeholder="Leave empty for full amount"
+                  />
+                  {convertData.percentage && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      Invoice Amount: ${((convertingChangeOrder.total_amount * parseFloat(convertData.percentage)) / 100).toFixed(2)}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="convert_title" className="block text-sm font-medium text-gray-700">
+                    Invoice Title (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="convert_title"
+                    value={convertData.title}
+                    onChange={(e) => setConvertData({ ...convertData, title: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    placeholder="Auto-generated if empty"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="convert_due_date" className="block text-sm font-medium text-gray-700">
+                    Due Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    id="convert_due_date"
+                    value={convertData.due_date}
+                    onChange={(e) => setConvertData({ ...convertData, due_date: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowConvertToInvoiceModal(false);
+                      setConvertingChangeOrder(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={convertLoading}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {convertLoading ? 'Creating...' : 'Create Invoice'}
                   </button>
                 </div>
               </form>

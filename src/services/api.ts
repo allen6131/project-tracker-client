@@ -589,6 +589,11 @@ export const invoicesAPI = {
     return response.data;
   },
 
+  createInvoiceFromChangeOrder: async (changeOrderId: number, invoiceData: { title?: string; due_date?: string; percentage?: number; amount?: number }): Promise<{ invoice: Invoice; message: string }> => {
+    const response: AxiosResponse<{ invoice: Invoice; message: string }> = await api.post(`/invoices/from-change-order/${changeOrderId}`, invoiceData);
+    return response.data;
+  },
+
   getInvoice: async (id: number): Promise<{ invoice: Invoice }> => {
     const response: AxiosResponse<{ invoice: Invoice }> = await api.get(`/invoices/${id}`);
     return response.data;
