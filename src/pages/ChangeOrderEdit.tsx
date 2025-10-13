@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { changeOrdersAPI, customersAPI, projectsAPI } from '../services/api';
+import { changeOrdersAPI, customersAPI, projectsAPI, invoicesAPI } from '../services/api';
 import { ChangeOrder, ChangeOrderItem, Project, UpdateChangeOrderRequest } from '../types';
 
 const ChangeOrderEdit: React.FC = () => {
@@ -15,6 +15,8 @@ const ChangeOrderEdit: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertLoading, setConvertLoading] = useState(false);
 
   const [changeOrder, setChangeOrder] = useState<ChangeOrder | null>(null);
   const [customers, setCustomers] = useState<{ id: number; name: string }[]>([]);
@@ -38,6 +40,12 @@ const ChangeOrderEdit: React.FC = () => {
   const [items, setItems] = useState<ChangeOrderItem[]>([
     { description: '', quantity: 1, unit_price: 0 }
   ]);
+  
+  const [convertData, setConvertData] = useState({
+    percentage: '',
+    title: '',
+    due_date: ''
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -168,6 +176,57 @@ const ChangeOrderEdit: React.FC = () => {
   const handleCancel = () => {
     navigate(-1); // Go back to previous page
   };
+  
+  const handleConvertToInvoice = () => {
+    if (!changeOrder) return;
+    if (changeOrder.status !== 'approved') {
+      setError('Only approved change orders can be converted to invoices');
+      return;
+    }
+    setConvertData({
+      percentage: '',
+      title: '',
+      due_date: ''
+    });
+    setShowConvertModal(true);
+  };
+
+  const handleConvertSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changeOrder) return;
+    
+    try {
+      setConvertLoading(true);
+      setError(null);
+      
+      const invoiceData: any = {
+        title: convertData.title || undefined,
+        due_date: convertData.due_date || undefined
+      };
+      
+      // If percentage is provided, calculate the amount
+      if (convertData.percentage) {
+        const percentage = parseFloat(convertData.percentage);
+        if (percentage > 0 && percentage <= 100) {
+          invoiceData.percentage = percentage;
+          invoiceData.amount = (changeOrder.total_amount * percentage) / 100;
+        }
+      }
+      
+      const response = await invoicesAPI.createInvoiceFromChangeOrder(changeOrder.id, invoiceData);
+      setSuccess(`Invoice ${response.invoice.invoice_number} created successfully from change order`);
+      setShowConvertModal(false);
+      
+      // Navigate to invoices page after a brief delay
+      setTimeout(() => {
+        navigate('/invoices');
+      }, 1500);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to convert change order to invoice');
+    } finally {
+      setConvertLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -212,6 +271,17 @@ const ChangeOrderEdit: React.FC = () => {
                 </p>
               </div>
               <div className="flex space-x-3">
+                {changeOrder.status === 'approved' && (
+                  <button
+                    onClick={handleConvertToInvoice}
+                    className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 flex items-center"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Convert to Invoice
+                  </button>
+                )}
                 <button
                   onClick={handleCancel}
                   className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -543,6 +613,98 @@ const ChangeOrderEdit: React.FC = () => {
             </button>
           </div>
         </form>
+        
+        {/* Convert to Invoice Modal */}
+        {showConvertModal && changeOrder && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                  Convert Change Order to Invoice
+                </h3>
+                
+                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <strong>Change Order:</strong> {changeOrder.change_order_number}
+                  </p>
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <strong>Total Amount:</strong> ${changeOrder.total_amount.toFixed(2)}
+                  </p>
+                </div>
+                
+                <form onSubmit={handleConvertSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="convert_percentage" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Percentage (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      id="convert_percentage"
+                      min="0.01"
+                      max="100"
+                      step="0.01"
+                      value={convertData.percentage}
+                      onChange={(e) => setConvertData({ ...convertData, percentage: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="Leave empty for full amount"
+                    />
+                    {convertData.percentage && (
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Invoice Amount: ${((changeOrder.total_amount * parseFloat(convertData.percentage)) / 100).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="convert_title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Invoice Title (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      id="convert_title"
+                      value={convertData.title}
+                      onChange={(e) => setConvertData({ ...convertData, title: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="Auto-generated if empty"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="convert_due_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Due Date (Optional)
+                    </label>
+                    <input
+                      type="date"
+                      id="convert_due_date"
+                      value={convertData.due_date}
+                      onChange={(e) => setConvertData({ ...convertData, due_date: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowConvertModal(false);
+                      }}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={convertLoading}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {convertLoading ? 'Creating...' : 'Create Invoice'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
