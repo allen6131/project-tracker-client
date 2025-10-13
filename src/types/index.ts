@@ -749,6 +749,7 @@ export interface UpdateChangeOrderRequest {
   requested_date?: string | null;
   approved_date?: string | null;
   notes?: string;
+  items?: ChangeOrderItem[];
 }
 
 export interface ChangeOrdersResponse {

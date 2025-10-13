@@ -157,6 +157,7 @@ const ChangeOrderEdit: React.FC = () => {
         requested_date: formData.requested_date || null,
         notes: formData.notes,
         status: formData.status,
+        items: items.filter(item => item.description && item.description.trim() !== ''),
       };
 
       await changeOrdersAPI.updateChangeOrder(changeOrder.id, updateData);
