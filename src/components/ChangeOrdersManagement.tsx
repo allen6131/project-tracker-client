@@ -527,7 +527,6 @@ const ChangeOrdersManagement: React.FC<ChangeOrdersManagementProps> = ({
                     <tr key={changeOrder.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{changeOrder.change_order_number}</div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">{changeOrder.title}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900 max-w-xs truncate">
